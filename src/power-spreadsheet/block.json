@@ -1,0 +1,35 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "prc-block/power-spreadsheet",
+	"version": "1.0.0",
+	"title": "Power Spreadsheet",
+	"category": "text",
+	"keywords": ["table", "spreadsheet", "sheet", "data", "tabs"],
+	"description": "An Excel-like tabbed container for Power Tables. Each tab is a sheet.",
+	"textdomain": "prc-block-tables",
+	"attributes": {
+		"activeSheetIndex": {
+			"type": "number",
+			"default": 0,
+			"role": "local"
+		}
+	},
+	"providesContext": {
+		"prc-block/power-spreadsheet/activeSheetIndex": "activeSheetIndex"
+	},
+	"supports": {
+		"anchor": true,
+		"interactivity": true,
+		"align": ["wide", "full"],
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"allowedBlocks": ["prc-block/table"],
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScriptModule": "file:./view.js"
+}

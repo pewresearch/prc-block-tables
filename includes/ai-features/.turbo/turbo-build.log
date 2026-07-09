@@ -1,0 +1,64 @@
+
+> @prc/block-tables-ai-features@0.0.0 build
+> wp-scripts build --webpack-copy-php --source-path=src --output-path=build
+
+assets by chunk 817 KiB (name: generate-tabular-data/index)
+  assets by path generate-tabular-data/*.css 2.9 KiB
+    asset generate-tabular-data/index-rtl.css 1.45 KiB [compared for emit] (name: generate-tabular-data/index)
+    asset generate-tabular-data/index.css 1.45 KiB [compared for emit] (name: generate-tabular-data/index)
+  asset generate-tabular-data/index.js 814 KiB [compared for emit] [minimized] [big] (name: generate-tabular-data/index)
+  asset generate-tabular-data/index.asset.php 384 bytes [compared for emit] (name: generate-tabular-data/index)
+assets by chunk 5.59 KiB (name: generate-tabular-data/style-index)
+  asset generate-tabular-data/style-index-rtl.css 2.8 KiB [compared for emit] (name: generate-tabular-data/style-index) (id hint: style)
+  asset generate-tabular-data/style-index.css 2.79 KiB [compared for emit] (name: generate-tabular-data/style-index) (id hint: style)
+asset generate-tabular-data/block.json 206 bytes [compared for emit] [from: src/generate-tabular-data/block.json] [copied]
+Entrypoint generate-tabular-data/index [big] 823 KiB = 6 assets
+orphan modules 2.83 MiB (javascript) 3.66 KiB (runtime) [orphan] 1020 modules
+runtime modules 3.36 KiB 6 modules
+built modules 2.15 MiB (javascript) 4.24 KiB (css/mini-extract) [built]
+  javascript modules 2.15 MiB
+    modules by path ../../../../node_modules/prop-types/ 2.6 KiB
+      ../../../../node_modules/prop-types/index.js 710 bytes [built] [code generated]
+      + 2 modules
+    + 4 modules
+  modules by path ../../../prc-scripts/includes/scripts/src/@prc/ 4.24 KiB
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/components/icon-pick...(truncated) 558 bytes [built] [code generated]
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/components/ai/styles.scss 927 bytes [built] [code generated]
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/icons/src/style.scss 143 bytes [built] [code generated]
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/components/settings-p...(truncated) 2.65 KiB [built] [code generated]
+
+WARNING in ../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js 108:14-38
+export 'currentUser' (imported as 'firebaseAuth') was not found in 'firebase/auth' (possible exports: ActionCodeOperation, ActionCodeURL, AuthCredential, AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TotpMultiFactorGenerator, TotpSecret, TwitterAuthProvider, applyActionCode, beforeAuthStateChanged, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, initializeRecaptchaConfig, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, revokeAccessToken, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, validatePassword, verifyBeforeUpdateEmail, verifyPasswordResetCode)
+ @ ../../../prc-scripts/includes/scripts/src/@prc/components/exports.ts 7:0-63 7:0-63 7:0-63
+ @ ./src/generate-tabular-data/index.tsx 4:0-57 41:28-50
+
+WARNING in ../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js 120:14-38
+export 'currentUser' (imported as 'firebaseAuth') was not found in 'firebase/auth' (possible exports: ActionCodeOperation, ActionCodeURL, AuthCredential, AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TotpMultiFactorGenerator, TotpSecret, TwitterAuthProvider, applyActionCode, beforeAuthStateChanged, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, initializeRecaptchaConfig, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, revokeAccessToken, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, validatePassword, verifyBeforeUpdateEmail, verifyPasswordResetCode)
+ @ ../../../prc-scripts/includes/scripts/src/@prc/components/exports.ts 7:0-63 7:0-63 7:0-63
+ @ ./src/generate-tabular-data/index.tsx 4:0-57 41:28-50
+
+WARNING in ../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js 171:4-21
+export 'database' (imported as 'firebase') was not found in 'firebase/app' (possible exports: FirebaseError, SDK_VERSION, _DEFAULT_ENTRY_NAME, _addComponent, _addOrOverwriteComponent, _apps, _clearComponents, _components, _getProvider, _isFirebaseApp, _isFirebaseServerApp, _registerComponent, _removeServiceInstance, _serverApps, deleteApp, getApp, getApps, initializeApp, initializeServerApp, onLog, registerVersion, setLogLevel)
+ @ ../../../prc-scripts/includes/scripts/src/@prc/components/exports.ts 7:0-63 7:0-63 7:0-63
+ @ ./src/generate-tabular-data/index.tsx 4:0-57 41:28-50
+
+WARNING in asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  generate-tabular-data/index.js (814 KiB)
+
+WARNING in entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  generate-tabular-data/index (823 KiB)
+      generate-tabular-data/style-index.css
+      generate-tabular-data/style-index-rtl.css
+      generate-tabular-data/index.css
+      generate-tabular-data/index.js
+      generate-tabular-data/index-rtl.css
+      generate-tabular-data/index.asset.php
+
+WARNING in webpack performance recommendations: 
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+
+webpack 5.106.2 compiled with 6 warnings in 18457 ms

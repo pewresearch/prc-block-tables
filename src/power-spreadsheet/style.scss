@@ -1,0 +1,51 @@
+.wp-block-prc-block-power-spreadsheet {
+	&__tabs {
+		display: flex;
+		align-items: stretch;
+		gap: 0;
+		overflow-x: auto;
+		border-top: 1px solid #ddd;
+	}
+
+	&__tab {
+		appearance: none;
+		margin: 0 0 0 -1px;
+		padding: 6px 14px;
+		border: 1px solid #ddd;
+		border-top: none;
+		border-radius: 0 0 4px 4px;
+		background: #f5f5f5;
+		color: inherit;
+		font-family: var(--wp--preset--font-family--sans-serif);
+		font-size: 0.875rem;
+		line-height: 1.4;
+		white-space: nowrap;
+		cursor: pointer;
+
+		&:first-child {
+			margin-left: 0;
+		}
+
+		&.is-active {
+			position: relative;
+			z-index: 1;
+			background: #fff;
+			font-weight: 600;
+		}
+	}
+
+	&__panels {
+		border: 1px solid #ddd;
+		border-bottom: none;
+	}
+
+	&__panel {
+		&[hidden] {
+			display: none;
+		}
+	}
+
+	.spreadsheet-sheet {
+		margin-bottom: 0;
+	}
+}

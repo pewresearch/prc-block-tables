@@ -1,0 +1,1 @@
+<?php return array('dependencies' => array('comma-separated-values', 'emotion-styled', 'react', 'react-jsx-runtime', 'wp-api-fetch', 'wp-block-editor', 'wp-blocks', 'wp-components', 'wp-compose', 'wp-core-data', 'wp-data', 'wp-element', 'wp-hooks', 'wp-i18n', 'wp-keycodes', 'wp-notices', 'wp-primitives'), 'version' => 'baa1749ffc3d2f07b924');
