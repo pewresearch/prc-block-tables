@@ -1,5 +1,5 @@
 
-> @prc/block-tables@1.1.0 build
+> @prc/block-tables@1.0.0 build
 > wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai
 
 assets by path table/ 253 KiB
@@ -34,7 +34,7 @@ built modules 25.9 KiB (css/mini-extract) 428 KiB (javascript) [built]
     ../../node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js 2.68 KiB [built] [code generated]
     ../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js 196 bytes [built] [code generated]
     ../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated) 2.49 KiB [built] [code generated]
-webpack 5.106.2 compiled successfully in 10638 ms
+webpack 5.106.2 compiled successfully in 7580 ms
 
 assets by path table/ 3.92 KiB
   asset table/view.js 3.8 KiB [compared for emit] [javascript module] [minimized] (name: table/view)
@@ -47,10 +47,10 @@ Entrypoint table/view 3.92 KiB = table/view.js 3.8 KiB table/view.asset.php 130 
 orphan modules 42 bytes [orphan] 1 module
 ./src/power-spreadsheet/view.js + 1 modules 1.22 KiB [not cacheable] [built] [code generated]
 ./src/table/view.js + 1 modules 11.3 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 2700 ms
+webpack 5.106.2 compiled successfully in 1186 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
-> @prc/block-tables@1.1.0 build:ai
+> @prc/block-tables@1.0.0 build:ai
 > npm -w @prc/block-tables-ai-features run build
 
 
@@ -116,4 +116,4 @@ WARNING in webpack performance recommendations:
 You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
 For more info visit https://webpack.js.org/guides/code-splitting/
 
-webpack 5.106.2 compiled with 6 warnings in 17099 ms
+webpack 5.106.2 compiled with 6 warnings in 14100 ms
