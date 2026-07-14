@@ -16,7 +16,13 @@ import type {
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { useState, useEffect, useRef, useMemo } from '@wordpress/element';
+import {
+	useState,
+	useEffect,
+	useRef,
+	useMemo,
+	useCallback,
+} from '@wordpress/element';
 import {
 	// @ts-ignore: has no exported member
 	__experimentalUseColorProps as useColorProps,
@@ -33,6 +39,9 @@ import {
 	deleteRow,
 	insertColumn,
 	deleteColumn,
+	moveColumn,
+	canMoveColumn,
+	getColumnCount,
 	toRectangledSelectedCells,
 	toVirtualRows,
 	toTableAttributes,
@@ -44,9 +53,13 @@ import {
 	type VSelectedCells,
 } from '../utils/table-state';
 import { convertToObject } from '../utils/style-converter';
+import { recastHoverBackgroundColor } from '../utils/hover-background-color';
 import {
 	getEffectiveColumnMeta,
 	setColumnMetaField,
+	insertColumnMeta,
+	deleteColumnMeta,
+	moveColumnMeta,
 } from '../utils/column-meta';
 import { validateTable } from '../utils/validation';
 
@@ -60,6 +73,7 @@ import type { StoreOptions } from '../store';
 import ContextMenu from './context-menu';
 import GoToCellModal from '../controls/go-to-cell-modal';
 import TableCellControls from './table-cell-controls';
+import ColumnResizeHandle from './column-resize-handle';
 
 // Create the SlotFill for the context menu
 const { Fill: TableCellContextMenuFill, Slot: TableCellContextMenuSlot } =
@@ -126,7 +140,7 @@ export default function Table({
 	const [isReady, setIdReady] = useState<boolean>(false);
 	useEffect(() => setIdReady(true), []);
 
-	const tableRef = useRef(null);
+	const tableRef = useRef<HTMLTableElement>(null);
 	const { createWarningNotice } = useDispatch(noticesStore);
 
 	let isTabMove: boolean = false;
@@ -142,6 +156,96 @@ export default function Table({
 	const [isGoToModalOpen, setIsGoToModalOpen] = useState(false);
 	const [goToValue, setGoToValue] = useState('');
 	const goToInputRef = useRef<HTMLInputElement>(null);
+
+	const columnCount = useMemo(() => getColumnCount(vTable), [vTable]);
+	const columnMoveAvailability = useMemo(() => {
+		return Array.from({ length: columnCount }, (_, vColIndex) => ({
+			left: canMoveColumn(vTable, vColIndex, vColIndex - 1),
+			right: canMoveColumn(vTable, vColIndex, vColIndex + 1),
+		}));
+	}, [columnCount, vTable]);
+
+	type ResizeSession = {
+		vColIndex: number;
+		startWidth: number;
+		hadFixedLayout: boolean;
+		originalWidth: string;
+	};
+	const resizeSessionRef = useRef<ResizeSession | null>(null);
+
+	const getColElement = useCallback((vColIndex: number) => {
+		return tableRef.current?.querySelector(
+			`col[data-prc-v-col="${vColIndex}"]`
+		) as HTMLTableColElement | null;
+	}, []);
+
+	const onResizeStart = useCallback(
+		(vColIndex: number, startWidth: number) => {
+			const table = tableRef.current;
+			const col = getColElement(vColIndex);
+			const hadFixedLayout =
+				table?.classList.contains('has-fixed-layout') ?? false;
+			if (table && !hadFixedLayout) {
+				table.classList.add('has-fixed-layout');
+			}
+			resizeSessionRef.current = {
+				vColIndex,
+				startWidth,
+				hadFixedLayout,
+				originalWidth: col?.style.width ?? '',
+			};
+			if (col) {
+				col.style.width = `${startWidth}px`;
+			}
+		},
+		[getColElement]
+	);
+
+	const onResizePreview = useCallback(
+		(vColIndex: number, widthPx: number) => {
+			const col = getColElement(vColIndex);
+			if (col) {
+				col.style.width = `${widthPx}px`;
+			}
+		},
+		[getColElement]
+	);
+
+	const onResizeCommit = useCallback(
+		(vColIndex: number, widthPx: number) => {
+			resizeSessionRef.current = null;
+			setAttributes({
+				hasFixedLayout: true,
+				columnMeta: setColumnMetaField(
+					vColIndex,
+					'width',
+					`${widthPx}px`,
+					attributes.columnMeta || []
+				),
+			});
+		},
+		[attributes.columnMeta, setAttributes]
+	);
+
+	const onResizeCancel = useCallback(
+		(vColIndex: number) => {
+			const session = resizeSessionRef.current;
+			const col = getColElement(vColIndex);
+			if (col) {
+				if (session?.originalWidth) {
+					col.style.width = session.originalWidth;
+				} else {
+					col.style.removeProperty('width');
+				}
+			}
+			const table = tableRef.current;
+			if (table && session && !session.hadFixedLayout) {
+				table.classList.remove('has-fixed-layout');
+			}
+			resizeSessionRef.current = null;
+		},
+		[getColElement]
+	);
 
 	const onInsertRow = (sectionName: SectionName, rowIndex: number) => {
 		const newVTable = insertRow(vTable, { sectionName, rowIndex });
@@ -185,16 +289,57 @@ export default function Table({
 				: vTargetCell.vColIndex + offset + vTargetCell.colSpan - 1;
 
 		const newVTable = insertColumn(vTable, { vColIndex });
-		setAttributes(toTableAttributes(newVTable));
+		setAttributes({
+			...toTableAttributes(newVTable),
+			columnMeta: insertColumnMeta(
+				attributes.columnMeta || [],
+				vColIndex
+			),
+		});
 		setSelectedCells(undefined);
 		setSelectedLine(undefined);
 	};
 
 	const onDeleteColumn = (vColIndex: number) => {
 		const newVTable = deleteColumn(vTable, { vColIndex });
-		setAttributes(toTableAttributes(newVTable));
+		setAttributes({
+			...toTableAttributes(newVTable),
+			columnMeta: deleteColumnMeta(
+				attributes.columnMeta || [],
+				vColIndex
+			),
+		});
 		setSelectedCells(undefined);
 		setSelectedLine(undefined);
+	};
+
+	const onMoveColumn = (fromVColIndex: number, toVColIndex: number) => {
+		if (!canMoveColumn(vTable, fromVColIndex, toVColIndex)) {
+			return;
+		}
+		const newVTable = moveColumn(vTable, { fromVColIndex, toVColIndex });
+		setAttributes({
+			...toTableAttributes(newVTable),
+			columnMeta: moveColumnMeta(
+				attributes.columnMeta || [],
+				fromVColIndex,
+				toVColIndex
+			),
+		});
+		const vRows = toVirtualRows(newVTable);
+		setSelectedCells(
+			vRows.reduce(
+				(cells: VCell[], row) =>
+					cells.concat(
+						row.cells.filter(
+							(cell) =>
+								cell.vColIndex === toVColIndex && !cell.isHidden
+						)
+					),
+				[]
+			)
+		);
+		setSelectedLine({ vColIndex: toVColIndex });
 	};
 
 	const onHideColumn = (vColIndex: number) => {
@@ -325,7 +470,6 @@ export default function Table({
 		if (key === 'Shift' || key === 'Control' || key === 'Meta') {
 			// range-select mode or multi-select mode.
 			setIsSelectMode(true);
-			console.log('range-select mode or multi-select mode.');
 		} else if (key === 'Tab' && options.tab_move && tableRef.current) {
 			const isInsideTableBlock =
 				(event.target as HTMLElement).closest(
@@ -631,7 +775,10 @@ export default function Table({
 				}
 			);
 		} catch (err) {
-			console.error('Failed to copy:', err);
+			createWarningNotice(
+				__('Failed to copy content to clipboard', 'prc-block-tables'),
+				{ type: 'snackbar' }
+			);
 		}
 	};
 
@@ -724,6 +871,25 @@ export default function Table({
 				onKeyDown={onKeyDown}
 				onKeyUp={onKeyUp}
 			>
+				{columnCount > 0 && (
+					<colgroup>
+						{Array.from({ length: columnCount }).map(
+							(_, colIndex) => {
+								const width = getEffectiveColumnMeta(
+									colIndex,
+									attributes
+								).width;
+								return (
+									<col
+										key={colIndex}
+										data-prc-v-col={colIndex}
+										style={width ? { width } : undefined}
+									/>
+								);
+							}
+						)}
+					</colgroup>
+				)}
 				{filteredSections.map(
 					(sectionName: SectionName, sectionIndex) => (
 						<TSection name={sectionName} key={sectionIndex}>
@@ -758,16 +924,9 @@ export default function Table({
 											);
 
 											const cellStylesObj =
-												convertToObject(styles);
-											// If there is a hoverBackgroundColor, recast it as --hover-background-color
-											if (
-												cellStylesObj?.hoverBackgroundColor
-											) {
-												cellStylesObj[
-													'--hover-background-color'
-												] =
-													cellStylesObj.hoverBackgroundColor;
-											}
+												recastHoverBackgroundColor(
+													convertToObject(styles)
+												);
 
 											return (
 												<Cell
@@ -837,6 +996,17 @@ export default function Table({
 															onInsertColumn,
 															onDeleteColumn,
 															onHideColumn,
+															onMoveColumn,
+															canMoveColumnLeft:
+																columnMoveAvailability[
+																	vColIndex
+																]?.left ??
+																false,
+															canMoveColumnRight:
+																columnMoveAvailability[
+																	vColIndex
+																]?.right ??
+																false,
 															onSelectRow,
 															onSelectColumn,
 															filteredVTable,
@@ -872,6 +1042,30 @@ export default function Table({
 																),
 														}}
 													/>
+													{isSelected &&
+														!isContentOnlyMode &&
+														options.show_control_button &&
+														sectionIndex === 0 &&
+														rowIndex === 0 &&
+														!cell.isHidden && (
+															<ColumnResizeHandle
+																vColIndex={
+																	vColIndex
+																}
+																onResizeStart={
+																	onResizeStart
+																}
+																onResizePreview={
+																	onResizePreview
+																}
+																onResizeCommit={
+																	onResizeCommit
+																}
+																onResizeCancel={
+																	onResizeCancel
+																}
+															/>
+														)}
 												</Cell>
 											);
 										})}

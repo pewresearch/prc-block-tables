@@ -18,6 +18,7 @@ import type { BlockSaveProps } from '@wordpress/blocks';
  * Internal Dependencies
  */
 import { convertToObject } from './utils/style-converter';
+import { recastHoverBackgroundColor } from './utils/hover-background-color';
 import { toInteger } from './utils/helper';
 import {
 	normalizeRoundDecimalsValue,
@@ -39,6 +40,23 @@ function getVColStartForCell(row: Row, cellIndex: number): number {
 		v += span > 1 ? span : 1;
 	}
 	return v;
+}
+
+/**
+ * Number of virtual columns from the widest section row.
+ * @param head
+ * @param body
+ * @param foot
+ */
+function getSavedColumnCount(head: Row[], body: Row[], foot: Row[]): number {
+	const rows = [...(head || []), ...(body || []), ...(foot || [])];
+	return rows.reduce((max, row) => {
+		const count = row.cells.reduce((sum, cell) => {
+			const span = toInteger(cell.colSpan);
+			return sum + (span > 1 ? span : 1);
+		}, 0);
+		return Math.max(max, count);
+	}, 0);
 }
 
 export default function save({ attributes }: BlockSaveProps<BlockAttributes>) {
@@ -94,6 +112,8 @@ export default function save({ attributes }: BlockSaveProps<BlockAttributes>) {
 	const hasTableTitle: boolean = !RichText.isEmpty(tableTitle || '');
 
 	const hasSourceNote: boolean = !RichText.isEmpty(sourceNote || '');
+
+	const columnCount = getSavedColumnCount(head, body, foot);
 
 	const Section = ({ type, rows }: { type: SectionName; rows: Row[] }) => {
 		if (!rows.length) {
@@ -199,7 +219,9 @@ export default function save({ attributes }: BlockSaveProps<BlockAttributes>) {
 												? toInteger(colSpan)
 												: undefined
 										}
-										style={convertToObject(styles)}
+										style={recastHoverBackgroundColor(
+											convertToObject(styles)
+										)}
 										{...dataSectionProps}
 										{...roundDecimalsProps}
 									/>
@@ -246,6 +268,24 @@ export default function save({ attributes }: BlockSaveProps<BlockAttributes>) {
 				className={tableClasses ?? undefined}
 				style={{ ...tableStylesObj, ...colorProps.style }}
 			>
+				{columnCount > 0 && (
+					<colgroup>
+						{Array.from({ length: columnCount }).map(
+							(_, colIndex) => {
+								const width = getEffectiveColumnMeta(
+									colIndex,
+									attributes
+								).width;
+								return (
+									<col
+										key={colIndex}
+										style={width ? { width } : undefined}
+									/>
+								);
+							}
+						)}
+					</colgroup>
+				)}
 				<Section type="head" rows={head} />
 				<Section type="body" rows={body} />
 				<Section type="foot" rows={foot} />

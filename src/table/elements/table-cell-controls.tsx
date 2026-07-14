@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import {
 	chevronDown,
+	chevronLeft,
 	chevronRight,
 	plus,
 	seen,
@@ -48,6 +49,9 @@ interface TableCellControlsProps {
 	onInsertColumn: (cell: any, offset: number) => void;
 	onDeleteColumn: (vColIndex: number) => void;
 	onHideColumn: (vColIndex: number) => void;
+	onMoveColumn: (fromVColIndex: number, toVColIndex: number) => void;
+	canMoveColumnLeft: boolean;
+	canMoveColumnRight: boolean;
 	onSelectRow: (sectionName: SectionName, rowIndex: number) => void;
 	onSelectColumn: (vColIndex: number) => void;
 	filteredVTable: any;
@@ -110,6 +114,9 @@ const TableCellControls = ({
 	onInsertColumn,
 	onDeleteColumn,
 	onHideColumn,
+	onMoveColumn,
+	canMoveColumnLeft,
+	canMoveColumnRight,
 	onSelectRow,
 	onSelectColumn,
 	filteredVTable,
@@ -253,15 +260,54 @@ const TableCellControls = ({
 					/>
 					{isColumnSelected &&
 						selectedLine.vColIndex === vColIndex && (
-							<>
+							<div className="ftb-column-toolbar">
 								<Button
-									className="ftb-column-hider"
+									className="ftb-column-move-left"
 									label={__(
-										isColumnHidden
-											? 'Unhide column'
-											: 'Hide column',
+										'Move column left',
 										'flexible-table-block'
 									)}
+									tabIndex={
+										options.focus_control_button ? 0 : -1
+									}
+									icon={chevronLeft}
+									iconSize={20}
+									disabled={!canMoveColumnLeft}
+									onClick={(event: MouseEvent) => {
+										onMoveColumn(vColIndex, vColIndex - 1);
+										event.stopPropagation();
+									}}
+								/>
+								<Button
+									className="ftb-column-move-right"
+									label={__(
+										'Move column right',
+										'flexible-table-block'
+									)}
+									tabIndex={
+										options.focus_control_button ? 0 : -1
+									}
+									icon={chevronRight}
+									iconSize={20}
+									disabled={!canMoveColumnRight}
+									onClick={(event: MouseEvent) => {
+										onMoveColumn(vColIndex, vColIndex + 1);
+										event.stopPropagation();
+									}}
+								/>
+								<Button
+									className="ftb-column-hider"
+									label={
+										isColumnHidden
+											? __(
+													'Unhide column',
+													'flexible-table-block'
+												)
+											: __(
+													'Hide column',
+													'flexible-table-block'
+												)
+									}
 									tabIndex={
 										options.focus_control_button ? 0 : -1
 									}
@@ -288,7 +334,7 @@ const TableCellControls = ({
 										event.stopPropagation();
 									}}
 								/>
-							</>
+							</div>
 						)}
 				</>
 			)}

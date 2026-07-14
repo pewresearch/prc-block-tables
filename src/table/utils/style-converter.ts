@@ -17,13 +17,16 @@ export function convertToObject(inlineStyles: string | undefined): Properties {
 	return inlineStyles
 		.split(';')
 		.filter((style) => style.split(':')[0] && style.split(':')[1])
-		.map((style) => [
-			style
-				.split(':')[0]
-				.trim()
-				.replace(/-./g, (c) => c.substr(1).toUpperCase()),
-			style.split(':')[1].trim(),
-		])
+		.map((style) => {
+			const property = style.split(':')[0].trim();
+			return [
+				// Custom properties (--foo) must not be camelCased.
+				property.startsWith('--')
+					? property
+					: property.replace(/-./g, (c) => c.substr(1).toUpperCase()),
+				style.split(':')[1].trim(),
+			];
+		})
 		.reduce(
 			(styleObj, style) => ({
 				...styleObj,
@@ -42,9 +45,9 @@ export function convertToObject(inlineStyles: string | undefined): Properties {
 export function convertToInline(stylesObj: Properties): string {
 	const lines: string[] = Object.keys(stylesObj).reduce<string[]>(
 		(result: string[], key: string) => {
-			const property = key
-				.replace(/([a-z])([A-Z])/g, '$1-$2')
-				.toLowerCase();
+			const property = key.startsWith('--')
+				? key
+				: key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 			const value = stylesObj[key as keyof Properties];
 
 			if (

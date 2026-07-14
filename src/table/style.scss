@@ -55,9 +55,11 @@
 		align-items: flex-end;
 	}
 
+	th,
 	td {
 		&:hover {
-			background-color: var(--hover-background-color);
+			// Override inline base background-color on the cell.
+			background-color: var(--hover-background-color) !important;
 		}
 	}
 

@@ -1,4 +1,4 @@
-/* eslint-disable @wordpress/no-unsafe-wp-apis */
+/* eslint-disable @wordpress/no-unsafe-wp-apis, max-lines -- Large legacy settings panel; split in a follow-up */
 /**
  * External Dependencies
  */
@@ -14,7 +14,6 @@ import {
 	Button,
 	Flex,
 	FlexBlock,
-	FlexItem,
 	SelectControl,
 	TextControl,
 	__experimentalHStack as HStack,
@@ -54,6 +53,10 @@ import {
 } from '../utils/table-state';
 import { convertToObject } from '../utils/style-converter';
 import {
+	HOVER_BACKGROUND_COLOR_PROPERTY,
+	type CellStyles,
+} from '../utils/hover-background-color';
+import {
 	pickPadding,
 	pickBorderWidth,
 	pickBorderRadius,
@@ -81,7 +84,6 @@ type Props = {
 
 /* eslint-disable max-lines-per-function */
 export default function TableCellSettings({
-	attributes,
 	setAttributes,
 	vTable,
 	selectedCells = [],
@@ -116,7 +118,7 @@ export default function TableCellSettings({
 		[]
 	);
 
-	const cellStylesObj = convertToObject(targetCell.styles);
+	const cellStylesObj: CellStyles = convertToObject(targetCell.styles);
 	const [parsedWidthQuantity, parsedWidthUnit] =
 		parseQuantityAndUnitFromRawValue(cellStylesObj?.width);
 
@@ -129,7 +131,6 @@ export default function TableCellSettings({
 		scope?: CellScopeValue;
 	}) => {
 		const newVTable = updateCells(vTable, state, selectedCells);
-		console.log('updateCellsState', newVTable);
 		setAttributes(toTableAttributes(newVTable));
 	};
 
@@ -156,7 +157,14 @@ export default function TableCellSettings({
 	const onChangeCellHoverBackgroundColor = (
 		value: Property.BackgroundColor
 	) => {
-		updateCellsState({ styles: { hoverBackgroundColor: value } });
+		updateCellsState({
+			styles: {
+				// Store as the custom property the block stylesheet consumes;
+				// clear the legacy literal-property form.
+				[HOVER_BACKGROUND_COLOR_PROPERTY]: value,
+				hoverBackgroundColor: undefined,
+			},
+		});
 	};
 
 	const onChangeWidth = (value: string | number | undefined) => {
@@ -243,6 +251,7 @@ export default function TableCellSettings({
 				color: undefined,
 				backgroundColor: undefined,
 				hoverBackgroundColor: undefined,
+				[HOVER_BACKGROUND_COLOR_PROPERTY]: undefined,
 				padding: {
 					top: undefined,
 					right: undefined,
@@ -404,7 +413,10 @@ export default function TableCellSettings({
 					'Cell hover background color',
 					'flexible-table-block'
 				)}
-				value={cellStylesObj?.hoverBackgroundColor}
+				value={
+					cellStylesObj?.[HOVER_BACKGROUND_COLOR_PROPERTY] ??
+					cellStylesObj?.hoverBackgroundColor
+				}
 				colors={[
 					{
 						name: __('Transparent', 'flexible-table-block'),

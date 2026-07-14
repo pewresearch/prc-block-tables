@@ -36,6 +36,8 @@ export interface ColumnMeta {
 	sortable?: boolean;
 	/** 1–10, null = off */
 	roundDecimals?: number | null;
+	/** CSS length for column width (e.g. "142px"), applied via colgroup. */
+	width?: string;
 }
 
 type NestedObject = {

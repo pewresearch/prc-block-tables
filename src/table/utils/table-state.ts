@@ -496,6 +496,154 @@ export function deleteColumn(
 }
 
 /**
+ * Returns the number of virtual columns in the table.
+ * Uses the widest row across head, body, and foot (matches save markup).
+ *
+ * @param vTable Virtual table.
+ * @return Column count.
+ */
+export function getColumnCount(vTable: VTable): number {
+	const rows = [...vTable.head, ...vTable.body, ...vTable.foot];
+	return rows.reduce((max, row) => {
+		const count = row.cells.reduce((rowMax, cell) => {
+			const end = cell.vColIndex + (cell.colSpan > 1 ? cell.colSpan : 1);
+			return Math.max(rowMax, end);
+		}, 0);
+		return Math.max(max, count);
+	}, 0);
+}
+
+/**
+ * Returns true when an adjacent column move from `fromVColIndex` to
+ * `toVColIndex` is allowed (edges + colspan/rowspan guards).
+ *
+ * @param vTable        Virtual table.
+ * @param fromVColIndex Source column index.
+ * @param toVColIndex   Destination column index (must be adjacent).
+ */
+export function canMoveColumn(
+	vTable: VTable,
+	fromVColIndex: number,
+	toVColIndex: number
+): boolean {
+	const colCount = getColumnCount(vTable);
+	if (colCount < 2) {
+		return false;
+	}
+	if (
+		fromVColIndex < 0 ||
+		toVColIndex < 0 ||
+		fromVColIndex >= colCount ||
+		toVColIndex >= colCount
+	) {
+		return false;
+	}
+	if (Math.abs(fromVColIndex - toVColIndex) !== 1) {
+		return false;
+	}
+
+	const vRows = toVirtualRows(vTable);
+	const minIndex = Math.min(fromVColIndex, toVColIndex);
+	const maxIndex = Math.max(fromVColIndex, toVColIndex);
+
+	for (const row of vRows) {
+		for (const cell of row.cells) {
+			if (cell.isHidden) {
+				continue;
+			}
+			const span = cell.colSpan > 1 ? cell.colSpan : 1;
+			const cellStart = cell.vColIndex;
+			const cellEnd = cell.vColIndex + span - 1;
+			const coversMoveColumn =
+				(cellStart <= fromVColIndex && fromVColIndex <= cellEnd) ||
+				(cellStart <= toVColIndex && toVColIndex <= cellEnd);
+
+			// Any colspan that covers either move column or crosses the boundary.
+			if (span > 1) {
+				if (
+					coversMoveColumn ||
+					(cellStart <= minIndex && cellEnd >= maxIndex)
+				) {
+					return false;
+				}
+			}
+
+			// Rowspan cells leave hidden placeholders in covered rows, so
+			// moveColumn cannot swap those slots without misaligning columns.
+			if (cell.rowSpan > 1 && coversMoveColumn) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Moves a column to an adjacent index by swapping cells in every section/row.
+ *
+ * @param vTable                Virtual table.
+ * @param options
+ * @param options.fromVColIndex Source virtual column index.
+ * @param options.toVColIndex   Destination virtual column index (adjacent).
+ * @return New virtual table, or the original when the move is not allowed.
+ */
+export function moveColumn(
+	vTable: VTable,
+	{
+		fromVColIndex,
+		toVColIndex,
+	}: { fromVColIndex: number; toVColIndex: number }
+): VTable {
+	if (!canMoveColumn(vTable, fromVColIndex, toVColIndex)) {
+		return vTable;
+	}
+
+	return Object.entries(vTable).reduce(
+		(newVTable: VTable, [sectionName, section]) => {
+			if (!section.length) {
+				return newVTable;
+			}
+			newVTable[sectionName as SectionName] = section.map(({ cells }) => {
+				const fromCellIndex = cells.findIndex(
+					(cell) => cell.vColIndex === fromVColIndex && !cell.isHidden
+				);
+				const toCellIndex = cells.findIndex(
+					(cell) => cell.vColIndex === toVColIndex && !cell.isHidden
+				);
+
+				if (fromCellIndex === -1 || toCellIndex === -1) {
+					return { cells };
+				}
+
+				const nextCells = [...cells];
+				const fromCell = {
+					...nextCells[fromCellIndex],
+					vColIndex: toVColIndex,
+				};
+				const toCell = {
+					...nextCells[toCellIndex],
+					vColIndex: fromVColIndex,
+				};
+				nextCells[fromCellIndex] = toCell;
+				nextCells[toCellIndex] = fromCell;
+
+				// Keep cells ordered by vColIndex for stable serialization.
+				nextCells.sort((a, b) => a.vColIndex - b.vColIndex);
+
+				return { cells: nextCells };
+			});
+			return newVTable;
+		},
+		{
+			head: [],
+			body: [],
+			foot: [],
+		}
+	);
+}
+
+/**
  * Merge cells in the virtual table.
  *
  * @param vTable         Current virtual table state.

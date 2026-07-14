@@ -7,7 +7,6 @@ import { blockTable, justifyLeft } from '@wordpress/icons';
 /**
  * WordPress Dependencies
  */
-import { store as blockEditorStore } from '@wordpress/block-editor';
 import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalConfirmDialog as ConfirmDialog,
@@ -36,7 +35,11 @@ import {
 	tableRowDelete,
 	tableSplitCell,
 } from '../icons';
-import { hasActiveColumnMeta } from '../utils/column-meta';
+import {
+	deleteColumnMeta,
+	hasActiveColumnMeta,
+	insertColumnMeta,
+} from '../utils/column-meta';
 import {
 	deleteColumn,
 	deleteRow,
@@ -73,10 +76,8 @@ export default function ToolbarControls({
 	setSelectedCells,
 	setSelectedLine,
 	attributes,
-	clientId,
 }: Props) {
 	const { createWarningNotice } = useDispatch(noticesStore);
-	const { updateBlockAttributes } = useDispatch(blockEditorStore);
 
 	const dropdownRef = useRef<HTMLButtonElement>(null);
 	const [showTransposeConfirm, setShowTransposeConfirm] = useState(false);
@@ -166,7 +167,13 @@ export default function ToolbarControls({
 
 		const newVTable = insertColumn(vTable, { vColIndex: insertVColIndex });
 
-		setAttributes(toTableAttributes(newVTable));
+		setAttributes({
+			...toTableAttributes(newVTable),
+			columnMeta: insertColumnMeta(
+				attributes.columnMeta || [],
+				insertVColIndex
+			),
+		});
 		setSelectedCells(undefined);
 		setSelectedLine(undefined);
 	};
@@ -180,7 +187,13 @@ export default function ToolbarControls({
 		const { vColIndex } = selectedCells[0];
 
 		const newVTable = deleteColumn(vTable, { vColIndex });
-		setAttributes(toTableAttributes(newVTable));
+		setAttributes({
+			...toTableAttributes(newVTable),
+			columnMeta: deleteColumnMeta(
+				attributes.columnMeta || [],
+				vColIndex
+			),
+		});
 		setSelectedCells(undefined);
 		setSelectedLine(undefined);
 	};
@@ -323,12 +336,12 @@ export default function ToolbarControls({
 				controls={TableEditControls}
 				ref={dropdownRef}
 			/>
-		<ToolbarButton
-			icon={tablePivot}
-			label={__('Transpose table', 'prc-block-library')}
-			onClick={onTransposeClick}
-			disabled={!canTranspose}
-		/>
+			<ToolbarButton
+				icon={tablePivot}
+				label={__('Transpose table', 'prc-block-library')}
+				onClick={onTransposeClick}
+				disabled={!canTranspose}
+			/>
 			{showTransposeConfirm && (
 				<ConfirmDialog
 					onConfirm={() => {
