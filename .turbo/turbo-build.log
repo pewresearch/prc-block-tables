@@ -1,56 +1,56 @@
 
-> @prc/block-tables@1.0.0 build
+> @prc/block-tables@1.1.0 build
 > wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai
 
-assets by path table/ 265 KiB
-  assets by path table/*.php 37.6 KiB 7 assets
-  assets by path table/*.css 51.3 KiB 4 assets
-  asset table/index.js 166 KiB [compared for emit] [minimized] (name: table/index)
-  asset table/block.json 10.8 KiB [compared for emit] [from: src/table/block.json] [copied]
-assets by path power-spreadsheet/ 15.4 KiB
+assets by path [1m[32mtable/[39m[22m 265 KiB
+  assets by path [1m[32mtable/*.php[39m[22m 37.6 KiB 7 assets
+  assets by path [1m[32mtable/*.css[39m[22m 51.3 KiB 4 assets
+  asset [1m[32mtable/index.js[39m[22m 166 KiB [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m (name: table/index)
+  asset [1m[32mtable/block.json[39m[22m 10.8 KiB [1m[32m[emitted][39m[22m [from: src/table/block.json] [1m[32m[copied][39m[22m
+assets by path [1m[32mpower-spreadsheet/[39m[22m 15.4 KiB
   assets by chunk 9.1 KiB (name: power-spreadsheet/index) 4 assets
   assets by chunk 1.66 KiB (id hint: style) 2 assets
-  asset power-spreadsheet/class-power-spreadsheet.php 3.7 KiB [compared for emit] [from: src/power-spreadsheet/class-power-spreadsheet.php] [copied]
-  asset power-spreadsheet/block.json 1010 bytes [compared for emit] [from: src/power-spreadsheet/block.json] [copied]
-assets by path remote-pivot-table/ 18.1 KiB
-  assets by path remote-pivot-table/*.php 12.1 KiB 2 assets
-  asset remote-pivot-table/index.js 4.83 KiB [compared for emit] [minimized] (name: remote-pivot-table/index)
-  asset remote-pivot-table/block.json 1.14 KiB [compared for emit] [from: src/remote-pivot-table/block.json] [copied]
-Entrypoint power-spreadsheet/index 10.8 KiB = 6 assets
-Entrypoint remote-pivot-table/index 5.04 KiB = remote-pivot-table/index.js 4.83 KiB remote-pivot-table/index.asset.php 218 bytes
-Entrypoint table/index 217 KiB = 6 assets
-orphan modules 687 KiB (javascript) 3.7 KiB (runtime) [orphan] 449 modules
+  asset [1m[32mpower-spreadsheet/class-power-spreadsheet.php[39m[22m 3.7 KiB [1m[32m[emitted][39m[22m [from: src/power-spreadsheet/class-power-spreadsheet.php] [1m[32m[copied][39m[22m
+  asset [1m[32mpower-spreadsheet/block.json[39m[22m 1010 bytes [1m[32m[emitted][39m[22m [from: src/power-spreadsheet/block.json] [1m[32m[copied][39m[22m
+assets by path [1m[32mremote-pivot-table/[39m[22m 18.1 KiB
+  assets by path [1m[32mremote-pivot-table/*.php[39m[22m 12.1 KiB 2 assets
+  asset [1m[32mremote-pivot-table/index.js[39m[22m 4.83 KiB [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m (name: remote-pivot-table/index)
+  asset [1m[32mremote-pivot-table/block.json[39m[22m 1.14 KiB [1m[32m[emitted][39m[22m [from: src/remote-pivot-table/block.json] [1m[32m[copied][39m[22m
+Entrypoint [1mpower-spreadsheet/index[39m[22m 10.8 KiB = 6 assets
+Entrypoint [1mremote-pivot-table/index[39m[22m 5.04 KiB = [1m[32mremote-pivot-table/index.js[39m[22m 4.83 KiB [1m[32mremote-pivot-table/index.asset.php[39m[22m 218 bytes
+Entrypoint [1mtable/index[39m[22m 217 KiB = 6 assets
+orphan modules 687 KiB (javascript) 3.7 KiB (runtime) [1m[33m[orphan][39m[22m 449 modules
 runtime modules 5.58 KiB 8 modules
-built modules 27.4 KiB (css/mini-extract) 454 KiB (javascript) [built]
-  modules by path ./src/ 27.4 KiB (css/mini-extract) 449 KiB (javascript)
+built modules 27.4 KiB (css/mini-extract) 454 KiB (javascript) [1m[33m[built][39m[22m
+  modules by path [1m./src/[39m[22m 27.4 KiB (css/mini-extract) 449 KiB (javascript)
     cacheable modules 27.4 KiB
-      modules by path ./src/power-spreadsheet/ 1.77 KiB 2 modules
-      modules by path ./src/table/ 25.6 KiB 2 modules
+      modules by path [1m./src/power-spreadsheet/[39m[22m 1.77 KiB 2 modules
+      modules by path [1m./src/table/[39m[22m 25.6 KiB 2 modules
     javascript modules 449 KiB
-      ./src/power-spreadsheet/index.js + 16 modules 13.2 KiB [not cacheable] [built] [code generated]
-      ./src/remote-pivot-table/index.js + 14 modules 11.1 KiB [not cacheable] [built] [code generated]
-      ./src/table/index.js + 106 modules 424 KiB [not cacheable] [built] [code generated]
-  modules by path ../../node_modules/ 5.36 KiB
-    ../../node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js 2.68 KiB [built] [code generated]
-    ../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js 196 bytes [built] [code generated]
-    ../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated) 2.49 KiB [built] [code generated]
-webpack 5.106.2 compiled successfully in 7724 ms
+      [1m./src/power-spreadsheet/index.js + 16 modules[39m[22m 13.2 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./src/remote-pivot-table/index.js + 14 modules[39m[22m 11.1 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./src/table/index.js + 106 modules[39m[22m 424 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  modules by path [1m../../node_modules/[39m[22m 5.36 KiB
+    [1m../../node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js[39m[22m 2.68 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js[39m[22m 196 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated)[39m[22m 2.49 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 11499 ms
 
-assets by path table/ 3.92 KiB
-  asset table/view.js 3.8 KiB [compared for emit] [javascript module] [minimized] (name: table/view)
-  asset table/view.asset.php 130 bytes [compared for emit] (name: table/view)
-assets by path power-spreadsheet/ 590 bytes
-  asset power-spreadsheet/view.js 460 bytes [compared for emit] [javascript module] [minimized] (name: power-spreadsheet/view)
-  asset power-spreadsheet/view.asset.php 130 bytes [compared for emit] (name: power-spreadsheet/view)
-Entrypoint power-spreadsheet/view 590 bytes = power-spreadsheet/view.js 460 bytes power-spreadsheet/view.asset.php 130 bytes
-Entrypoint table/view 3.92 KiB = table/view.js 3.8 KiB table/view.asset.php 130 bytes
-orphan modules 42 bytes [orphan] 1 module
-./src/power-spreadsheet/view.js + 1 modules 1.22 KiB [not cacheable] [built] [code generated]
-./src/table/view.js + 1 modules 11.3 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 2013 ms
+assets by path [1m[32mtable/[39m[22m 3.92 KiB
+  asset [1m[32mtable/view.js[39m[22m 3.8 KiB [1m[32m[emitted][39m[22m [javascript module] [1m[32m[minimized][39m[22m (name: table/view)
+  asset [1m[32mtable/view.asset.php[39m[22m 130 bytes [1m[32m[emitted][39m[22m (name: table/view)
+assets by path [1m[32mpower-spreadsheet/[39m[22m 590 bytes
+  asset [1m[32mpower-spreadsheet/view.js[39m[22m 460 bytes [1m[32m[emitted][39m[22m [javascript module] [1m[32m[minimized][39m[22m (name: power-spreadsheet/view)
+  asset [1m[32mpower-spreadsheet/view.asset.php[39m[22m 130 bytes [1m[32m[emitted][39m[22m (name: power-spreadsheet/view)
+Entrypoint [1mpower-spreadsheet/view[39m[22m 590 bytes = [1m[32mpower-spreadsheet/view.js[39m[22m 460 bytes [1m[32mpower-spreadsheet/view.asset.php[39m[22m 130 bytes
+Entrypoint [1mtable/view[39m[22m 3.92 KiB = [1m[32mtable/view.js[39m[22m 3.8 KiB [1m[32mtable/view.asset.php[39m[22m 130 bytes
+orphan modules 42 bytes [1m[33m[orphan][39m[22m 1 module
+[1m./src/power-spreadsheet/view.js + 1 modules[39m[22m 1.22 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1m./src/table/view.js + 1 modules[39m[22m 11.3 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 2653 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
-> @prc/block-tables@1.0.0 build:ai
+> @prc/block-tables@1.1.0 build:ai
 > npm -w @prc/block-tables-ai-features run build
 
 
@@ -58,62 +58,64 @@ Block metadata PHP file generated at: build/blocks-manifest.php
 > wp-scripts build --webpack-copy-php --source-path=src --output-path=build
 
 assets by chunk 818 KiB (name: generate-tabular-data/index)
-  assets by path generate-tabular-data/*.css 3.38 KiB
-    asset generate-tabular-data/index-rtl.css 1.69 KiB [compared for emit] (name: generate-tabular-data/index)
-    asset generate-tabular-data/index.css 1.69 KiB [compared for emit] (name: generate-tabular-data/index)
-  asset generate-tabular-data/index.js 814 KiB [compared for emit] [minimized] [big] (name: generate-tabular-data/index)
-  asset generate-tabular-data/index.asset.php 384 bytes [compared for emit] (name: generate-tabular-data/index)
+  assets by status 814 KiB [1m[32m[emitted][39m[22m
+    asset [1m[33mgenerate-tabular-data/index.js[39m[22m [1m[33m814 KiB[39m[22m [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m [1m[33m[big][39m[22m (name: generate-tabular-data/index)
+    asset [1m[32mgenerate-tabular-data/index.asset.php[39m[22m 384 bytes [1m[32m[emitted][39m[22m [1m[33m[compared for emit][39m[22m (name: generate-tabular-data/index)
+  assets by path [1m[32mgenerate-tabular-data/*.css[39m[22m 3.38 KiB
+    asset [1m[32mgenerate-tabular-data/index-rtl.css[39m[22m 1.69 KiB [1m[33m[compared for emit][39m[22m (name: generate-tabular-data/index)
+    asset [1m[32mgenerate-tabular-data/index.css[39m[22m 1.69 KiB [1m[33m[compared for emit][39m[22m (name: generate-tabular-data/index)
 assets by chunk 138 KiB (name: generate-tabular-data/style-index)
-  asset generate-tabular-data/style-index-rtl.css 68.9 KiB [compared for emit] (name: generate-tabular-data/style-index) (id hint: style)
-  asset generate-tabular-data/style-index.css 68.9 KiB [compared for emit] (name: generate-tabular-data/style-index) (id hint: style)
-asset generate-tabular-data/block.json 206 bytes [compared for emit] [from: src/generate-tabular-data/block.json] [copied]
-Entrypoint generate-tabular-data/index [big] 955 KiB = 6 assets
-orphan modules 6.89 MiB (javascript) 3.66 KiB (runtime) [orphan] 3307 modules
+  asset [1m[32mgenerate-tabular-data/style-index-rtl.css[39m[22m 68.9 KiB [1m[33m[compared for emit][39m[22m (name: generate-tabular-data/style-index) (id hint: style)
+  asset [1m[32mgenerate-tabular-data/style-index.css[39m[22m 68.9 KiB [1m[33m[compared for emit][39m[22m (name: generate-tabular-data/style-index) (id hint: style)
+asset [1m[32mgenerate-tabular-data/block.json[39m[22m 206 bytes [1m[33m[compared for emit][39m[22m [from: src/generate-tabular-data/block.json] [1m[32m[copied][39m[22m
+Entrypoint [1mgenerate-tabular-data/index[39m[22m [1m[33m[big][39m[22m 956 KiB = 6 assets
+orphan modules 6.89 MiB (javascript) 3.66 KiB (runtime) [1m[33m[orphan][39m[22m 3307 modules
 runtime modules 3.36 KiB 6 modules
-built modules 2.2 MiB (javascript) 70.6 KiB (css/mini-extract) [built]
+built modules 2.2 MiB (javascript) 70.6 KiB (css/mini-extract) [1m[33m[built][39m[22m
   javascript modules 2.2 MiB
-    modules by path ../../../../node_modules/prop-types/ 2.6 KiB
-      ../../../../node_modules/prop-types/index.js 710 bytes [built] [code generated]
+    modules by path [1m../../../../node_modules/prop-types/[39m[22m 2.6 KiB
+      [1m../../../../node_modules/prop-types/index.js[39m[22m 710 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
       + 2 modules
     + 4 modules
-  modules by path ../../../prc-scripts/includes/scripts/src/@prc/ 70.6 KiB
-    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/components/icon-pick...(truncated) 558 bytes [built] [code generated]
-    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/components/ai/styles.scss 1.14 KiB [built] [code generated]
-    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/icons/src/style.scss 143 bytes [built] [code generated]
-    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!../../../prc-scripts/includes/scripts/src/@prc/components/settings-p...(truncated) 68.8 KiB [built] [code generated]
+  modules by path [1m../../../prc-scripts/includes/scripts/src/@prc/[39m[22m 70.6 KiB
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m../../../prc-scripts/includes/scripts/src/@prc/components/icon-pick...(truncated)[39m[22m 558 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m../../../prc-scripts/includes/scripts/src/@prc/components/ai/styles.scss[39m[22m 1.14 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m../../../prc-scripts/includes/scripts/src/@prc/icons/src/style.scss[39m[22m 143 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    css ../../../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m../../../prc-scripts/includes/scripts/src/@prc/components/settings-p...(truncated)[39m[22m 68.8 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
 
-WARNING in ../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js 108:14-38
-export 'currentUser' (imported as 'firebaseAuth') was not found in 'firebase/auth' (possible exports: ActionCodeOperation, ActionCodeURL, AuthCredential, AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TotpMultiFactorGenerator, TotpSecret, TwitterAuthProvider, applyActionCode, beforeAuthStateChanged, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, initializeRecaptchaConfig, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, revokeAccessToken, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, validatePassword, verifyBeforeUpdateEmail, verifyPasswordResetCode)
+[1m[33mWARNING[39m[22m in [1m../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js[39m[22m [1m[32m108:14-38[39m[22m
+[1mexport 'currentUser' (imported as 'firebaseAuth') was [1m[31mnot found[39m[22m[1m in 'firebase/auth' (possible exports: [1m[32mActionCodeOperation, ActionCodeURL, AuthCredential, AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TotpMultiFactorGenerator, TotpSecret, TwitterAuthProvider, applyActionCode, beforeAuthStateChanged, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, initializeRecaptchaConfig, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, revokeAccessToken, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, validatePassword, verifyBeforeUpdateEmail, verifyPasswordResetCode[39m[22m[1m)[39m[22m
  @ ../../../prc-scripts/includes/scripts/src/@prc/components/exports.ts 7:0-63 7:0-63 7:0-63
  @ ./src/generate-tabular-data/index.tsx 4:0-57 41:28-50
 
-WARNING in ../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js 120:14-38
-export 'currentUser' (imported as 'firebaseAuth') was not found in 'firebase/auth' (possible exports: ActionCodeOperation, ActionCodeURL, AuthCredential, AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TotpMultiFactorGenerator, TotpSecret, TwitterAuthProvider, applyActionCode, beforeAuthStateChanged, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, initializeRecaptchaConfig, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, revokeAccessToken, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, validatePassword, verifyBeforeUpdateEmail, verifyPasswordResetCode)
+[1m[33mWARNING[39m[22m in [1m../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js[39m[22m [1m[32m120:14-38[39m[22m
+[1mexport 'currentUser' (imported as 'firebaseAuth') was [1m[31mnot found[39m[22m[1m in 'firebase/auth' (possible exports: [1m[32mActionCodeOperation, ActionCodeURL, AuthCredential, AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TotpMultiFactorGenerator, TotpSecret, TwitterAuthProvider, applyActionCode, beforeAuthStateChanged, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, initializeRecaptchaConfig, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, revokeAccessToken, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, validatePassword, verifyBeforeUpdateEmail, verifyPasswordResetCode[39m[22m[1m)[39m[22m
  @ ../../../prc-scripts/includes/scripts/src/@prc/components/exports.ts 7:0-63 7:0-63 7:0-63
  @ ./src/generate-tabular-data/index.tsx 4:0-57 41:28-50
 
-WARNING in ../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js 171:4-21
-export 'database' (imported as 'firebase') was not found in 'firebase/app' (possible exports: FirebaseError, SDK_VERSION, _DEFAULT_ENTRY_NAME, _addComponent, _addOrOverwriteComponent, _apps, _clearComponents, _components, _getProvider, _isFirebaseApp, _isFirebaseServerApp, _registerComponent, _removeServiceInstance, _serverApps, deleteApp, getApp, getApps, initializeApp, initializeServerApp, onLog, registerVersion, setLogLevel)
+[1m[33mWARNING[39m[22m in [1m../../../prc-scripts/includes/scripts/src/@prc/components/auth-provider-context/index.js[39m[22m [1m[32m171:4-21[39m[22m
+[1mexport 'database' (imported as 'firebase') was [1m[31mnot found[39m[22m[1m in 'firebase/app' (possible exports: [1m[32mFirebaseError, SDK_VERSION, _DEFAULT_ENTRY_NAME, _addComponent, _addOrOverwriteComponent, _apps, _clearComponents, _components, _getProvider, _isFirebaseApp, _isFirebaseServerApp, _registerComponent, _removeServiceInstance, _serverApps, deleteApp, getApp, getApps, initializeApp, initializeServerApp, onLog, registerVersion, setLogLevel[39m[22m[1m)[39m[22m
  @ ../../../prc-scripts/includes/scripts/src/@prc/components/exports.ts 7:0-63 7:0-63 7:0-63
  @ ./src/generate-tabular-data/index.tsx 4:0-57 41:28-50
 
-WARNING in asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+[1m[33mWARNING[39m[22m in [1masset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
 This can impact web performance.
 Assets: 
-  generate-tabular-data/index.js (814 KiB)
+  generate-tabular-data/index.js (814 KiB)[39m[22m
 
-WARNING in entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+[1m[33mWARNING[39m[22m in [1mentrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
 Entrypoints:
-  generate-tabular-data/index (955 KiB)
+  generate-tabular-data/index (956 KiB)
       generate-tabular-data/style-index.css
       generate-tabular-data/style-index-rtl.css
       generate-tabular-data/index.css
       generate-tabular-data/index.js
       generate-tabular-data/index-rtl.css
       generate-tabular-data/index.asset.php
+[39m[22m
 
-WARNING in webpack performance recommendations: 
+[1m[33mWARNING[39m[22m in [1mwebpack performance recommendations: 
 You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
-For more info visit https://webpack.js.org/guides/code-splitting/
+For more info visit https://webpack.js.org/guides/code-splitting/[39m[22m
 
-webpack 5.106.2 compiled with 6 warnings in 12324 ms
+webpack 5.106.2 compiled with [1m[33m6 warnings[39m[22m in 62070 ms

@@ -23,6 +23,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Generate_Tabular_Data {
 
 	/**
+	 * Plugin file used to validate activation on the target site.
+	 *
+	 * @var string
+	 */
+	private const PLUGIN_FILE = 'prc-block-tables/prc-block-tables.php';
+
+	/**
 	 * Ability name.
 	 *
 	 * @var string
@@ -63,6 +70,7 @@ class Generate_Tabular_Data {
 							'type'        => 'number',
 							'description' => 'End year of the data range (e.g., 2020).',
 						),
+						'site_id'          => Utils\site_id_input_schema_property(),
 					),
 					'required'             => array( 'data_description' ),
 					'additionalProperties' => false,
@@ -80,13 +88,25 @@ class Generate_Tabular_Data {
 						),
 					),
 				),
-				'execute_callback'    => array( $this, 'execute' ),
-				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+				'execute_callback'    => function ( $input ) {
+					return $this->with_site(
+						$input,
+						function () use ( $input ) {
+							return $this->execute( $input );
+						}
+					);
+				},
+				'permission_callback' => function ( $input = null ) {
+					return $this->with_site(
+						$input,
+						function () {
+							return current_user_can( 'manage_options' );
+						}
+					);
 				},
 				'meta'                => array(
 					'annotations'    => array(
-						'instructions' => 'This ability searches Pew Research Center content matching the data description, then uses AI to generate a markdown table from the matched sources.',
+						'instructions' => 'This ability searches Pew Research Center content matching the data description, then uses AI to generate a markdown table from the matched sources. Optionally pass site_id to run against a specific multisite blog; defaults to the content site (20). If this plugin is inactive on the target site, the ability returns plugin_inactive_on_site.',
 						'readonly'     => true,
 						'destructive'  => false,
 						'idempotent'   => false,
@@ -248,6 +268,21 @@ OUTPUT FORMAT:
 		return array(
 			'error' => '',
 			'table' => (string) $table,
+		);
+	}
+
+	/**
+	 * Run a callback on the requested target site.
+	 *
+	 * @param array|null $input    Ability input.
+	 * @param callable   $callback Callback to run after site validation/switching.
+	 * @return mixed
+	 */
+	private function with_site( $input, callable $callback ) {
+		return Utils\with_site(
+			Utils\resolve_site_id( is_array( $input ) ? $input : null ),
+			self::PLUGIN_FILE,
+			$callback
 		);
 	}
 }
