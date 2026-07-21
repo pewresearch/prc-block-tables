@@ -18,6 +18,7 @@ import {
 	type VCell,
 } from './utils/table-state';
 import { normalizeRowColSpan } from './utils/helper';
+import { isTableWithinLimits } from './utils/table-limits';
 import type {
 	BlockAttributes,
 	CoreTableCell,
@@ -34,6 +35,30 @@ const transforms: Transforms = {
 		{
 			type: 'block',
 			blocks: ['core/table'],
+			isMatch: (attributes) => {
+				const rows = [
+					...attributes.head,
+					...attributes.body,
+					...attributes.foot,
+				];
+				const columnCount = rows.reduce(
+					(maximum, row) =>
+						Math.max(
+							maximum,
+							row.cells.reduce(
+								(count, cell) =>
+									count +
+									Number(
+										normalizeRowColSpan(cell.colspan) || 1
+									),
+								0
+							)
+						),
+					0
+				);
+
+				return isTableWithinLimits(rows.length, columnCount);
+			},
 			transform: (attributes) => {
 				const { hasFixedLayout, head, body, foot, caption, style } =
 					attributes;

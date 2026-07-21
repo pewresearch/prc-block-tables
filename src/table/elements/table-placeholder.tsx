@@ -7,9 +7,11 @@ import type { FormEvent } from 'react';
 /**
  * WordPress Dependencies
  */
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useState, createInterpolateElement, useRef } from '@wordpress/element';
 import { BlockIcon } from '@wordpress/block-editor';
+import { useDispatch } from '@wordpress/data';
+import { store as noticesStore } from '@wordpress/notices';
 import {
 	Button,
 	DropZone,
@@ -18,6 +20,7 @@ import {
 	ToggleControl,
 	__experimentalHStack as HStack,
 	__experimentalVStack as VStack,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalSpacer as Spacer,
 	__experimentalText as Text,
 } from '@wordpress/components';
@@ -31,7 +34,7 @@ import {
 	DEFAULT_PREVIEW_COLUMNS,
 	MIN_PREVIEW_TABLE_HEIGHT,
 	MAX_PREVIEW_TABLE_COL,
-	MAX_PREVIEW_TABLE_ROW,
+	MAX_TABLE_CELLS,
 	THRESHOLD_PREVIEW_TABLE_COL,
 	THRESHOLD_PREVIEW_TABLE_ROW,
 } from '../constants';
@@ -40,6 +43,7 @@ import {
 	toTableAttributes,
 	type VTable,
 } from '../utils/table-state';
+import { getMaximumTableRows } from '../utils/table-limits';
 import { handleCSV } from '../csv-parser';
 import { blockIcon as icon } from '../icons';
 import type { BlockAttributes } from '../block-attributes';
@@ -60,6 +64,15 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 	const [footerSection, setFooterSection] = useState<boolean>(false);
 
 	const csvFileInputRef = useRef<HTMLInputElement>(null);
+	const { createErrorNotice } = useDispatch(noticesStore);
+	const maximumBodyRows = colCount
+		? Math.max(
+				1,
+				getMaximumTableRows(colCount) -
+					Number(headerSection) -
+					Number(footerSection)
+			)
+		: 1;
 
 	const totalRowCount: number | undefined = rowCount
 		? rowCount + Number(headerSection) + Number(footerSection)
@@ -79,7 +92,7 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 		}
 
 		const vTable: VTable = createTable({
-			rowCount: Math.min(rowCount, MAX_PREVIEW_TABLE_ROW),
+			rowCount: Math.min(rowCount, maximumBodyRows),
 			colCount: Math.min(colCount, MAX_PREVIEW_TABLE_COL),
 			headerSection,
 			footerSection,
@@ -93,8 +106,19 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 		if (isNaN(parsedValue)) {
 			setColCount(undefined);
 		} else {
-			setColCount(
-				Math.max(1, Math.min(MAX_PREVIEW_TABLE_COL, parsedValue))
+			const nextColumnCount = Math.max(
+				1,
+				Math.min(MAX_PREVIEW_TABLE_COL, parsedValue)
+			);
+			const nextMaximumBodyRows = Math.max(
+				1,
+				getMaximumTableRows(nextColumnCount) -
+					Number(headerSection) -
+					Number(footerSection)
+			);
+			setColCount(nextColumnCount);
+			setRowCount((current) =>
+				current ? Math.min(current, nextMaximumBodyRows) : current
 			);
 		}
 	};
@@ -104,17 +128,33 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 		if (isNaN(parsedValue)) {
 			setRowCount(undefined);
 		} else {
-			setRowCount(
-				Math.max(1, Math.min(MAX_PREVIEW_TABLE_ROW, parsedValue))
-			);
+			setRowCount(Math.max(1, Math.min(maximumBodyRows, parsedValue)));
 		}
 	};
 
-	const onToggleHeaderSection = (section: boolean) =>
+	const onToggleHeaderSection = (section: boolean) => {
 		setHeaderSection(section);
+		const nextMaximumBodyRows = colCount
+			? getMaximumTableRows(colCount) -
+				Number(section) -
+				Number(footerSection)
+			: 1;
+		setRowCount((current) =>
+			current ? Math.min(current, nextMaximumBodyRows) : current
+		);
+	};
 
-	const onToggleFooterSection = (section: boolean) =>
+	const onToggleFooterSection = (section: boolean) => {
 		setFooterSection(section);
+		const nextMaximumBodyRows = colCount
+			? getMaximumTableRows(colCount) -
+				Number(headerSection) -
+				Number(section)
+			: 1;
+		setRowCount((current) =>
+			current ? Math.min(current, nextMaximumBodyRows) : current
+		);
+	};
 
 	const tableClasses: string = clsx('ftb-placeholder__table', {
 		'is-overflow-row':
@@ -132,7 +172,17 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 			<DropZone
 				label={__('Drop CSV to import', 'prc-block')}
 				onFilesDrop={(files) =>
-					handleCSV(files, {} as BlockAttributes, setAttributes)
+					handleCSV(
+						files,
+						{} as BlockAttributes,
+						setAttributes,
+						(message: string) => {
+							// @ts-ignore
+							createErrorNotice(message, {
+								type: 'snackbar',
+							});
+						}
+					)
 				}
 			/>
 			<div className="components-placeholder__instructions">
@@ -236,7 +286,11 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 						__nextHasNoMarginBottom
 					/>
 				</HStack>
-				<HStack wrap alignment="end" justify="start">
+				<HStack
+					alignment="end"
+					justify="start"
+					className="ftb-placeholder__controls"
+				>
 					<TextControl
 						label={__('Column count', 'prc-block')}
 						className="ftb-placeholder__input"
@@ -246,24 +300,21 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 						value={colCount || ''}
 						onChange={onChangeColumnCount}
 						__nextHasNoMarginBottom
-						__next40pxDefaultSize
 					/>
 					<TextControl
 						label={__('Row count', 'prc-block')}
 						className="ftb-placeholder__input"
 						type="number"
 						min="1"
-						max={MAX_PREVIEW_TABLE_ROW}
+						max={maximumBodyRows}
 						value={rowCount || ''}
 						onChange={onChangeRowCount}
 						__nextHasNoMarginBottom
-						__next40pxDefaultSize
 					/>
 					<Button
 						variant="primary"
 						type="submit"
 						disabled={!rowCount || !colCount}
-						__next40pxDefaultSize
 					>
 						{__('Create Table', 'prc-block')}
 					</Button>
@@ -271,7 +322,6 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 						variant="secondary"
 						type="button"
 						onClick={() => csvFileInputRef.current?.click()}
-						__next40pxDefaultSize
 					>
 						{__('Import CSV', 'prc-block')}
 					</Button>
@@ -284,13 +334,30 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 								handleCSV(
 									e.target.files,
 									{} as BlockAttributes,
-									setAttributes
+									setAttributes,
+									(message: string) => {
+										// @ts-ignore
+										createErrorNotice(message, {
+											type: 'snackbar',
+										});
+									}
 								);
 							}
 						}}
 						style={{ display: 'none' }}
 					/>
 				</HStack>
+				<Text variant="muted" size="12px">
+					{sprintf(
+						/* translators: 1: maximum body rows, 2: maximum total cells */
+						__(
+							'Up to %1$d body rows for this configuration (%2$s-cell limit).',
+							'prc-block'
+						),
+						maximumBodyRows,
+						MAX_TABLE_CELLS.toLocaleString()
+					)}
+				</Text>
 			</VStack>
 		</Placeholder>
 	);

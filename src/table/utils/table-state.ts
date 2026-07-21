@@ -17,6 +17,11 @@ import {
 } from './style-updater';
 import { toInteger } from './helper';
 import { normalizeCellPersistedFields } from './table-attribute-normalize';
+import {
+	getMaximumTableRows,
+	getRemainingTableRows,
+	isTableWithinLimits,
+} from './table-limits';
 import type {
 	CellTagValue,
 	CellScopeValue,
@@ -87,6 +92,12 @@ export function createTable({
 	headerSection: boolean;
 	footerSection: boolean;
 }) {
+	const reservedRows = Number(headerSection) + Number(footerSection);
+	const bodyRowCount = Math.min(
+		rowCount,
+		Math.max(0, getMaximumTableRows(colCount) - reservedRows)
+	);
+
 	const createSection = (
 		rows: number,
 		cols: number,
@@ -113,7 +124,7 @@ export function createTable({
 
 	return {
 		head: createSection(Number(headerSection), colCount, 'head'),
-		body: createSection(rowCount, colCount, 'body'),
+		body: createSection(bodyRowCount, colCount, 'body'),
 		foot: createSection(Number(footerSection), colCount, 'foot'),
 	};
 }
@@ -132,73 +143,117 @@ export function insertRow(
 	vTable: VTable,
 	{ sectionName, rowIndex }: { sectionName: SectionName; rowIndex: number }
 ): VTable {
-	// Number of columns in the row to be inserted.
-	const newRowColCount: number = vTable.body[0].cells.length;
+	return insertRows(vTable, { sectionName, rowIndex, count: 1 });
+}
+
+/**
+ * Inserts one or more rows in the virtual table state.
+ *
+ * Preserves rowspan/colspan semantics of repeated {@link insertRow} calls
+ * in a single structural pass (needed for bulk append of large counts).
+ *
+ * @param vTable              Virtual table in which to insert the rows.
+ * @param options
+ * @param options.sectionName Section in which to insert the rows.
+ * @param options.rowIndex    Row index at which to insert the first new row.
+ * @param options.count       Number of rows to insert (must be ≥ 1).
+ * @return New virtual table state, or the original table when count is invalid.
+ */
+export function insertRows(
+	vTable: VTable,
+	{
+		sectionName,
+		rowIndex,
+		count,
+	}: { sectionName: SectionName; rowIndex: number; count: number }
+): VTable {
+	if (!Number.isFinite(count) || count < 1) {
+		return vTable;
+	}
+
+	// Number of columns in the rows to be inserted.
+	const newRowColCount = getColumnCount(vTable);
+
+	if (!newRowColCount) {
+		return vTable;
+	}
 
 	const vRows: VRow[] = toVirtualRows(vTable);
+	const insertCount = Math.min(
+		Math.floor(count),
+		getRemainingTableRows(vRows.length, newRowColCount)
+	);
 
-	// Row state to be inserted.
-	const newRow: VRow = {
-		cells: Array.from({ length: newRowColCount }).map(
-			(_, vColIndex): VCell => {
-				// Find the cell with rowspan that covers the cell in the inserted row.
-				const rowSpanCells: VCell[] = vRows
-					.reduce(
-						(cells: VCell[], row) => cells.concat(row.cells),
-						[]
-					)
-					.filter(
-						(cell: VCell) =>
-							cell.sectionName === sectionName &&
-							cell.rowIndex < rowIndex &&
-							cell.rowIndex + cell.rowSpan - 1 >= rowIndex &&
-							cell.vColIndex <= vColIndex &&
-							vColIndex <= cell.vColIndex + cell.colSpan - 1
-					);
+	if (insertCount < 1) {
+		return vTable;
+	}
 
-				return {
-					content: '',
-					tag: 'head' === sectionName ? 'th' : 'td',
-					rowSpan: 1,
-					colSpan: 1,
-					sectionName,
-					rowIndex,
-					vColIndex,
-					isFirstSelected: false,
-					isHidden: !!rowSpanCells.length,
-				};
-			}
-		),
-	};
+	const allCells: VCell[] = vRows.reduce(
+		(cells: VCell[], row) => cells.concat(row.cells),
+		[]
+	);
+
+	const newRows: VRow[] = Array.from({ length: insertCount }).map(
+		(_row, offset): VRow => {
+			const insertedRowIndex = rowIndex + offset;
+
+			return {
+				cells: Array.from({ length: newRowColCount }).map(
+					(_, vColIndex): VCell => {
+						// Find cells whose rowspan covers this inserted row index.
+						const rowSpanCells: VCell[] = allCells.filter(
+							(cell: VCell) =>
+								cell.sectionName === sectionName &&
+								cell.rowIndex < rowIndex &&
+								cell.rowIndex + cell.rowSpan - 1 >= rowIndex &&
+								cell.vColIndex <= vColIndex &&
+								vColIndex <= cell.vColIndex + cell.colSpan - 1
+						);
+
+						return {
+							content: '',
+							tag: 'head' === sectionName ? 'th' : 'td',
+							rowSpan: 1,
+							colSpan: 1,
+							sectionName,
+							rowIndex: insertedRowIndex,
+							vColIndex,
+							isFirstSelected: false,
+							isHidden: !!rowSpanCells.length,
+						};
+					}
+				),
+			};
+		}
+	);
 
 	return {
 		...vTable,
 		[sectionName]: [
 			...vTable[sectionName].slice(0, rowIndex),
-			newRow,
+			...newRows,
 			...vTable[sectionName].slice(rowIndex).map(({ cells }) => ({
 				cells: cells.map((cell) => {
-					// increment row index.
 					return {
 						...cell,
-						rowIndex: cell.rowIndex + 1,
+						rowIndex: cell.rowIndex + insertCount,
 					};
 				}),
 			})),
 		].map(({ cells }, cRowIndex) => ({
 			cells: cells.map((cell) => {
-				// Expand cells with rowspan in the before and inserted rows.
+				// Expand cells with rowspan that span the insertion point.
 				if (
 					cell.sectionName === sectionName &&
 					cell.rowSpan > 1 &&
-					cRowIndex <= rowIndex &&
+					cRowIndex < rowIndex &&
 					cRowIndex + cell.rowSpan - 1 >= rowIndex
 				) {
 					return {
 						...cell,
 						sectionName,
 						rowIndex: cRowIndex,
-						rowSpan: cell.rowSpan + 1,
+						rowSpan: cell.rowSpan + insertCount,
 					};
 				}
 
@@ -297,11 +352,16 @@ export function insertColumn(
 	vTable: VTable,
 	{ vColIndex }: { vColIndex: number }
 ): VTable {
+	const vRows: VRow[] = toVirtualRows(vTable);
+	const currentColumnCount = getColumnCount(vTable);
+
+	if (!isTableWithinLimits(vRows.length, currentColumnCount + 1)) {
+		return vTable;
+	}
+
 	// Whether to add a column after the last column.
 	const isLastColumnInsert: boolean =
 		vTable.body[0].cells.length === vColIndex;
-
-	const vRows: VRow[] = toVirtualRows(vTable);
 
 	return Object.entries(vTable).reduce(
 		(newVTable: VTable, [sectionName, section]) => {
@@ -1486,6 +1546,9 @@ export function transposeTable(vTable: VTable): VTable | null {
 	if (bodyRowCount === 0 || colCount === 0) {
 		return null;
 	}
+	if (!isTableWithinLimits(colCount, bodyRowCount + 1)) {
+		return null;
+	}
 
 	// New header: [corner cell, body-col-0 values...]
 	// e.g. original head [H1,H2,H3] + body col 0 [A,B] => new head [H1, A, B]
@@ -1574,7 +1637,12 @@ export function toggleSection(
 	}
 
 	// Number of columns in the row to be inserted.
-	const newRowColCount: number = vTable.body[0].cells.length;
+	const newRowColCount = getColumnCount(vTable);
+	const totalRowCount = toVirtualRows(vTable).length;
+
+	if (!isTableWithinLimits(totalRowCount + 1, newRowColCount)) {
+		return vTable;
+	}
 
 	// Row state to be inserted.
 	const newRow: VRow = {

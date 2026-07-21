@@ -409,7 +409,6 @@ export default function TableSettings({
 			</HStack>
 			<ToggleGroupControl
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 				hideLabelFromVision
 				label={__('Table percentage width', 'flexible-table-block')}
 				isBlock
@@ -458,7 +457,6 @@ export default function TableSettings({
 			</HStack>
 			<ToggleGroupControl
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 				hideLabelFromVision
 				label={__('Table percentage max width', 'flexible-table-block')}
 				isBlock
@@ -508,7 +506,6 @@ export default function TableSettings({
 			</HStack>
 			<ToggleGroupControl
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 				hideLabelFromVision
 				label={__('Table percentage min width', 'flexible-table-block')}
 				isBlock
@@ -571,7 +568,6 @@ export default function TableSettings({
 			<hr />
 			<ToggleGroupControl
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 				label={__('Cell borders', 'flexible-table-block')}
 				value={tableStylesObj?.borderCollapse}
 				isDeselectable

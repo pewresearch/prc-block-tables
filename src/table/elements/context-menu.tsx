@@ -108,6 +108,10 @@ export default function ContextMenu({
 		if (!isOpen) {
 			return;
 		}
+		const ownerDocument =
+			menuContentRef.current?.ownerDocument ??
+			anchorElement?.ownerDocument ??
+			document;
 		const handleOutside = (event: MouseEvent | PointerEvent) => {
 			const target = event.target as Node | null;
 			if (!target) {
@@ -119,22 +123,34 @@ export default function ContextMenu({
 			}
 			onClose();
 		};
-		document.addEventListener('pointerdown', handleOutside, true);
-		document.addEventListener('mousedown', handleOutside, true);
-		document.addEventListener('click', handleOutside, true);
-		document.addEventListener('contextmenu', handleOutside, true);
+		ownerDocument.addEventListener('pointerdown', handleOutside, true);
+		ownerDocument.addEventListener('mousedown', handleOutside, true);
+		ownerDocument.addEventListener('click', handleOutside, true);
+		ownerDocument.addEventListener('contextmenu', handleOutside, true);
 		return () => {
-			document.removeEventListener('pointerdown', handleOutside, true);
-			document.removeEventListener('mousedown', handleOutside, true);
-			document.removeEventListener('click', handleOutside, true);
-			document.removeEventListener('contextmenu', handleOutside, true);
+			ownerDocument.removeEventListener(
+				'pointerdown',
+				handleOutside,
+				true
+			);
+			ownerDocument.removeEventListener('mousedown', handleOutside, true);
+			ownerDocument.removeEventListener('click', handleOutside, true);
+			ownerDocument.removeEventListener(
+				'contextmenu',
+				handleOutside,
+				true
+			);
 		};
-	}, [isOpen, onClose]);
+	}, [isOpen, onClose, anchorElement]);
 
 	useEffect(() => {
 		if (!isOpen) {
 			return;
 		}
+		const ownerDocument =
+			menuContentRef.current?.ownerDocument ??
+			anchorElement?.ownerDocument ??
+			document;
 		const handleEscape = (event: KeyboardEvent) => {
 			if (event.key !== 'Escape') {
 				return;
@@ -145,11 +161,11 @@ export default function ContextMenu({
 			}
 			onClose();
 		};
-		document.addEventListener('keydown', handleEscape);
+		ownerDocument.addEventListener('keydown', handleEscape);
 		return () => {
-			document.removeEventListener('keydown', handleEscape);
+			ownerDocument.removeEventListener('keydown', handleEscape);
 		};
-	}, [isOpen, menuView, onClose]);
+	}, [isOpen, menuView, onClose, anchorElement]);
 
 	if (!isOpen || !cell) return null;
 

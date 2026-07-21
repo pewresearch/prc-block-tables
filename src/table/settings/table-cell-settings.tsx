@@ -324,7 +324,6 @@ export default function TableCellSettings({
 						min={0}
 						onChange={onChangeLineHeight}
 						__nextHasNoMarginBottom
-						__next40pxDefaultSize
 					/>
 				</FlexBlock>
 			</Spacer>
@@ -367,7 +366,6 @@ export default function TableCellSettings({
 			</HStack>
 			<ToggleGroupControl
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 				hideLabelFromVision
 				label={__('Cell percentage width', 'flexible-table-block')}
 				isBlock
@@ -476,7 +474,6 @@ export default function TableCellSettings({
 						<ToggleGroupControl
 							hideLabelFromVision
 							__nextHasNoMarginBottom
-							__next40pxDefaultSize
 							label={__('Text alignment', 'flexible-table-block')}
 							value={cellStylesObj?.textAlign}
 							isDeselectable
@@ -496,7 +493,6 @@ export default function TableCellSettings({
 						<ToggleGroupControl
 							hideLabelFromVision
 							__nextHasNoMarginBottom
-							__next40pxDefaultSize
 							label={__(
 								'Vertical alignment',
 								'flexible-table-block'
@@ -522,7 +518,6 @@ export default function TableCellSettings({
 			<hr />
 			<ToggleGroupControl
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 				label={__('Cell tag', 'flexible-table-block')}
 				value={targetCell.tag}
 				isBlock
@@ -546,7 +541,6 @@ export default function TableCellSettings({
 					'flexible-table-block'
 				)}
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 			/>
 			{selectedCellTags.length === 1 && (
 				<>
@@ -564,7 +558,6 @@ export default function TableCellSettings({
 							value={targetCell.id || ''}
 							onChange={onChangeId}
 							__nextHasNoMarginBottom
-							__next40pxDefaultSize
 						/>
 					)}
 					<TextControl
@@ -579,7 +572,6 @@ export default function TableCellSettings({
 						value={targetCell.headers || ''}
 						onChange={onChangeHeaders}
 						__nextHasNoMarginBottom
-						__next40pxDefaultSize
 					/>
 					{selectedCellTags.includes('th') && (
 						<SelectControl

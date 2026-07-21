@@ -123,7 +123,6 @@ export default function TableTitleSettings({
 						value={tableTitleStylesObj?.lineHeight || ''}
 						min={0}
 						__nextHasNoMarginBottom
-						__next40pxDefaultSize
 					/>
 				</FlexBlock>
 			</Spacer>
@@ -134,7 +133,6 @@ export default function TableTitleSettings({
 			/>
 			<ToggleGroupControl
 				__nextHasNoMarginBottom
-				__next40pxDefaultSize
 				label={__('Table title text alignment', 'prc-block')}
 				value={tableTitleStylesObj?.textAlign}
 				isDeselectable

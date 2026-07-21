@@ -195,6 +195,12 @@
 		width: 112px;
 	}
 
+	.ftb-placeholder__controls {
+		width: 100%;
+		flex-wrap: nowrap;
+		gap: 16px;
+	}
+
 	.ftb-table-cell-label {
 		position: absolute;
 		top: 0;

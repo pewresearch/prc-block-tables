@@ -114,6 +114,18 @@ export default function ToolbarControls({
 			rowIndex: insertRowIndex,
 		});
 
+		if (newVTable === vTable) {
+			// @ts-ignore
+			createWarningNotice(
+				__(
+					'Power Table has reached its 500-row or 5,000-cell limit.',
+					'prc-block'
+				),
+				{ type: 'snackbar' }
+			);
+			return;
+		}
+
 		setAttributes(toTableAttributes(newVTable));
 		setSelectedCells(undefined);
 		setSelectedLine(undefined);
@@ -166,6 +178,18 @@ export default function ToolbarControls({
 			offset === 0 ? vColIndex : vColIndex + offset + colSpan - 1;
 
 		const newVTable = insertColumn(vTable, { vColIndex: insertVColIndex });
+
+		if (newVTable === vTable) {
+			// @ts-ignore
+			createWarningNotice(
+				__(
+					'Power Table has reached its 500-row or 5,000-cell limit.',
+					'prc-block'
+				),
+				{ type: 'snackbar' }
+			);
+			return;
+		}
 
 		setAttributes({
 			...toTableAttributes(newVTable),

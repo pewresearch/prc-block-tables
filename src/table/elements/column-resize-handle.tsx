@@ -31,6 +31,10 @@ type DragState = {
 	ended: boolean;
 };
 
+function getOwnerBody(node: HTMLElement | null): HTMLElement {
+	return node?.ownerDocument?.body ?? document.body;
+}
+
 /**
  * Drag handle on the right edge of a column for resizing width.
  *
@@ -73,7 +77,9 @@ export default function ColumnResizeHandle({
 			if (drag.rafId !== null) {
 				cancelAnimationFrame(drag.rafId);
 			}
-			document.body.classList.remove('ftb-is-resizing-column');
+			getOwnerBody(handleRef.current).classList.remove(
+				'ftb-is-resizing-column'
+			);
 			dragRef.current = null;
 		};
 	}, []);
@@ -109,7 +115,9 @@ export default function ColumnResizeHandle({
 			cancelAnimationFrame(drag.rafId);
 			drag.rafId = null;
 		}
-		document.body.classList.remove('ftb-is-resizing-column');
+		getOwnerBody(handleRef.current).classList.remove(
+			'ftb-is-resizing-column'
+		);
 		setTooltipVisible(false);
 
 		const { latestWidth, startWidth, pointerId } = drag;
@@ -148,7 +156,7 @@ export default function ColumnResizeHandle({
 		};
 
 		handleRef.current?.setPointerCapture(event.pointerId);
-		document.body.classList.add('ftb-is-resizing-column');
+		getOwnerBody(handleRef.current).classList.add('ftb-is-resizing-column');
 		setTooltipVisible(true, startWidth);
 		callbacksRef.current.onResizeStart(vColIndex, startWidth);
 	};

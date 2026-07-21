@@ -5,6 +5,7 @@ import {
 	createTable,
 	deleteColumn,
 	deleteRow,
+	insertColumn,
 	insertRow,
 	moveColumn,
 	canMoveColumn,
@@ -178,6 +179,30 @@ describe('table-state', () => {
 				foot: [getRow(3, 'foot', 0, 'td')],
 			});
 		});
+
+		it('should reserve total-row capacity for head and foot sections', () => {
+			const result = createTable({
+				rowCount: 500,
+				colCount: 3,
+				headerSection: true,
+				footerSection: true,
+			});
+
+			expect(result.head).toHaveLength(1);
+			expect(result.body).toHaveLength(498);
+			expect(result.foot).toHaveLength(1);
+		});
+
+		it('should cap creation at 5,000 total cells', () => {
+			const result = createTable({
+				rowCount: 500,
+				colCount: 20,
+				headerSection: false,
+				footerSection: false,
+			});
+
+			expect(result.body).toHaveLength(250);
+		});
 	});
 
 	describe('insertRow', () => {
@@ -254,6 +279,19 @@ describe('table-state', () => {
 				],
 				foot: [getRow(2, 'foot', 0, 'td', 'foot')],
 			});
+		});
+	});
+
+	describe('insertColumn limits', () => {
+		it('should reject a column that would exceed 5,000 cells', () => {
+			const source = createTable({
+				rowCount: 100,
+				colCount: 50,
+				headerSection: false,
+				footerSection: false,
+			});
+
+			expect(insertColumn(source, { vColIndex: 50 })).toBe(source);
 		});
 	});
 

@@ -249,6 +249,17 @@ export default function Table({
 
 	const onInsertRow = (sectionName: SectionName, rowIndex: number) => {
 		const newVTable = insertRow(vTable, { sectionName, rowIndex });
+		if (newVTable === vTable) {
+			// @ts-ignore
+			createWarningNotice(
+				__(
+					'Power Table has reached its 500-row or 5,000-cell limit.',
+					'prc-block'
+				),
+				{ type: 'snackbar' }
+			);
+			return;
+		}
 		setAttributes(toTableAttributes(newVTable));
 		setSelectedCells(undefined);
 		setSelectedLine(undefined);
@@ -289,6 +300,17 @@ export default function Table({
 				: vTargetCell.vColIndex + offset + vTargetCell.colSpan - 1;
 
 		const newVTable = insertColumn(vTable, { vColIndex });
+		if (newVTable === vTable) {
+			// @ts-ignore
+			createWarningNotice(
+				__(
+					'Power Table has reached its 500-row or 5,000-cell limit.',
+					'prc-block'
+				),
+				{ type: 'snackbar' }
+			);
+			return;
+		}
 		setAttributes({
 			...toTableAttributes(newVTable),
 			columnMeta: insertColumnMeta(
@@ -816,9 +838,13 @@ export default function Table({
 
 					// Focus the RichText element and scroll into view
 					setTimeout(() => {
-						const cellElement = document.querySelector(
+						const tableElement = tableRef.current;
+						if (!tableElement) {
+							return;
+						}
+						const cellElement = tableElement.querySelector(
 							`[data-row="${targetRow}"][data-col="${targetCol}"]`
-						) as HTMLElement;
+						) as HTMLElement | null;
 
 						if (cellElement) {
 							// Scroll the cell into view with smooth behavior

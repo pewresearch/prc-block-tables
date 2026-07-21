@@ -4,6 +4,17 @@
 import CSV from 'comma-separated-values';
 
 /**
+ * WordPress Dependencies
+ */
+import { __, sprintf } from '@wordpress/i18n';
+
+/**
+ * Internal Dependencies
+ */
+import { MAX_TABLE_CELLS, MAX_TABLE_ROWS } from './constants';
+import { isTableWithinLimits } from './utils/table-limits';
+
+/**
  * Utilities for managing core/table data
  */
 
@@ -22,12 +33,48 @@ function convertJSONToAttributes(d, tag = 'td') {
 	return d.map((row) => ({ cells: convertToRow(row, tag) }));
 }
 
-function parseCSV(csvInput, attributes, setAttributes) {
+export function parseCSV(csvInput, attributes, setAttributes) {
 	const opts = {
 		header: false,
 	};
 	const csv = new CSV(csvInput, opts);
 	const parsed = csv.parse();
+	const footerRows = attributes.foot ?? [];
+	const rowCount = parsed.length + footerRows.length;
+	const columnCount = [
+		...parsed,
+		...footerRows.map((row) => row.cells),
+	].reduce(
+		(maximum, row) =>
+			Math.max(
+				maximum,
+				row.reduce(
+					(count, cell) =>
+						count +
+						Number(
+							typeof cell === 'object' && cell !== null
+								? cell.colSpan || 1
+								: 1
+						),
+					0
+				)
+			),
+		0
+	);
+
+	if (!isTableWithinLimits(rowCount, columnCount)) {
+		throw new Error(
+			sprintf(
+				/* translators: 1: maximum rows, 2: maximum cells */
+				__(
+					'Power Tables support up to %1$d total rows and %2$s total cells. Reduce the CSV size and try again.',
+					'prc-block'
+				),
+				MAX_TABLE_ROWS,
+				MAX_TABLE_CELLS.toLocaleString()
+			)
+		);
+	}
 
 	const headerData = convertJSONToAttributes(parsed.shift(), 'th');
 	const bodyData = convertJSONToAttributes(parsed);
@@ -52,11 +99,26 @@ export function exportCSV(attributes) {
 	return csv.encode();
 }
 
-export function handleCSV(files, attributes, setAttributes) {
+export function handleCSV(
+	files,
+	attributes,
+	setAttributes,
+	onError = () => {}
+) {
 	// eslint-disable-next-line no-undef
 	const reader = new FileReader();
 	reader.onload = () => {
-		parseCSV(reader.result, attributes, setAttributes);
+		try {
+			parseCSV(reader.result, attributes, setAttributes);
+		} catch (error) {
+			onError(
+				error instanceof Error
+					? error.message
+					: __('Unable to import this CSV.', 'prc-block')
+			);
+		}
 	};
+	reader.onerror = () =>
+		onError(__('Unable to read this CSV file.', 'prc-block'));
 	Array.from(files).forEach((file) => reader.readAsBinaryString(file));
 }

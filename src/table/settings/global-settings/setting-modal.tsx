@@ -322,7 +322,6 @@ export default function SettingModal({
 									>
 										<ToggleGroupControl
 											__nextHasNoMarginBottom
-											__next40pxDefaultSize
 											label={__(
 												'Cell borders',
 												'flexible-table-block'
@@ -687,7 +686,6 @@ export default function SettingModal({
 									>
 										<ToggleGroupControl
 											__nextHasNoMarginBottom
-											__next40pxDefaultSize
 											label={__(
 												'Cell text alignment',
 												'flexible-table-block'
@@ -739,7 +737,6 @@ export default function SettingModal({
 									>
 										<ToggleGroupControl
 											__nextHasNoMarginBottom
-											__next40pxDefaultSize
 											label={__(
 												'Cell vertical alignment',
 												'flexible-table-block'
@@ -819,7 +816,6 @@ export default function SettingModal({
 												DEFAULT_RESPONSIVE_BREAKPOINT,
 										});
 									}}
-									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 							</VStack>
@@ -992,7 +988,6 @@ export default function SettingModal({
 					variant="primary"
 					disabled={isWaiting}
 					onClick={handleUpdateOptions}
-					__next40pxDefaultSize
 				>
 					{__('Save settings', 'flexible-table-block')}
 				</Button>
@@ -1000,7 +995,6 @@ export default function SettingModal({
 					isDestructive
 					disabled={isWaiting}
 					onClick={() => setIsResetPopup(!isResetPopup)}
-					__next40pxDefaultSize
 				>
 					{__('Restore default settings', 'flexible-table-block')}
 					{isResetPopup && (

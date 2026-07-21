@@ -37,7 +37,13 @@ export const DEFAULT_PREVIEW_ROWS = 3 as const;
 export const DEFAULT_PREVIEW_COLUMNS = 3 as const;
 export const MIN_PREVIEW_TABLE_HEIGHT = 150 as const;
 export const MAX_PREVIEW_TABLE_COL = 50 as const;
-export const MAX_PREVIEW_TABLE_ROW = 50 as const;
+/**
+ * Hard editor limits established from local Gutenberg benchmarks:
+ * 5,000 cells rendered in ~2s and updated in ~0.4s; 10,000 cells took
+ * ~6s/~0.8s and 25,000 cells took ~31s/~2.3s.
+ */
+export const MAX_TABLE_ROWS = 500 as const;
+export const MAX_TABLE_CELLS = 5000 as const;
 export const THRESHOLD_PREVIEW_TABLE_COL = 10 as const;
 export const THRESHOLD_PREVIEW_TABLE_ROW = 10 as const;
 
