@@ -2,20 +2,21 @@
 > @prc/block-tables@1.1.1 build
 > wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai
 
-assets by path table/ 269 KiB
-  assets by path table/*.php 37.6 KiB 7 assets
-  assets by path table/*.css 51.5 KiB 4 assets
-  asset table/index.js 169 KiB [compared for emit] [minimized] (name: table/index)
-  asset table/block.json 10.8 KiB [compared for emit] [from: src/table/block.json] [copied]
-assets by path power-spreadsheet/ 15.4 KiB
-  assets by chunk 9.1 KiB (name: power-spreadsheet/index) 4 assets
-  assets by chunk 1.66 KiB (id hint: style) 2 assets
-  asset power-spreadsheet/class-power-spreadsheet.php 3.7 KiB [compared for emit] [from: src/power-spreadsheet/class-power-spreadsheet.php] [copied]
-  asset power-spreadsheet/block.json 1010 bytes [compared for emit] [from: src/power-spreadsheet/block.json] [copied]
-assets by path remote-pivot-table/ 18.1 KiB
-  assets by path remote-pivot-table/*.php 12.1 KiB 2 assets
-  asset remote-pivot-table/index.js 4.83 KiB [compared for emit] [minimized] (name: remote-pivot-table/index)
-  asset remote-pivot-table/block.json 1.14 KiB [compared for emit] [from: src/remote-pivot-table/block.json] [copied]
+assets by status 251 KiB [compared for emit]
+  assets by path table/ 218 KiB
+    assets by path table/*.php 37.6 KiB 7 assets
+    + 2 assets
+  assets by path power-spreadsheet/ 15.4 KiB 8 assets
+  assets by path remote-pivot-table/ 18.1 KiB
+    assets by path remote-pivot-table/*.php 12.1 KiB 2 assets
+    + 2 assets
+assets by path table/*.css 51.4 KiB
+  assets by chunk 39.6 KiB (name: table/index)
+    asset table/index-rtl.css 19.8 KiB [emitted] (name: table/index)
+    asset table/index.css 19.8 KiB [emitted] (name: table/index)
+  assets by chunk 11.8 KiB (name: table/style-index)
+    asset table/style-index.css 5.9 KiB [emitted] (name: table/style-index) (id hint: style)
+    asset table/style-index-rtl.css 5.9 KiB [emitted] (name: table/style-index) (id hint: style)
 Entrypoint power-spreadsheet/index 10.8 KiB = 6 assets
 Entrypoint remote-pivot-table/index 5.04 KiB = remote-pivot-table/index.js 4.83 KiB remote-pivot-table/index.asset.php 218 bytes
 Entrypoint table/index 221 KiB = 6 assets
@@ -25,7 +26,7 @@ built modules 27.5 KiB (css/mini-extract) 464 KiB (javascript) [built]
   modules by path ./src/ 27.5 KiB (css/mini-extract) 459 KiB (javascript)
     cacheable modules 27.5 KiB
       modules by path ./src/power-spreadsheet/ 1.77 KiB 2 modules
-      modules by path ./src/table/ 25.8 KiB 2 modules
+      modules by path ./src/table/ 25.7 KiB 2 modules
     javascript modules 459 KiB
       ./src/power-spreadsheet/index.js + 16 modules 13.2 KiB [not cacheable] [built] [code generated]
       ./src/remote-pivot-table/index.js + 14 modules 11.1 KiB [not cacheable] [built] [code generated]
@@ -34,7 +35,7 @@ built modules 27.5 KiB (css/mini-extract) 464 KiB (javascript) [built]
     ../../node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js 2.68 KiB [built] [code generated]
     ../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js 196 bytes [built] [code generated]
     ../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated) 2.49 KiB [built] [code generated]
-webpack 5.106.2 compiled successfully in 9400 ms
+webpack 5.106.2 compiled successfully in 8471 ms
 
 assets by path table/ 3.92 KiB
   asset table/view.js 3.8 KiB [compared for emit] [javascript module] [minimized] (name: table/view)
@@ -47,7 +48,7 @@ Entrypoint table/view 3.92 KiB = table/view.js 3.8 KiB table/view.asset.php 130 
 orphan modules 42 bytes [orphan] 1 module
 ./src/power-spreadsheet/view.js + 1 modules 1.22 KiB [not cacheable] [built] [code generated]
 ./src/table/view.js + 1 modules 11.3 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 2752 ms
+webpack 5.106.2 compiled successfully in 1915 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
 > @prc/block-tables@1.1.1 build:ai
@@ -58,4 +59,4 @@ asset index.asset.php 189 bytes [compared for emit] (name: index)
 Entrypoint index 3.48 KiB = index.js 3.29 KiB index.asset.php 189 bytes
 orphan modules 6.29 KiB [orphan] 8 modules
 ./includes/ai-features/src/generate-tabular-data/index.tsx + 8 modules 8.21 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 777 ms
+webpack 5.106.2 compiled successfully in 1791 ms
