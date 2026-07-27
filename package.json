@@ -1,6 +1,6 @@
 {
 	"name": "@prc/block-tables",
-	"version": "1.1.1",
+	"version": "1.1.0",
 	"description": "Table blocks for PRC Platform (Power Table, and future Spreadsheet).",
 	"scripts": {
 		"build": "wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai",
