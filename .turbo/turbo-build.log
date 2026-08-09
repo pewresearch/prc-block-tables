@@ -1,61 +1,69 @@
 
-> @prc/block-tables@1.1.0 build
+> @prc/block-tables@1.2.0 build
 > wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai
 
-assets by path table/ 269 KiB
-  assets by path table/*.php 37.6 KiB 7 assets
-  assets by path table/*.css 51.4 KiB 4 assets
-  asset table/index.js 169 KiB [compared for emit] [minimized] (name: table/index)
-  asset table/block.json 10.8 KiB [compared for emit] [from: src/table/block.json] [copied]
-assets by path power-spreadsheet/ 15.4 KiB
-  assets by chunk 9.1 KiB (name: power-spreadsheet/index) 4 assets
-  assets by chunk 1.66 KiB (id hint: style) 2 assets
-  asset power-spreadsheet/class-power-spreadsheet.php 3.7 KiB [compared for emit] [from: src/power-spreadsheet/class-power-spreadsheet.php] [copied]
-  asset power-spreadsheet/block.json 1010 bytes [compared for emit] [from: src/power-spreadsheet/block.json] [copied]
-assets by path remote-pivot-table/ 18.1 KiB
-  assets by path remote-pivot-table/*.php 12.1 KiB 2 assets
-  asset remote-pivot-table/index.js 4.83 KiB [compared for emit] [minimized] (name: remote-pivot-table/index)
-  asset remote-pivot-table/block.json 1.14 KiB [compared for emit] [from: src/remote-pivot-table/block.json] [copied]
-Entrypoint power-spreadsheet/index 10.8 KiB = 6 assets
-Entrypoint remote-pivot-table/index 5.04 KiB = remote-pivot-table/index.js 4.83 KiB remote-pivot-table/index.asset.php 218 bytes
-Entrypoint table/index 221 KiB = 6 assets
-orphan modules 697 KiB (javascript) 3.7 KiB (runtime) [orphan] 450 modules
-runtime modules 5.58 KiB 8 modules
-built modules 27.5 KiB (css/mini-extract) 464 KiB (javascript) [built]
-  modules by path ./src/ 27.5 KiB (css/mini-extract) 459 KiB (javascript)
-    cacheable modules 27.5 KiB
-      modules by path ./src/power-spreadsheet/ 1.77 KiB 2 modules
-      modules by path ./src/table/ 25.7 KiB 2 modules
-    javascript modules 459 KiB
-      ./src/power-spreadsheet/index.js + 16 modules 13.2 KiB [not cacheable] [built] [code generated]
-      ./src/remote-pivot-table/index.js + 14 modules 11.1 KiB [not cacheable] [built] [code generated]
-      ./src/table/index.js + 107 modules 435 KiB [not cacheable] [built] [code generated]
-  modules by path ../../node_modules/ 5.36 KiB
-    ../../node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js 2.68 KiB [built] [code generated]
-    ../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js 196 bytes [built] [code generated]
-    ../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated) 2.49 KiB [built] [code generated]
-webpack 5.106.2 compiled successfully in 6403 ms
+assets by chunk 43 KiB (id hint: style) 14 assets
+assets by path [1m[32mtable/*.php[39m[22m 37.6 KiB 7 assets
+assets by chunk 118 KiB (name: data-table-controller/index) 4 assets
+assets by chunk 18.8 KiB (name: data-table-filter-select/index) 4 assets
+assets by chunk 15.2 KiB (name: data-table-key/index) 4 assets
+assets by path [1m[32mremote-pivot-table/[39m[22m 18.1 KiB 4 assets
+assets by chunk 9.1 KiB (name: power-spreadsheet/index) 4 assets
+assets by chunk 7.68 KiB (name: data-table-filter/index)
+  assets by path [1m[32mdata-table-filter/*.css[39m[22m 758 bytes 2 assets
+  + 2 assets
+assets by chunk 5.45 KiB (name: data-table-render/index)
+  assets by path [1m[32mdata-table-render/*.css[39m[22m 1.57 KiB 2 assets
+  + 2 assets
++ 20 assets
+orphan modules 1.02 MiB (javascript) 12.9 KiB (runtime) [1m[33m[orphan][39m[22m 546 modules
+runtime modules 19.8 KiB 29 modules
+built modules 48.7 KiB (css/mini-extract) 836 KiB (javascript) [1m[33m[built][39m[22m
+  cacheable modules 48.7 KiB (css/mini-extract) 5.36 KiB (javascript)
+    modules by path [1m./src/[39m[22m 48.7 KiB 14 modules
+    javascript modules 5.36 KiB
+      [1m../../node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js[39m[22m 2.68 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js[39m[22m 196 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated)[39m[22m 2.49 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 8 modules
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 57146 ms
 
-assets by path table/ 3.92 KiB
-  asset table/view.js 3.8 KiB [compared for emit] [javascript module] [minimized] (name: table/view)
-  asset table/view.asset.php 130 bytes [compared for emit] (name: table/view)
-assets by path power-spreadsheet/ 590 bytes
-  asset power-spreadsheet/view.js 460 bytes [compared for emit] [javascript module] [minimized] (name: power-spreadsheet/view)
-  asset power-spreadsheet/view.asset.php 130 bytes [compared for emit] (name: power-spreadsheet/view)
-Entrypoint power-spreadsheet/view 590 bytes = power-spreadsheet/view.js 460 bytes power-spreadsheet/view.asset.php 130 bytes
-Entrypoint table/view 3.92 KiB = table/view.js 3.8 KiB table/view.asset.php 130 bytes
-orphan modules 42 bytes [orphan] 1 module
-./src/power-spreadsheet/view.js + 1 modules 1.22 KiB [not cacheable] [built] [code generated]
-./src/table/view.js + 1 modules 11.3 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 1201 ms
+assets by path [1m[32mdata-table-render/[39m[22m 19.4 KiB 2 assets
+assets by path [1m[32mdata-table-filter-select/[39m[22m 4.36 KiB 2 assets
+assets by path [1m[32mtable/[39m[22m 3.92 KiB 2 assets
+assets by path [1m[32mdata-table-filter/[39m[22m 1.66 KiB
+  asset [1m[32mdata-table-filter/view.js[39m[22m 1.53 KiB [1m[32m[emitted][39m[22m [javascript module] [1m[32m[minimized][39m[22m (name: data-table-filter/view)
+  asset [1m[32mdata-table-filter/view.asset.php[39m[22m 130 bytes [1m[32m[emitted][39m[22m (name: data-table-filter/view)
+assets by path [1m[32mdata-table-key/[39m[22m 759 bytes
+  asset [1m[32mdata-table-key/view.js[39m[22m 629 bytes [1m[32m[emitted][39m[22m [javascript module] [1m[32m[minimized][39m[22m (name: data-table-key/view)
+  asset [1m[32mdata-table-key/view.asset.php[39m[22m 130 bytes [1m[32m[emitted][39m[22m (name: data-table-key/view)
+assets by path [1m[32mpower-spreadsheet/[39m[22m 590 bytes
+  asset [1m[32mpower-spreadsheet/view.js[39m[22m 460 bytes [1m[32m[emitted][39m[22m [javascript module] [1m[32m[minimized][39m[22m (name: power-spreadsheet/view)
+  asset [1m[32mpower-spreadsheet/view.asset.php[39m[22m 130 bytes [1m[32m[emitted][39m[22m (name: power-spreadsheet/view)
+orphan modules 12.9 KiB [1m[33m[orphan][39m[22m 16 modules
+runtime modules 2.47 KiB 3 modules
+built modules 80.4 KiB [1m[33m[built][39m[22m
+  modules by path [1m./src/[39m[22m 80.3 KiB
+    cacheable modules 50.9 KiB
+      [1m./src/data-table-render/view.js[39m[22m 18.3 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./src/data-table-render/row-dropdown-utils.js[39m[22m 8.37 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./src/data-table-render/cell-display-format.js + 12 modules[39m[22m 24.3 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./src/data-table-filter/view.js + 1 modules[39m[22m 3.99 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./src/data-table-filter-select/view.js + 1 modules[39m[22m 11.3 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./src/data-table-key/view.js + 1 modules[39m[22m 1.57 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./src/power-spreadsheet/view.js + 1 modules[39m[22m 1.22 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./src/table/view.js + 1 modules[39m[22m 11.3 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@wordpress/interactivity"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@prc/d3"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 30871 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
-> @prc/block-tables@1.1.0 build:ai
+> @prc/block-tables@1.2.0 build:ai
 > wp-scripts build --source-path=includes/ai-features/src/generate-tabular-data --output-path=includes/ai-features/build/generate-tabular-data
 
-asset index.js 3.29 KiB [compared for emit] [minimized] (name: index)
-asset index.asset.php 189 bytes [compared for emit] (name: index)
-Entrypoint index 3.48 KiB = index.js 3.29 KiB index.asset.php 189 bytes
-orphan modules 6.29 KiB [orphan] 8 modules
-./includes/ai-features/src/generate-tabular-data/index.tsx + 8 modules 8.21 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 805 ms
+asset [1m[32mindex.js[39m[22m 3.29 KiB [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m (name: index)
+asset [1m[32mindex.asset.php[39m[22m 189 bytes [1m[32m[emitted][39m[22m (name: index)
+Entrypoint [1mindex[39m[22m 3.48 KiB = [1m[32mindex.js[39m[22m 3.29 KiB [1m[32mindex.asset.php[39m[22m 189 bytes
+orphan modules 6.29 KiB [1m[33m[orphan][39m[22m 8 modules
+[1m./includes/ai-features/src/generate-tabular-data/index.tsx + 8 modules[39m[22m 8.21 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 1352 ms

@@ -1,6 +1,566 @@
 <?php
 // This file is generated. Do not modify it manually.
 return array(
+	'data-table-controller' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'prc-block/data-table-controller',
+		'version' => '0.1.0',
+		'title' => 'Data Table Controller',
+		'category' => 'widgets',
+		'description' => 'Provides tabular data (CSV, JSON, Firebase, Remote Data Blocks, or a parent provider via block context) to a data table render block.',
+		'allowedBlocks' => array(
+			'prc-block/data-table-render',
+			'prc-block/data-table-filter',
+			'prc-block/data-table-filter-select',
+			'prc-block/data-table-key',
+			'core/group'
+		),
+		'attributes' => array(
+			'dataTableInstanceId' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'dataSource' => array(
+				'type' => 'string',
+				'default' => 'csv'
+			),
+			'csvTable' => array(
+				'type' => 'object',
+				'default' => array(
+					'columns' => array(
+						
+					),
+					'rows' => array(
+						
+					)
+				)
+			),
+			'jsonTable' => array(
+				'type' => 'object',
+				'default' => array(
+					'columns' => array(
+						
+					),
+					'rows' => array(
+						
+					)
+				)
+			),
+			'hiddenColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'jsonColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'columnOrder' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'defaultJsonSheet' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'mobileHeaderColumn' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'columnSortMode' => array(
+				'type' => 'string',
+				'default' => 'custom'
+			),
+			'enableColumnSorting' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'autoSortVariable' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'autoSortRowIndex' => array(
+				'type' => 'number',
+				'default' => -1
+			),
+			'autoSortExcludedColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'mobileColumnSortMode' => array(
+				'type' => 'string',
+				'default' => 'inherit'
+			),
+			'mobileColumnOrder' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'mobileAutoSortVariable' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'mobileAutoSortRowIndex' => array(
+				'type' => 'number',
+				'default' => -1
+			),
+			'mobileAutoSortExcludedColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'valuePrefix' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'valueSuffix' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'valueFormatSheets' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'valueFormatExcludedColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'valueFormatRules' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'mobileValueFormatRules' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'enableRowDropdowns' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'rowDropdownIdentityColumn' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'rowDropdownColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'enableHeaderSpecialBorders' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'headerSpecialBorderColors' => array(
+				'type' => 'object',
+				'default' => array(
+					
+				)
+			),
+			'mobileColumnColors' => array(
+				'type' => 'object',
+				'default' => array(
+					
+				)
+			),
+			'firebasePath' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'pivotEnabled' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'pivotIndexColumn' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'pivotColumnField' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'pivotColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'pivotValueFields' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'pivotExtraColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			)
+		),
+		'supports' => array(
+			'anchor' => true,
+			'html' => false,
+			'interactivity' => array(
+				'clientNavigation' => true
+			),
+			'spacing' => array(
+				'blockGap' => true,
+				'margin' => array(
+					'top',
+					'bottom'
+				),
+				'padding' => true,
+				'__experimentalDefaultControls' => array(
+					'padding' => true
+				)
+			),
+			'typography' => array(
+				'fontSize' => true,
+				'__experimentalFontFamily' => true,
+				'__experimentalDefaultControls' => array(
+					'fontSize' => true,
+					'__experimentalFontFamily' => true
+				)
+			)
+		),
+		'providesContext' => array(
+			'prc-block/dataTableInstanceId' => 'dataTableInstanceId',
+			'prc-block/dataTableDataSource' => 'dataSource',
+			'prc-block/dataTableColumns' => 'jsonColumns',
+			'prc-block/dataTableColumnOrder' => 'columnOrder',
+			'prc-block/dataTableHiddenColumns' => 'hiddenColumns',
+			'prc-block/dataTableEnableHeaderSpecialBorders' => 'enableHeaderSpecialBorders',
+			'prc-block/dataTableHeaderSpecialBorderColors' => 'headerSpecialBorderColors',
+			'prc-block/dataTableEnableColumnSorting' => 'enableColumnSorting'
+		),
+		'usesContext' => array(
+			'prc-block/dataTableData',
+			'remote-data-blocks/remoteData'
+		),
+		'textdomain' => 'data-table-controller',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css'
+	),
+	'data-table-filter' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'prc-block/data-table-filter',
+		'version' => '0.1.0',
+		'title' => 'Data Table Filter',
+		'category' => 'widgets',
+		'description' => 'A button that switches the active sheet or filters rows by column value in a sibling Data Table Render block.',
+		'ancestor' => array(
+			'prc-block/data-table-controller'
+		),
+		'attributes' => array(
+			'value' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'label' => array(
+				'type' => 'string',
+				'default' => 'Filter'
+			),
+			'filterType' => array(
+				'type' => 'string',
+				'default' => 'sheet'
+			),
+			'filterColumn' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'isDefault' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'asCheckbox' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'invertCheckbox' => array(
+				'type' => 'boolean',
+				'default' => false
+			)
+		),
+		'supports' => array(
+			'anchor' => true,
+			'html' => false,
+			'interactivity' => true,
+			'spacing' => array(
+				'margin' => true,
+				'padding' => true,
+				'__experimentalDefaultControls' => array(
+					'margin' => true,
+					'padding' => true
+				)
+			),
+			'color' => array(
+				'background' => true,
+				'text' => true,
+				'__experimentalDefaultControls' => array(
+					'background' => true,
+					'text' => true
+				)
+			),
+			'typography' => array(
+				'fontSize' => true,
+				'__experimentalDefaultControls' => array(
+					'fontSize' => true
+				)
+			),
+			'__experimentalBorder' => array(
+				'color' => true,
+				'radius' => true,
+				'style' => true,
+				'width' => true,
+				'__experimentalDefaultControls' => array(
+					'color' => true,
+					'radius' => true,
+					'style' => true,
+					'width' => true
+				)
+			)
+		),
+		'usesContext' => array(
+			'prc-block/dataTableInstanceId',
+			'prc-block/dataTableDataSource',
+			'prc-block/dataTableColumns'
+		),
+		'textdomain' => 'data-table-filter',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'render' => 'file:./render.php',
+		'viewScriptModule' => 'file:./view.js'
+	),
+	'data-table-filter-select' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'prc-block/data-table-filter-select',
+		'version' => '0.1.0',
+		'title' => 'Data Table Filter Select',
+		'category' => 'widgets',
+		'description' => 'A dropdown that groups multiple data table filter options into a single select control.',
+		'ancestor' => array(
+			'prc-block/data-table-controller'
+		),
+		'allowedBlocks' => array(
+			'prc-block/data-table-filter'
+		),
+		'attributes' => array(
+			'placeholder' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'includeResetOption' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'resetLabel' => array(
+				'type' => 'string',
+				'default' => 'All'
+			),
+			'defaultValue' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'filterColumn' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'importedOptions' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'isFullWidth' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'hasClearIcon' => array(
+				'type' => 'boolean',
+				'default' => false
+			)
+		),
+		'supports' => array(
+			'anchor' => true,
+			'html' => false,
+			'interactivity' => true,
+			'spacing' => array(
+				'margin' => true,
+				'padding' => true,
+				'__experimentalDefaultControls' => array(
+					'margin' => true,
+					'padding' => true
+				)
+			),
+			'typography' => array(
+				'fontSize' => true,
+				'__experimentalDefaultControls' => array(
+					'fontSize' => true
+				)
+			)
+		),
+		'usesContext' => array(
+			'prc-block/dataTableInstanceId',
+			'prc-block/dataTableDataSource',
+			'prc-block/dataTableColumns',
+			'prc-block/dataTableData'
+		),
+		'textdomain' => 'data-table-filter-select',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'render' => 'file:./render.php',
+		'viewScriptModule' => 'file:./view.js'
+	),
+	'data-table-key' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'prc-block/data-table-key',
+		'version' => '0.1.0',
+		'title' => 'Data Table Key',
+		'category' => 'widgets',
+		'description' => 'Legend that maps a column’s values to colors and keys the data table rows.',
+		'parent' => array(
+			'prc-block/data-table-controller'
+		),
+		'attributes' => array(
+			'keyColumn' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'colorMap' => array(
+				'type' => 'object',
+				'default' => array(
+					
+				)
+			),
+			'enableFilter' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'keyOrder' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'excludedKeys' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			)
+		),
+		'supports' => array(
+			'anchor' => true,
+			'html' => false,
+			'interactivity' => true,
+			'spacing' => array(
+				'margin' => true,
+				'padding' => true,
+				'__experimentalDefaultControls' => array(
+					'margin' => true,
+					'padding' => true
+				)
+			),
+			'typography' => array(
+				'fontSize' => true,
+				'__experimentalDefaultControls' => array(
+					'fontSize' => true
+				)
+			)
+		),
+		'usesContext' => array(
+			'prc-block/dataTableInstanceId',
+			'prc-block/dataTableDataSource',
+			'prc-block/dataTableData'
+		),
+		'textdomain' => 'data-table-key',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'render' => 'file:./render.php',
+		'viewScriptModule' => 'file:./view.js'
+	),
+	'data-table-render' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'prc-block/data-table-render',
+		'version' => '0.1.0',
+		'title' => 'Data Table Render',
+		'category' => 'media',
+		'description' => 'Renders an interactive sortable table from parent controller data.',
+		'attributes' => array(
+			
+		),
+		'supports' => array(
+			'anchor' => true,
+			'html' => false,
+			'interactivity' => array(
+				'clientNavigation' => true
+			),
+			'spacing' => array(
+				'blockGap' => true,
+				'margin' => array(
+					'top',
+					'bottom'
+				),
+				'padding' => true,
+				'__experimentalDefaultControls' => array(
+					'padding' => true
+				)
+			),
+			'typography' => array(
+				'fontSize' => true,
+				'__experimentalFontFamily' => true,
+				'__experimentalDefaultControls' => array(
+					'fontSize' => true,
+					'__experimentalFontFamily' => true
+				)
+			)
+		),
+		'usesContext' => array(
+			'prc-block/dataTableInstanceId',
+			'prc-block/dataTableColumns',
+			'prc-block/dataTableColumnOrder',
+			'prc-block/dataTableHiddenColumns',
+			'prc-block/dataTableEnableHeaderSpecialBorders',
+			'prc-block/dataTableHeaderSpecialBorderColors',
+			'prc-block/dataTableEnableColumnSorting'
+		),
+		'textdomain' => 'data-table-render',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'render' => 'file:./render.php',
+		'viewScriptModule' => array(
+			'@prc/d3',
+			'file:./view.js'
+		)
+	),
 	'power-spreadsheet' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion' => 3,

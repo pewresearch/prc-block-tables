@@ -1,0 +1,212 @@
+.wp-block-prc-block-data-table-filter-select {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5em;
+	font-family: var(--wp--preset--font-family--sans-serif);
+	font-size: 1rem;
+	margin: 0 0.25em 0.5em 0;
+
+	&.is-full-width {
+		display: flex;
+		width: 100%;
+		max-width: 100%;
+		margin-right: 0;
+
+		.ui.selection.dropdown {
+			display: block;
+			width: 100%;
+			max-width: 100%;
+		}
+	}
+}
+
+.wp-block-prc-block-data-table-filter-select .ui.selection.dropdown {
+	box-sizing: border-box;
+	position: relative;
+	display: inline-block;
+	min-width: 14em;
+	max-width: 100%;
+	padding: 0.78571429em 2.1em 0.78571429em 1em;
+
+	&.has-clear-icon {
+		padding-right: 3.25em;
+	}
+	border: 1px solid rgba(34, 36, 38, 0.15);
+	border-radius: 0.28571429rem;
+	background-color: #fff;
+	color: rgba(0, 0, 0, 0.87);
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: 400;
+	line-height: 1em;
+	white-space: normal;
+	word-wrap: break-word;
+	cursor: pointer;
+	outline: 0;
+	transition:
+		box-shadow 0.1s ease,
+		width 0.1s ease;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+
+	&:hover {
+		border-color: rgba(34, 36, 38, 0.35);
+	}
+
+	&:focus-visible {
+		border-color: rgba(0, 0, 0, 0.8);
+		box-shadow: none;
+	}
+
+	&.active,
+	&.visible {
+		z-index: 10;
+		border-color: rgba(0, 0, 0, 0.8);
+		box-shadow: 0 2px 3px 0 rgba(34, 36, 38, 0.15);
+		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+
+	> .text {
+		display: inline-block;
+		font-weight: 700;
+		line-height: 1;
+
+		&.default {
+			font-weight: 400;
+			color: rgba(0, 0, 0, 0.4);
+		}
+	}
+
+	> .prc-data-table-filter-select__clear-button {
+		position: absolute;
+		top: 50%;
+		right: 2.35em;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0;
+		padding: 0;
+		border: none;
+		background: transparent;
+		color: rgba(0, 0, 0, 0.45);
+		line-height: 1;
+		cursor: pointer;
+		transform: translateY(-50%);
+		-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+
+		.icon {
+			display: inline-flex;
+			width: 1em;
+			height: 1em;
+			font-size: 0.95em;
+		}
+
+		&:hover,
+		&:focus-visible {
+			color: rgba(0, 0, 0, 0.87);
+		}
+
+		&:focus-visible {
+			outline: 2px solid rgba(0, 0, 0, 0.8);
+			outline-offset: 2px;
+		}
+
+		&[hidden] {
+			display: none;
+		}
+	}
+
+	> .dropdown.icon {
+		position: absolute;
+		top: 0.78571429em;
+		right: 1em;
+		width: auto;
+		height: auto;
+		margin: 0;
+		padding: 0;
+		opacity: 0.8;
+		line-height: 1;
+		pointer-events: none;
+
+		&::before {
+			content: "";
+			display: block;
+			width: 0.65em;
+			height: 0.65em;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%23666' d='M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9S301.5 192 288 192H32c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z'/%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: contain;
+			transition: transform 0.1s ease;
+		}
+	}
+
+	&.active > .dropdown.icon::before,
+	&.visible > .dropdown.icon::before {
+		transform: rotate(180deg);
+	}
+
+	> .menu {
+		display: none;
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: auto;
+		min-width: calc(100% + 2px);
+		width: calc(100% + 2px);
+		margin: 0 -1px;
+		padding: 0;
+		background: #fff;
+		border: 1px solid rgba(34, 36, 38, 0.15);
+		border-top-width: 0;
+		border-radius: 0 0 0.28571429rem 0.28571429rem;
+		box-shadow: 0 2px 3px 0 rgba(34, 36, 38, 0.15);
+		text-align: left;
+		overflow-x: hidden;
+		overflow-y: auto;
+		max-height: 12rem;
+		z-index: 11;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	&.visible > .menu,
+	&.active > .menu {
+		display: block;
+	}
+
+	> .menu > .item {
+		position: relative;
+		display: block;
+		padding: 0.78571429em 1.14285714em !important;
+		border: none;
+		border-top: 1px solid rgba(34, 36, 38, 0.1);
+		color: rgba(0, 0, 0, 0.87);
+		font-size: inherit;
+		font-weight: 400;
+		line-height: 1em;
+		text-transform: none;
+		white-space: normal;
+		word-wrap: normal;
+		cursor: pointer;
+		box-shadow: none;
+		-webkit-touch-callout: none;
+
+		&:first-child {
+			border-top-width: 0;
+		}
+
+		&:hover {
+			background: rgba(0, 0, 0, 0.05);
+			color: rgba(0, 0, 0, 0.95);
+			z-index: 13;
+		}
+
+		&.active,
+		&.selected {
+			background: rgba(0, 0, 0, 0.03);
+			color: rgba(0, 0, 0, 0.95);
+			font-weight: 700;
+			z-index: 12;
+		}
+	}
+}

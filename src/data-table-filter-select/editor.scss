@@ -1,0 +1,25 @@
+.wp-block-prc-block-data-table-filter-select {
+	.prc-data-table-filter-select__editor-note {
+		margin: 0 0 0.75em;
+		font-size: 12px;
+		color: #757575;
+	}
+
+	.prc-data-table-filter-select__placeholder-preview {
+		display: inline-block;
+		margin-right: 0.5em;
+		font-weight: 400;
+		color: #757575;
+		font-style: italic;
+	}
+
+	.prc-data-table-filter-select__options {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25em;
+		padding: 0.75em;
+		border: 1px dashed #c3c4c7;
+		border-radius: 4px;
+		background: #f6f7f7;
+	}
+}

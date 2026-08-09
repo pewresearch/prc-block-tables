@@ -1,0 +1,76 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "prc-block/data-table-filter-select",
+	"version": "0.1.0",
+	"title": "Data Table Filter Select",
+	"category": "widgets",
+	"description": "A dropdown that groups multiple data table filter options into a single select control.",
+	"ancestor": ["prc-block/data-table-controller"],
+	"allowedBlocks": ["prc-block/data-table-filter"],
+	"attributes": {
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		},
+		"includeResetOption": {
+			"type": "boolean",
+			"default": true
+		},
+		"resetLabel": {
+			"type": "string",
+			"default": "All"
+		},
+		"defaultValue": {
+			"type": "string",
+			"default": ""
+		},
+		"filterColumn": {
+			"type": "string",
+			"default": ""
+		},
+		"importedOptions": {
+			"type": "array",
+			"default": []
+		},
+		"isFullWidth": {
+			"type": "boolean",
+			"default": false
+		},
+		"hasClearIcon": {
+			"type": "boolean",
+			"default": false
+		}
+	},
+	"supports": {
+		"anchor": true,
+		"html": false,
+		"interactivity": true,
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true,
+				"padding": true
+			}
+		},
+		"typography": {
+			"fontSize": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		}
+	},
+	"usesContext": [
+		"prc-block/dataTableInstanceId",
+		"prc-block/dataTableDataSource",
+		"prc-block/dataTableColumns",
+		"prc-block/dataTableData"
+	],
+	"textdomain": "data-table-filter-select",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php",
+	"viewScriptModule": "file:./view.js"
+}

@@ -1,0 +1,220 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "prc-block/data-table-controller",
+  "version": "0.1.0",
+  "title": "Data Table Controller",
+  "category": "widgets",
+  "description": "Provides tabular data (CSV, JSON, Firebase, Remote Data Blocks, or a parent provider via block context) to a data table render block.",
+  "allowedBlocks": [
+    "prc-block/data-table-render",
+    "prc-block/data-table-filter",
+    "prc-block/data-table-filter-select",
+    "prc-block/data-table-key",
+    "core/group"
+  ],
+  "attributes": {
+    "dataTableInstanceId": {
+      "type": "string",
+      "default": ""
+    },
+    "dataSource": {
+      "type": "string",
+      "default": "csv"
+    },
+    "csvTable": {
+      "type": "object",
+      "default": {
+        "columns": [],
+        "rows": []
+      }
+    },
+    "jsonTable": {
+      "type": "object",
+      "default": {
+        "columns": [],
+        "rows": []
+      }
+    },
+    "hiddenColumns": {
+      "type": "array",
+      "default": []
+    },
+    "jsonColumns": {
+      "type": "array",
+      "default": []
+    },
+    "columnOrder": {
+      "type": "array",
+      "default": []
+    },
+    "defaultJsonSheet": {
+      "type": "string",
+      "default": ""
+    },
+    "mobileHeaderColumn": {
+      "type": "string",
+      "default": ""
+    },
+    "columnSortMode": {
+      "type": "string",
+      "default": "custom"
+    },
+    "enableColumnSorting": {
+      "type": "boolean",
+      "default": true
+    },
+    "autoSortVariable": {
+      "type": "string",
+      "default": ""
+    },
+    "autoSortRowIndex": {
+      "type": "number",
+      "default": -1
+    },
+    "autoSortExcludedColumns": {
+      "type": "array",
+      "default": []
+    },
+    "mobileColumnSortMode": {
+      "type": "string",
+      "default": "inherit"
+    },
+    "mobileColumnOrder": {
+      "type": "array",
+      "default": []
+    },
+    "mobileAutoSortVariable": {
+      "type": "string",
+      "default": ""
+    },
+    "mobileAutoSortRowIndex": {
+      "type": "number",
+      "default": -1
+    },
+    "mobileAutoSortExcludedColumns": {
+      "type": "array",
+      "default": []
+    },
+    "valuePrefix": {
+      "type": "string",
+      "default": ""
+    },
+    "valueSuffix": {
+      "type": "string",
+      "default": ""
+    },
+    "valueFormatSheets": {
+      "type": "array",
+      "default": []
+    },
+    "valueFormatExcludedColumns": {
+      "type": "array",
+      "default": []
+    },
+    "valueFormatRules": {
+      "type": "array",
+      "default": []
+    },
+    "mobileValueFormatRules": {
+      "type": "array",
+      "default": []
+    },
+    "enableRowDropdowns": {
+      "type": "boolean",
+      "default": false
+    },
+    "rowDropdownIdentityColumn": {
+      "type": "string",
+      "default": ""
+    },
+    "rowDropdownColumns": {
+      "type": "array",
+      "default": []
+    },
+    "enableHeaderSpecialBorders": {
+      "type": "boolean",
+      "default": false
+    },
+    "headerSpecialBorderColors": {
+      "type": "object",
+      "default": {}
+    },
+    "mobileColumnColors": {
+      "type": "object",
+      "default": {}
+    },
+    "firebasePath": {
+      "type": "string",
+      "default": ""
+    },
+    "pivotEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "pivotIndexColumn": {
+      "type": "string",
+      "default": ""
+    },
+    "pivotColumnField": {
+      "type": "string",
+      "default": ""
+    },
+    "pivotColumns": {
+      "type": "array",
+      "default": []
+    },
+    "pivotValueFields": {
+      "type": "array",
+      "default": []
+    },
+    "pivotExtraColumns": {
+      "type": "array",
+      "default": []
+    }
+  },
+  "supports": {
+    "anchor": true,
+    "html": false,
+    "interactivity": {
+      "clientNavigation": true
+    },
+    "spacing": {
+      "blockGap": true,
+      "margin": [
+        "top",
+        "bottom"
+      ],
+      "padding": true,
+      "__experimentalDefaultControls": {
+        "padding": true
+      }
+    },
+    "typography": {
+      "fontSize": true,
+      "__experimentalFontFamily": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true,
+        "__experimentalFontFamily": true
+      }
+    }
+  },
+  "providesContext": {
+    "prc-block/dataTableInstanceId": "dataTableInstanceId",
+    "prc-block/dataTableDataSource": "dataSource",
+    "prc-block/dataTableColumns": "jsonColumns",
+    "prc-block/dataTableColumnOrder": "columnOrder",
+    "prc-block/dataTableHiddenColumns": "hiddenColumns",
+    "prc-block/dataTableEnableHeaderSpecialBorders": "enableHeaderSpecialBorders",
+    "prc-block/dataTableHeaderSpecialBorderColors": "headerSpecialBorderColors",
+    "prc-block/dataTableEnableColumnSorting": "enableColumnSorting"
+  },
+  "usesContext": [
+    "prc-block/dataTableData",
+    "remote-data-blocks/remoteData"
+  ],
+  "textdomain": "data-table-controller",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css"
+}

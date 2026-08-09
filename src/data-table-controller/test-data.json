@@ -1,0 +1,68 @@
+[
+	{
+		"Region": "Middle East-North Africa",
+		"Year": 2020,
+		"Muslims": 94.2,
+		"Christians": 2.9,
+		"Jews": 1.5,
+		"Hindus": 0.7,
+		"Unaffiliated": 0.4,
+		"Other religions": 0.2,
+		"Buddhists": "<0.1"
+	},
+	{
+		"Region": "Middle East-North Africa",
+		"Year": 2030,
+		"Muslims": 94.5,
+		"Christians": 2.8,
+		"Jews": 1.5,
+		"Hindus": 0.7,
+		"Unaffiliated": 0.4,
+		"Other religions": 0.1,
+		"Buddhists": "<0.1"
+	},
+	{
+		"Region": "Middle East-North Africa",
+		"Year": 2040,
+		"Muslims": 94.7,
+		"Christians": 2.7,
+		"Jews": 1.4,
+		"Hindus": 0.7,
+		"Unaffiliated": 0.4,
+		"Other religions": 0.1,
+		"Buddhists": "<0.1"
+	},
+	{
+		"Region": "Middle East-North Africa",
+		"Year": 2050,
+		"Muslims": 94.9,
+		"Christians": 2.5,
+		"Jews": 1.4,
+		"Hindus": 0.7,
+		"Unaffiliated": 0.3,
+		"Other religions": 0.1,
+		"Buddhists": "<0.1"
+	},
+	{
+		"Region": "Middle East-North Africa",
+		"Year": 2060,
+		"Muslims": 95.2,
+		"Christians": 2.3,
+		"Jews": 1.4,
+		"Hindus": 0.6,
+		"Unaffiliated": 0.3,
+		"Other religions": 0.1,
+		"Buddhists": "<0.1"
+	},
+	{
+		"Region": "Middle East-North Africa",
+		"Year": 2070,
+		"Muslims": 95.2,
+		"Christians": 2.3,
+		"Jews": 1.4,
+		"Hindus": 0.6,
+		"Unaffiliated": 0.3,
+		"Other religions": 0.1,
+		"Buddhists": "<0.1"
+	}
+]

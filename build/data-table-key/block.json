@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "prc-block/data-table-key",
+  "version": "0.1.0",
+  "title": "Data Table Key",
+  "category": "widgets",
+  "description": "Legend that maps a column’s values to colors and keys the data table rows.",
+  "parent": [
+    "prc-block/data-table-controller"
+  ],
+  "attributes": {
+    "keyColumn": {
+      "type": "string",
+      "default": ""
+    },
+    "colorMap": {
+      "type": "object",
+      "default": {}
+    },
+    "enableFilter": {
+      "type": "boolean",
+      "default": false
+    },
+    "keyOrder": {
+      "type": "array",
+      "default": []
+    },
+    "excludedKeys": {
+      "type": "array",
+      "default": []
+    }
+  },
+  "supports": {
+    "anchor": true,
+    "html": false,
+    "interactivity": true,
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "__experimentalDefaultControls": {
+        "margin": true,
+        "padding": true
+      }
+    },
+    "typography": {
+      "fontSize": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true
+      }
+    }
+  },
+  "usesContext": [
+    "prc-block/dataTableInstanceId",
+    "prc-block/dataTableDataSource",
+    "prc-block/dataTableData"
+  ],
+  "textdomain": "data-table-key",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "viewScriptModule": "file:./view.js"
+}

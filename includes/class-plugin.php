@@ -9,6 +9,11 @@ namespace PRC\Platform\Block_Tables;
 
 use PRC\Platform\Blocks\Table;
 use PRC\Platform\Blocks\Power_Spreadsheet;
+use PRC\Platform\Blocks\Data_Table_Controller;
+use PRC\Platform\Blocks\Data_Table_Render;
+use PRC\Platform\Blocks\Data_Table_Filter;
+use PRC\Platform\Blocks\Data_Table_Filter_Select;
+use PRC\Platform\Blocks\Data_Table_Key;
 use PRC\Platform\Blocks\Remote_Pivot_Table;
 
 /**
@@ -56,6 +61,11 @@ class Plugin {
 		require_once plugin_dir_path( __DIR__ ) . '/includes/ai-features/class-ai-features.php';
 		require_once plugin_dir_path( __DIR__ ) . '/build/table/class-table.php';
 		require_once plugin_dir_path( __DIR__ ) . '/build/power-spreadsheet/class-power-spreadsheet.php';
+		require_once plugin_dir_path( __DIR__ ) . '/build/data-table-controller/class-data-table-controller.php';
+		require_once plugin_dir_path( __DIR__ ) . '/build/data-table-render/class-data-table-render.php';
+		require_once plugin_dir_path( __DIR__ ) . '/build/data-table-filter/class-data-table-filter.php';
+		require_once plugin_dir_path( __DIR__ ) . '/build/data-table-filter-select/class-data-table-filter-select.php';
+		require_once plugin_dir_path( __DIR__ ) . '/build/data-table-key/class-data-table-key.php';
 		require_once plugin_dir_path( __DIR__ ) . '/build/remote-pivot-table/class-remote-pivot-table.php';
 
 		$this->loader = new Loader();
@@ -73,6 +83,11 @@ class Plugin {
 		new AI_Features( $this->get_loader() );
 		new Table( $this->get_loader() );
 		new Power_Spreadsheet( $this->get_loader() );
+		new Data_Table_Controller( $this->get_loader() );
+		new Data_Table_Render( $this->get_loader() );
+		new Data_Table_Filter( $this->get_loader() );
+		new Data_Table_Filter_Select( $this->get_loader() );
+		new Data_Table_Key( $this->get_loader() );
 		new Remote_Pivot_Table( $this->get_loader() );
 	}
 

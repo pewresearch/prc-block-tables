@@ -1,15 +1,20 @@
 {
 	"name": "@prc/block-tables",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"description": "Table blocks for PRC Platform (Power Table, and future Spreadsheet).",
 	"scripts": {
 		"build": "wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai",
 		"build:ai": "wp-scripts build --source-path=includes/ai-features/src/generate-tabular-data --output-path=includes/ai-features/build/generate-tabular-data"
 	},
 	"dependencies": {
+		"@dnd-kit/core": "^6.3.1",
+		"@dnd-kit/sortable": "^7.0.2",
+		"@dnd-kit/utilities": "^3.2.2",
+		"@prc/d3": "*",
 		"@prc/functions": "*",
 		"@prc/icons": "*",
-		"comma-separated-values": "^3.6.4"
+		"comma-separated-values": "^3.6.4",
+		"d3-format": "^3.1.0"
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^31.4.0"

@@ -1,0 +1,21 @@
+.wp-block-prc-block-data-table-filter {
+	box-sizing: border-box;
+
+	.rich-text {
+		display: inline;
+	}
+
+	&.is-checkbox {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5em;
+
+		input[type="checkbox"] {
+			margin: 0;
+		}
+
+		.rich-text {
+			display: inline;
+		}
+	}
+}
