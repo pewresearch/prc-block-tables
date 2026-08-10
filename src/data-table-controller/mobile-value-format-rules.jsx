@@ -12,7 +12,7 @@ import {
 const GROUP_KEYS = ['K', 'M', 'B', 'T'];
 
 const GROUP_LABELS = {
-	K: __('Thousands (K)', 'data-table-controller'),
+	K: __('Thousands (k)', 'data-table-controller'),
 	M: __('Millions (M)', 'data-table-controller'),
 	B: __('Billions (B)', 'data-table-controller'),
 	T: __('Trillions (T)', 'data-table-controller'),

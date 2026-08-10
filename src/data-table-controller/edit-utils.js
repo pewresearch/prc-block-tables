@@ -427,8 +427,13 @@ export function getEditorTablePreview({
 		sheetNames = Object.keys(jsonTable.sheets);
 	}
 
+	// Match PHP / pivot override: only keep defaultJsonSheet when it still
+	// exists in the current sheet list; otherwise fall back to the first sheet.
+	const preferredDefault = defaultJsonSheet || jsonTable?.defaultSheet || '';
 	const resolvedDefaultSheet =
-		defaultJsonSheet || jsonTable?.defaultSheet || sheetNames[0] || '';
+		preferredDefault && sheetNames.includes(preferredDefault)
+			? preferredDefault
+			: sheetNames[0] || preferredDefault || '';
 
 	let previewSheet = null;
 	if (isMultiSheetContext) {

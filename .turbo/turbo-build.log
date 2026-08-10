@@ -4,7 +4,7 @@
 
 assets by chunk 43 KiB (id hint: style) 14 assets
 assets by path [1m[32mtable/*.php[39m[22m 37.6 KiB 7 assets
-assets by chunk 118 KiB (name: data-table-controller/index) 4 assets
+assets by chunk 121 KiB (name: data-table-controller/index) 4 assets
 assets by chunk 18.8 KiB (name: data-table-filter-select/index) 4 assets
 assets by chunk 15.2 KiB (name: data-table-key/index) 4 assets
 assets by path [1m[32mremote-pivot-table/[39m[22m 18.1 KiB 4 assets
@@ -16,9 +16,9 @@ assets by chunk 5.45 KiB (name: data-table-render/index)
   assets by path [1m[32mdata-table-render/*.css[39m[22m 1.57 KiB 2 assets
   + 2 assets
 + 20 assets
-orphan modules 1.02 MiB (javascript) 12.9 KiB (runtime) [1m[33m[orphan][39m[22m 546 modules
+orphan modules 1.03 MiB (javascript) 12.9 KiB (runtime) [1m[33m[orphan][39m[22m 546 modules
 runtime modules 19.8 KiB 29 modules
-built modules 48.7 KiB (css/mini-extract) 836 KiB (javascript) [1m[33m[built][39m[22m
+built modules 48.7 KiB (css/mini-extract) 843 KiB (javascript) [1m[33m[built][39m[22m
   cacheable modules 48.7 KiB (css/mini-extract) 5.36 KiB (javascript)
     modules by path [1m./src/[39m[22m 48.7 KiB 14 modules
     javascript modules 5.36 KiB
@@ -26,7 +26,7 @@ built modules 48.7 KiB (css/mini-extract) 836 KiB (javascript) [1m[33m[built]
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js[39m[22m 196 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated)[39m[22m 2.49 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   + 8 modules
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 57146 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 55642 ms
 
 assets by path [1m[32mdata-table-render/[39m[22m 19.4 KiB 2 assets
 assets by path [1m[32mdata-table-filter-select/[39m[22m 4.36 KiB 2 assets
@@ -55,7 +55,7 @@ built modules 80.4 KiB [1m[33m[built][39m[22m
     [1m./src/table/view.js + 1 modules[39m[22m 11.3 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   [1mexternal "@wordpress/interactivity"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   [1mexternal "@prc/d3"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 30871 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 28580 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
 > @prc/block-tables@1.2.0 build:ai
@@ -66,4 +66,4 @@ asset [1m[32mindex.asset.php[39m[22m 189 bytes [1m[32m[emitted][39m[22m 
 Entrypoint [1mindex[39m[22m 3.48 KiB = [1m[32mindex.js[39m[22m 3.29 KiB [1m[32mindex.asset.php[39m[22m 189 bytes
 orphan modules 6.29 KiB [1m[33m[orphan][39m[22m 8 modules
 [1m./includes/ai-features/src/generate-tabular-data/index.tsx + 8 modules[39m[22m 8.21 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 1352 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 2105 ms

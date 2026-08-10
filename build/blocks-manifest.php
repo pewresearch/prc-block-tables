@@ -53,6 +53,12 @@ return array(
 					
 				)
 			),
+			'hiddenColumnsBySheet' => array(
+				'type' => 'object',
+				'default' => array(
+					
+				)
+			),
 			'jsonColumns' => array(
 				'type' => 'array',
 				'default' => array(
@@ -80,6 +86,14 @@ return array(
 			'enableColumnSorting' => array(
 				'type' => 'boolean',
 				'default' => true
+			),
+			'defaultSortColumn' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'defaultSortDirection' => array(
+				'type' => 'string',
+				'default' => 'asc'
 			),
 			'autoSortVariable' => array(
 				'type' => 'string',

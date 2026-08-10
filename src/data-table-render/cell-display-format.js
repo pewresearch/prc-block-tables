@@ -125,7 +125,7 @@ const COMPACT_MAGNITUDES = [
 	{ key: 'T', suffix: 'T', divisor: 1e12 },
 	{ key: 'B', suffix: 'B', divisor: 1e9 },
 	{ key: 'M', suffix: 'M', divisor: 1e6 },
-	{ key: 'K', suffix: 'K', divisor: 1e3 },
+	{ key: 'K', suffix: 'k', divisor: 1e3 },
 ];
 
 const DEFAULT_COMPACT_GROUP = { decimals: 1, significantDigits: 2 };
@@ -170,7 +170,7 @@ function getReplaceRuleDisplay(raw, col, activeSheet, rules) {
 }
 
 /**
- * Format a number as K/M/B/T using Option A (sig digits then decimal places).
+ * Format a number as k/M/B/T using Option A (sig digits then decimal places).
  *
  * @param {number}      num    Numeric value.
  * @param {Object|null} groups Per-magnitude settings map.
@@ -433,7 +433,7 @@ function formatMobileDisplayCell(raw, col, options) {
 }
 
 /**
- * Desktop and mobile display strings for a cell (mobile may use K/M/B/T rules).
+ * Desktop and mobile display strings for a cell (mobile may use k/M/B/T rules).
  *
  * @param {unknown} raw     Raw cell value.
  * @param {string}  col     Column key.

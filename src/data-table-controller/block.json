@@ -40,6 +40,10 @@
 			"type": "array",
 			"default": []
 		},
+		"hiddenColumnsBySheet": {
+			"type": "object",
+			"default": {}
+		},
 		"jsonColumns": {
 			"type": "array",
 			"default": []
@@ -63,6 +67,14 @@
 		"enableColumnSorting": {
 			"type": "boolean",
 			"default": true
+		},
+		"defaultSortColumn": {
+			"type": "string",
+			"default": ""
+		},
+		"defaultSortDirection": {
+			"type": "string",
+			"default": "asc"
 		},
 		"autoSortVariable": {
 			"type": "string",

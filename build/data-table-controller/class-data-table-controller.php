@@ -346,43 +346,43 @@ class Data_Table_Controller {
 	}
 
 	/**
-	 * Resolve the interactives Realtime Database URL for the current environment.
+	 * Resolve the data-table-builder Realtime Database URL for the current environment.
 	 *
-	 * Table datasets (e.g. religious-migrations-table) live on the interactives
-	 * RTDB, not the default auth database that `\PRC\Platform\Firebase::$db` uses.
+	 * Table datasets (e.g. migrations) live on the data-table-builder RTDB, not
+	 * the default auth database that `\PRC\Platform\Firebase::$db` uses.
 	 *
 	 * @return string|\WP_Error Database URL or error.
 	 */
-	private function resolve_interactives_database_uri() {
+	private function resolve_data_table_builder_database_uri() {
 		$environment = \wp_get_environment_type();
 		$is_production = 'production' === $environment;
 
 		if ( $is_production ) {
-			if ( ! defined( 'PRC_PLATFORM_FIREBASE_INTERACTIVES_DB' ) ) {
+			if ( ! defined( 'PRC_PLATFORM_FIREBASE_DATA_TABLE_BUILDER_DB' ) ) {
 				return new \WP_Error(
 					'firebase_unavailable',
-					__( 'Interactives Firebase database URL is not configured.', 'data-table-controller' ),
+					__( 'Data-table-builder Firebase database URL is not configured.', 'data-table-controller' ),
 					array( 'status' => 503 )
 				);
 			}
-			return (string) \PRC_PLATFORM_FIREBASE_INTERACTIVES_DB;
+			return (string) \PRC_PLATFORM_FIREBASE_DATA_TABLE_BUILDER_DB;
 		}
 
-		if ( ! defined( 'PRC_PLATFORM_FIREBASE_INTERACTIVES_DB__DEV' ) ) {
+		if ( ! defined( 'PRC_PLATFORM_FIREBASE_DATA_TABLE_BUILDER_DB__DEV' ) ) {
 			return new \WP_Error(
 				'firebase_unavailable',
-				__( 'Interactives Firebase database URL is not configured.', 'data-table-controller' ),
+				__( 'Data-table-builder Firebase database URL is not configured.', 'data-table-controller' ),
 				array( 'status' => 503 )
 			);
 		}
 
-		return (string) \PRC_PLATFORM_FIREBASE_INTERACTIVES_DB__DEV;
+		return (string) \PRC_PLATFORM_FIREBASE_DATA_TABLE_BUILDER_DB__DEV;
 	}
 
 	/**
-	 * Fetch a value from the interactives Firebase Realtime Database via the platform SDK.
+	 * Fetch a value from the data-table-builder Firebase Realtime Database via the platform SDK.
 	 *
-	 * @param string $path Database path relative to the interactives RTDB root.
+	 * @param string $path Database path relative to the data-table-builder RTDB root.
 	 * @return mixed|\WP_Error Raw value or error.
 	 */
 	private function fetch_firebase_path( string $path ) {
@@ -394,7 +394,7 @@ class Data_Table_Controller {
 			);
 		}
 
-		$database_uri = $this->resolve_interactives_database_uri();
+		$database_uri = $this->resolve_data_table_builder_database_uri();
 		if ( is_wp_error( $database_uri ) ) {
 			return $database_uri;
 		}
@@ -409,7 +409,7 @@ class Data_Table_Controller {
 				);
 			}
 
-			// Point at the interactives RTDB (not the default auth DB).
+			// Point at the data-table-builder RTDB (not the default auth DB).
 			$db = $firebase->instance->withDatabaseUri( $database_uri )->createDatabase();
 
 			return $db->getReference( $path )->getValue();
@@ -1588,17 +1588,133 @@ class Data_Table_Controller {
 	}
 
 	/**
+	 * Sanitize hiddenColumnsBySheet block attribute.
+	 *
+	 * @param mixed $by_sheet Raw attribute value.
+	 * @return array<string, string[]>
+	 */
+	private function sanitize_hidden_columns_by_sheet( $by_sheet ): array {
+		if ( ! is_array( $by_sheet ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+		foreach ( $by_sheet as $sheet_name => $columns ) {
+			// JSON object keys that look like integers become int array keys in PHP
+			// (e.g. year sheets "2020"). Cast like sanitize_mobile_column_colors.
+			if ( ! is_array( $columns ) ) {
+				continue;
+			}
+
+			$safe_sheet = sanitize_text_field( (string) $sheet_name );
+			if ( '' === $safe_sheet ) {
+				continue;
+			}
+
+			$sanitized[ $safe_sheet ] = array_values( array_map( 'strval', $columns ) );
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Resolve global and per-sheet hidden column config from block attributes.
+	 *
+	 * @param array $attributes Block attributes.
+	 * @return array{0: string[], 1: array<string, string[]>}
+	 */
+	private function get_hidden_column_config( array $attributes ): array {
+		$hidden = isset( $attributes['hiddenColumns'] ) && is_array( $attributes['hiddenColumns'] )
+			? array_values( array_map( 'strval', $attributes['hiddenColumns'] ) )
+			: array();
+
+		$hidden_by_sheet = $this->sanitize_hidden_columns_by_sheet( $attributes['hiddenColumnsBySheet'] ?? array() );
+
+		return array( $hidden, $hidden_by_sheet );
+	}
+
+	/**
+	 * Resolve initial row-sort state seeded into Interactivity on first load.
+	 *
+	 * @param array  $attributes            Block attributes.
+	 * @param array  $sheets                Processed sheets map.
+	 * @param string $active_sheet          Active sheet key.
+	 * @param bool   $enable_column_sorting Whether click-to-sort is enabled.
+	 * @return array{ sortColumn: string|null, sortDirection: string }
+	 */
+	private function resolve_initial_sort_state( array $attributes, array $sheets, string $active_sheet, bool $enable_column_sorting ): array {
+		if ( ! $enable_column_sorting ) {
+			return array(
+				'sortColumn'    => null,
+				'sortDirection' => 'asc',
+			);
+		}
+
+		$default_column = isset( $attributes['defaultSortColumn'] )
+			? sanitize_text_field( (string) $attributes['defaultSortColumn'] )
+			: '';
+
+		if ( '' === $default_column ) {
+			return array(
+				'sortColumn'    => null,
+				'sortDirection' => 'asc',
+			);
+		}
+
+		$default_direction = isset( $attributes['defaultSortDirection'] )
+			? sanitize_text_field( (string) $attributes['defaultSortDirection'] )
+			: 'asc';
+
+		if ( ! in_array( $default_direction, array( 'asc', 'desc' ), true ) ) {
+			$default_direction = 'asc';
+		}
+
+		$active_data = $sheets[ $active_sheet ] ?? null;
+		if ( ! is_array( $active_data ) || empty( $active_data['columns'] ) || ! is_array( $active_data['columns'] ) ) {
+			return array(
+				'sortColumn'    => null,
+				'sortDirection' => 'asc',
+			);
+		}
+
+		$visible_columns = array_map( 'strval', $active_data['columns'] );
+		if ( ! in_array( $default_column, $visible_columns, true ) ) {
+			return array(
+				'sortColumn'    => null,
+				'sortDirection' => 'asc',
+			);
+		}
+
+		return array(
+			'sortColumn'    => $default_column,
+			'sortDirection' => $default_direction,
+		);
+	}
+
+	/**
 	 * Apply hidden-column filtering and column order to every sheet.
 	 *
-	 * @param array    $normalized Normalized sheets.
-	 * @param string[] $hidden     Hidden column keys.
-	 * @param string[] $col_order  Preferred column order.
+	 * @param array               $normalized       Normalized sheets.
+	 * @param string[]            $hidden           Global hidden column keys.
+	 * @param string[]            $col_order        Preferred column order.
+	 * @param array<string, string[]> $hidden_by_sheet Per-sheet hidden column keys.
 	 * @return array<string, array{ columns: string[], rows: array }>
 	 */
-	private function filter_and_order_sheets( array $normalized, array $hidden, array $col_order ): array {
+	private function filter_and_order_sheets( array $normalized, array $hidden, array $col_order, array $hidden_by_sheet = array() ): array {
 		$sheets = array();
 		foreach ( $normalized as $sheet_name => $sheet ) {
-			$filtered              = $this->filter_hidden_columns( $sheet, $hidden );
+			// Match sanitizer keying: cast + sanitize so numeric year keys and
+			// labels that change under sanitize_text_field still resolve.
+			$sheet_key    = sanitize_text_field( (string) $sheet_name );
+			$sheet_hidden = array_values(
+				array_unique(
+					array_merge(
+						$hidden,
+						$hidden_by_sheet[ $sheet_key ] ?? array()
+					)
+				)
+			);
+			$filtered              = $this->filter_hidden_columns( $sheet, $sheet_hidden );
 			$sheets[ $sheet_name ] = $this->apply_column_order( $filtered, $col_order );
 		}
 		return $sheets;
@@ -1616,8 +1732,7 @@ class Data_Table_Controller {
 	 * @return array{ sheets: array<string, array{ columns: string[], rows: array }>, activeSheet: string|null }
 	 */
 	private function build_sheets_from_raw_context( $raw, array $attributes, ?WP_Block $block, array $col_order ): array {
-		$hidden        = isset( $attributes['hiddenColumns'] ) && is_array( $attributes['hiddenColumns'] )
-			? $attributes['hiddenColumns'] : array();
+		list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
 		$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
 		$normalized    = $this->normalize_context_data( $raw, $attributes, $block );
 
@@ -1629,7 +1744,7 @@ class Data_Table_Controller {
 		}
 
 		$normalized = $this->apply_pivot( $normalized, $attributes );
-		$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order );
+		$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
 
 		$active_sheet = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
 			? $default_sheet
@@ -1678,13 +1793,12 @@ class Data_Table_Controller {
 
 			if ( '' === $firebase_path ) {
 				// Legacy posts that used dataSource=firebase without a path fall back to CSV.
-				$hidden     = isset( $attributes['hiddenColumns'] ) && is_array( $attributes['hiddenColumns'] )
-					? $attributes['hiddenColumns'] : array();
+				list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
 				$normalized = array(
 					'default' => $this->normalize_csv_table( $attributes['csvTable'] ?? null ),
 				);
 				$normalized    = $this->apply_pivot( $normalized, $attributes );
-				$sheets        = $this->filter_and_order_sheets( $normalized, $hidden, $col_order );
+				$sheets        = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
 				$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
 				$activeSheet   = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
 					? $default_sheet
@@ -1703,9 +1817,8 @@ class Data_Table_Controller {
 				}
 			}
 		} elseif ( 'json' === $data_source ) {
-			$json_table    = $attributes['jsonTable'] ?? null;
-			$hidden        = isset( $attributes['hiddenColumns'] ) && is_array( $attributes['hiddenColumns'] )
-				? $attributes['hiddenColumns'] : array();
+			$json_table = $attributes['jsonTable'] ?? null;
+			list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
 			$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
 			$multi_sheets  = $this->normalize_json_multi_sheet( $json_table );
 
@@ -1718,18 +1831,17 @@ class Data_Table_Controller {
 			}
 
 			$normalized = $this->apply_pivot( $normalized, $attributes );
-			$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order );
+			$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
 			$activeSheet = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
 				? $default_sheet
 				: array_key_first( $sheets );
 		} else {
-			$hidden   = isset( $attributes['hiddenColumns'] ) && is_array( $attributes['hiddenColumns'] )
-				? $attributes['hiddenColumns'] : array();
+			list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
 			$normalized = array(
 				'default' => $this->normalize_csv_table( $attributes['csvTable'] ?? null ),
 			);
 			$normalized = $this->apply_pivot( $normalized, $attributes );
-			$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order );
+			$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
 			$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
 			$activeSheet   = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
 				? $default_sheet
@@ -1765,6 +1877,7 @@ class Data_Table_Controller {
 		}
 
 		$enable_column_sorting = ! isset( $attributes['enableColumnSorting'] ) || ! empty( $attributes['enableColumnSorting'] );
+		$initial_sort          = $this->resolve_initial_sort_state( $attributes, $sheets, (string) $activeSheet, $enable_column_sorting );
 
 		$enable_row_dropdowns = ! empty( $attributes['enableRowDropdowns'] );
 		$dropdown_identity    = isset( $attributes['rowDropdownIdentityColumn'] )
@@ -1804,8 +1917,8 @@ class Data_Table_Controller {
 						'valueFormatRules'           => $value_format_rules,
 						'mobileValueFormatRules'     => $mobile_value_format_rules,
 						'enableColumnSorting'  => $enable_column_sorting,
-						'sortColumn'           => null,
-						'sortDirection'        => 'asc',
+						'sortColumn'           => $initial_sort['sortColumn'],
+						'sortDirection'        => $initial_sort['sortDirection'],
 						'columnFilters'        => $default_filters['columnFilters'],
 						'rowDropdown'          => array(
 							'enabled'        => $enable_row_dropdowns && '' !== $dropdown_identity,

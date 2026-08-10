@@ -143,11 +143,14 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		csvTable,
 		jsonTable,
 		hiddenColumns,
+		hiddenColumnsBySheet = {},
 		jsonColumns,
 		columnOrder,
 		defaultJsonSheet,
 		mobileHeaderColumn,
 		enableColumnSorting = true,
+		defaultSortColumn = '',
+		defaultSortDirection = 'asc',
 		columnSortMode = 'custom',
 		autoSortVariable = '',
 		autoSortRowIndex = -1,
@@ -282,6 +285,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 	const [firebaseData, setFirebaseData] = useState(null);
 	const [firebaseStatus, setFirebaseStatus] = useState('idle'); // idle | loading | ready | error
 	const [firebaseError, setFirebaseError] = useState('');
+	const [columnVisibilitySheet, setColumnVisibilitySheet] = useState('');
 
 	useEffect(() => {
 		if (dataSource !== 'firebase') {
@@ -610,6 +614,112 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		);
 		return cols.filter((col) => !hidden.has(col));
 	}, [jsonColumns, hiddenColumns]);
+
+	// Default sort applies on first load against the active/default sheet, which
+	// also subtracts per-sheet hides. Keep the dropdown and cleanup in sync.
+	const defaultSheetVisibleColumns = useMemo(() => {
+		const bySheet =
+			hiddenColumnsBySheet &&
+			typeof hiddenColumnsBySheet === 'object' &&
+			!Array.isArray(hiddenColumnsBySheet)
+				? hiddenColumnsBySheet
+				: {};
+		const sheetHidden = new Set(
+			Array.isArray(bySheet[resolvedDefaultSheet])
+				? bySheet[resolvedDefaultSheet]
+				: []
+		);
+		if (sheetHidden.size === 0) {
+			return visibleColumns;
+		}
+		return visibleColumns.filter((col) => !sheetHidden.has(col));
+	}, [visibleColumns, hiddenColumnsBySheet, resolvedDefaultSheet]);
+
+	const perSheetHiddenColumns = useMemo(() => {
+		const bySheet =
+			hiddenColumnsBySheet &&
+			typeof hiddenColumnsBySheet === 'object' &&
+			!Array.isArray(hiddenColumnsBySheet)
+				? hiddenColumnsBySheet
+				: {};
+		return bySheet[columnVisibilitySheet] || [];
+	}, [hiddenColumnsBySheet, columnVisibilitySheet]);
+
+	useEffect(() => {
+		if (!Array.isArray(sheetNames) || sheetNames.length <= 1) {
+			return;
+		}
+		if (
+			!columnVisibilitySheet ||
+			!sheetNames.includes(columnVisibilitySheet)
+		) {
+			setColumnVisibilitySheet(
+				resolvedDefaultSheet || sheetNames[0] || ''
+			);
+		}
+	}, [sheetNames, columnVisibilitySheet, resolvedDefaultSheet]);
+
+	useEffect(() => {
+		// Empty lists are not authoritative (e.g. Firebase/context still loading,
+		// or jsonColumns not yet backfilled). Pruning against them would wipe
+		// saved per-sheet visibility.
+		if (!Array.isArray(sheetNames) || sheetNames.length === 0) {
+			return;
+		}
+		if (!Array.isArray(jsonColumns) || jsonColumns.length === 0) {
+			return;
+		}
+
+		const cols = new Set(jsonColumns);
+		const names = new Set(sheetNames);
+		const bySheet =
+			hiddenColumnsBySheet &&
+			typeof hiddenColumnsBySheet === 'object' &&
+			!Array.isArray(hiddenColumnsBySheet)
+				? hiddenColumnsBySheet
+				: {};
+		let changed = false;
+		const next = {};
+
+		Object.entries(bySheet).forEach(([sheet, hidden]) => {
+			if (!names.has(sheet)) {
+				changed = true;
+				return;
+			}
+			const pruned = (Array.isArray(hidden) ? hidden : []).filter((col) =>
+				cols.has(col)
+			);
+			if (pruned.length !== (Array.isArray(hidden) ? hidden.length : 0)) {
+				changed = true;
+			}
+			if (pruned.length > 0) {
+				next[sheet] = pruned;
+			} else if (Array.isArray(hidden) && hidden.length > 0) {
+				changed = true;
+			}
+		});
+
+		if (changed) {
+			setAttributes({ hiddenColumnsBySheet: next });
+		}
+	}, [jsonColumns, sheetNames, hiddenColumnsBySheet, setAttributes]);
+
+	useEffect(() => {
+		if (!defaultSortColumn) {
+			return;
+		}
+		if (
+			!enableColumnSorting ||
+			!defaultSheetVisibleColumns.includes(defaultSortColumn)
+		) {
+			setAttributes({ defaultSortColumn: '' });
+		}
+	}, [
+		defaultSortColumn,
+		enableColumnSorting,
+		defaultSheetVisibleColumns,
+		setAttributes,
+	]);
 
 	const autoSortRowOptions = useMemo(
 		() =>
@@ -1236,7 +1346,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 						<>
 							<p className="prc-data-table-controller-help">
 								{__(
-									'Enter a path on the interactives Firebase Realtime Database. Data is fetched with the platform service account and normalized like provider context data.',
+									'Enter a path on the data-table-builder Firebase Realtime Database. Data is fetched with the platform service account and normalized like provider context data.',
 									'data-table-controller'
 								)}
 							</p>
@@ -1251,9 +1361,9 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 										firebasePath: value ?? '',
 									})
 								}
-								placeholder="religious-migrations-table"
+								placeholder="migrations"
 								help={__(
-									'Path relative to the interactives Realtime Database root (no leading slash or URL).',
+									'Path relative to the data-table-builder Realtime Database root (no leading slash or URL).',
 									'data-table-controller'
 								)}
 							/>
@@ -1847,9 +1957,79 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 						)}
 						checked={enableColumnSorting}
 						onChange={(value) =>
-							setAttributes({ enableColumnSorting: value })
+							setAttributes({
+								enableColumnSorting: value,
+								...(value ? {} : { defaultSortColumn: '' }),
+							})
 						}
 					/>
+					{enableColumnSorting &&
+						defaultSheetVisibleColumns.length > 0 && (
+							<>
+								<SelectControl
+									label={__(
+										'Default sort column',
+										'data-table-controller'
+									)}
+									help={__(
+										'Sort rows by this column when the table first loads. Sheet and filter changes clear the sort.',
+										'data-table-controller'
+									)}
+									value={defaultSortColumn || ''}
+									options={[
+										{
+											label: __(
+												'None',
+												'data-table-controller'
+											),
+											value: '',
+										},
+										...defaultSheetVisibleColumns.map(
+											(col) => ({
+												label: col,
+												value: col,
+											})
+										),
+									]}
+									onChange={(value) =>
+										setAttributes({
+											defaultSortColumn: value || '',
+										})
+									}
+								/>
+								{defaultSortColumn && (
+									<SelectControl
+										label={__(
+											'Default sort direction',
+											'data-table-controller'
+										)}
+										value={defaultSortDirection || 'asc'}
+										options={[
+											{
+												label: __(
+													'Ascending',
+													'data-table-controller'
+												),
+												value: 'asc',
+											},
+											{
+												label: __(
+													'Descending',
+													'data-table-controller'
+												),
+												value: 'desc',
+											},
+										]}
+										onChange={(value) =>
+											setAttributes({
+												defaultSortDirection:
+													value || 'asc',
+											})
+										}
+									/>
+								)}
+							</>
+						)}
 				</PanelBody>
 				{isMultiSheetJson && sheetNames.length > 0 && (
 					<PanelBody
@@ -1892,7 +2072,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 						>
 							<p className="prc-data-table-controller-help">
 								{__(
-									'Uncheck columns to hide them from the rendered table.',
+									'Uncheck columns to hide them from the rendered table on every sheet.',
 									'data-table-controller'
 								)}
 							</p>
@@ -1924,6 +2104,82 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 									}}
 								/>
 							))}
+							{Array.isArray(sheetNames) &&
+								sheetNames.length > 1 && (
+									<>
+										<hr />
+										<p className="prc-data-table-controller-help">
+											{__(
+												'Hide columns only when a specific sheet is active.',
+												'data-table-controller'
+											)}
+										</p>
+										<SelectControl
+											label={__(
+												'Sheet',
+												'data-table-controller'
+											)}
+											value={
+												columnVisibilitySheet ||
+												resolvedDefaultSheet ||
+												sheetNames[0] ||
+												''
+											}
+											options={sheetNames.map((name) => ({
+												label: name,
+												value: name,
+											}))}
+											onChange={setColumnVisibilitySheet}
+										/>
+										{visibleColumns.map((col) => (
+											<CheckboxControl
+												key={`${columnVisibilitySheet}-${col}`}
+												__nextHasNoMarginBottom
+												label={col}
+												checked={
+													!perSheetHiddenColumns.includes(
+														col
+													)
+												}
+												onChange={(visible) => {
+													const sheet =
+														columnVisibilitySheet ||
+														resolvedDefaultSheet ||
+														sheetNames[0] ||
+														'';
+													if (!sheet) {
+														return;
+													}
+													const current =
+														hiddenColumnsBySheet?.[
+															sheet
+														] || [];
+													const nextHidden = visible
+														? current.filter(
+																(c) => c !== col
+															)
+														: [...current, col];
+													const nextBySheet = {
+														...(hiddenColumnsBySheet ||
+															{}),
+													};
+													if (nextHidden.length > 0) {
+														nextBySheet[sheet] =
+															nextHidden;
+													} else {
+														delete nextBySheet[
+															sheet
+														];
+													}
+													setAttributes({
+														hiddenColumnsBySheet:
+															nextBySheet,
+													});
+												}}
+											/>
+										))}
+									</>
+								)}
 						</PanelBody>
 					)}
 				{dataSource === 'json' && jsonColumnList.length > 0 && (
@@ -2318,7 +2574,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 				>
 					<p className="prc-data-table-controller-help">
 						{__(
-							'Mobile-only formatting: conditional replacements override Value formatting replacements on small screens; K/M/B/T abbreviation for numbers ≥ 1,000. Display only; sorting and filtering use raw values.',
+							'Mobile-only formatting: conditional replacements override Value formatting replacements on small screens; k/M/B/T abbreviation for numbers ≥ 1,000. Display only; sorting and filtering use raw values.',
 							'data-table-controller'
 						)}
 					</p>
