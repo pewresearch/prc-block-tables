@@ -31,8 +31,9 @@ export default function GlobalSettings() {
 		[]
 	);
 
+	// manage_options proxy — matches REST POST/DELETE on /options.
 	const isAdministrator: boolean = useSelect(
-		(select) => select(coreStore).canUser('create', 'users'),
+		(select) => select(coreStore).canUser('read', 'settings'),
 		[]
 	);
 
@@ -48,7 +49,6 @@ export default function GlobalSettings() {
 
 	const isGlobalSettingLoaded =
 		isAdministrator !== undefined && options !== undefined;
-	const showGlobalSetting = isAdministrator || options?.show_global_setting;
 
 	return (
 		<>
@@ -59,7 +59,7 @@ export default function GlobalSettings() {
 				style={{ borderTop: '1px solid #e0e0e0' }}
 			>
 				{!isGlobalSettingLoaded && <Spinner />}
-				{isGlobalSettingLoaded && showGlobalSetting && (
+				{isGlobalSettingLoaded && isAdministrator && (
 					<Button
 						icon={cog}
 						variant="primary"
@@ -78,17 +78,14 @@ export default function GlobalSettings() {
 				/>
 			</Spacer>
 			{isHelpModalOpen && <HelpModal {...{ setIsHelpModalOpen }} />}
-			{options &&
-				isSettingModalOpen &&
-				(isAdministrator || options?.show_global_setting) && (
-					<SettingModal
-						{...{
-							options,
-							isAdministrator,
-							setIsSettingModalOpen,
-						}}
-					/>
-				)}
+			{options && isSettingModalOpen && isAdministrator && (
+				<SettingModal
+					{...{
+						options,
+						setIsSettingModalOpen,
+					}}
+				/>
+			)}
 		</>
 	);
 }

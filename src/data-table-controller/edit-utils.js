@@ -68,6 +68,53 @@ export function getAutoSortRowOptions({ rows, variable }) {
 }
 
 /**
+ * Resolve the auto-sort reference row by variable value, with index fallback.
+ *
+ * Mirrors {@see resolve_auto_sort_row_index} in class-data-table-controller.php.
+ *
+ * @param {Object} params          Params.
+ * @param {Array}  params.rows     Sheet rows.
+ * @param {string} params.variable Column key used to identify the row.
+ * @param {string} params.rowValue Saved cell value for the selected row.
+ * @param {number} params.rowIndex Saved zero-based row index fallback.
+ * @return {number|null} Resolved row index, or null when unavailable.
+ */
+export function resolveAutoSortRowIndex({
+	rows,
+	variable,
+	rowValue,
+	rowIndex,
+}) {
+	if (!Array.isArray(rows) || rows.length === 0) {
+		return null;
+	}
+
+	if (variable && rowValue !== '') {
+		for (let index = 0; index < rows.length; index++) {
+			const row = rows[index];
+			if (!row || typeof row !== 'object') {
+				continue;
+			}
+			const cell = row[variable] ?? '';
+			if (String(cell) === String(rowValue)) {
+				return index;
+			}
+		}
+	}
+
+	if (
+		Number.isInteger(rowIndex) &&
+		rowIndex >= 0 &&
+		rows[rowIndex] &&
+		typeof rows[rowIndex] === 'object'
+	) {
+		return rowIndex;
+	}
+
+	return null;
+}
+
+/**
  * Order visible, non-excluded columns by numeric values in the selected row (descending).
  *
  * @param {Object}   params          Params.
@@ -124,38 +171,121 @@ export function computeAutoSortOrder({
 }
 
 /**
- * Preserve excluded-column order from saved columnOrder.
+ * Split excluded columns into before/after groups relative to the auto-sorted block.
  *
  * @param {Object}   params             Params.
  * @param {string[]} params.columnOrder Saved order.
  * @param {string[]} params.excluded    Excluded column keys.
  * @param {string[]} params.visible     Visible column keys.
- * @return {string[]} Excluded columns in display order.
+ * @param {string[]} params.autoOrder   Locked auto-sorted column keys.
+ * @return {{ beforeOrder: string[], afterOrder: string[] }} Excluded columns by side.
  */
-export function getExcludedOrder({ columnOrder, excluded, visible }) {
+export function getExcludedSides({
+	columnOrder,
+	excluded,
+	visible,
+	autoOrder,
+}) {
 	const excludedSet = new Set(Array.isArray(excluded) ? excluded : []);
+	const autoSet = new Set(Array.isArray(autoOrder) ? autoOrder : []);
 	const excludedVisible = (Array.isArray(visible) ? visible : []).filter(
 		(col) => excludedSet.has(col)
 	);
 	const saved = Array.isArray(columnOrder) ? columnOrder : [];
-	const ordered = saved.filter((col) => excludedVisible.includes(col));
-	const tail = excludedVisible.filter((col) => !ordered.includes(col));
-	return [...ordered, ...tail];
+	const beforeOrder = [];
+	const afterOrder = [];
+	const placed = new Set();
+	let seenAuto = false;
+
+	for (const col of saved) {
+		if (autoSet.has(col)) {
+			seenAuto = true;
+			continue;
+		}
+		if (!excludedSet.has(col)) {
+			continue;
+		}
+		if (placed.has(col)) {
+			continue;
+		}
+		if (seenAuto) {
+			afterOrder.push(col);
+		} else {
+			beforeOrder.push(col);
+		}
+		placed.add(col);
+	}
+
+	for (const col of excludedVisible) {
+		if (!placed.has(col)) {
+			beforeOrder.push(col);
+		}
+	}
+
+	return { beforeOrder, afterOrder };
 }
 
 /**
  * Merge excluded (manual) and auto-sorted column groups.
  *
- * @param {Object}   params               Params.
- * @param {string[]} params.excludedOrder Draggable excluded columns.
- * @param {string[]} params.autoOrder     Locked auto-sorted columns.
+ * @param {Object}   params             Params.
+ * @param {string[]} params.beforeOrder Excluded columns before auto sort.
+ * @param {string[]} params.autoOrder   Locked auto-sorted columns.
+ * @param {string[]} params.afterOrder  Excluded columns after auto sort.
  * @return {string[]} Full column order.
  */
-export function buildAutoColumnOrder({ excludedOrder, autoOrder }) {
+export function buildAutoColumnOrder({ beforeOrder, autoOrder, afterOrder }) {
 	return [
-		...(Array.isArray(excludedOrder) ? excludedOrder : []),
+		...(Array.isArray(beforeOrder) ? beforeOrder : []),
 		...(Array.isArray(autoOrder) ? autoOrder : []),
+		...(Array.isArray(afterOrder) ? afterOrder : []),
 	];
+}
+
+/**
+ * Normalize a tentative drag order into before + auto + after groups.
+ *
+ * @param {string[]} order     Tentative order after drag.
+ * @param {string[]} autoOrder Locked auto-sorted columns.
+ * @param {string[]} excluded  Excluded column keys.
+ * @return {string[]} Full column order.
+ */
+export function normalizeAutoColumnOrder(order, autoOrder, excluded) {
+	const excludedSet = new Set(Array.isArray(excluded) ? excluded : []);
+	const autoSet = new Set(Array.isArray(autoOrder) ? autoOrder : []);
+	const saved = Array.isArray(order) ? order : [];
+	const beforeOrder = [];
+	const afterOrder = [];
+	const placed = new Set();
+	let seenAuto = false;
+
+	for (const col of saved) {
+		if (autoSet.has(col)) {
+			seenAuto = true;
+			continue;
+		}
+		if (!excludedSet.has(col) || placed.has(col)) {
+			continue;
+		}
+		if (seenAuto) {
+			afterOrder.push(col);
+		} else {
+			beforeOrder.push(col);
+		}
+		placed.add(col);
+	}
+
+	for (const col of Array.isArray(excluded) ? excluded : []) {
+		if (!placed.has(col)) {
+			beforeOrder.push(col);
+		}
+	}
+
+	return buildAutoColumnOrder({
+		beforeOrder,
+		autoOrder,
+		afterOrder,
+	});
 }
 
 /**

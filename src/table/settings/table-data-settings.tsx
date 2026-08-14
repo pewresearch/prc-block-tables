@@ -13,6 +13,7 @@ import {
 	TextControl,
 	Flex,
 	FlexItem,
+	Notice,
 } from '@wordpress/components';
 import { useDispatch } from '@wordpress/data';
 import { useEffect, useRef, useState } from '@wordpress/element';
@@ -34,6 +35,45 @@ import {
 } from '../utils/table-limits';
 import { MAX_TABLE_CELLS } from '../constants';
 import type { BlockAttributes } from '../block-attributes';
+import type { ValidationSchema } from '../utils/validation';
+
+declare global {
+	interface Window {
+		prcTableValidationSchemas?: ValidationSchema[];
+	}
+}
+
+// Guidance for the active validation schema, shown alongside the import/export
+// controls. Schemas (e.g. chart-builder's geo maps) carry an optional
+// description and reference links so the data-shape requirements live right
+// where producers import their CSV.
+function SchemaGuidance({ schemaSlug }: { schemaSlug?: string }) {
+	if (!schemaSlug) {
+		return null;
+	}
+	const schema = (window.prcTableValidationSchemas ?? []).find(
+		(s) => s.slug === schemaSlug
+	);
+	if (!schema?.description) {
+		return null;
+	}
+	return (
+		<Notice status="info" isDismissible={false}>
+			<p style={{ margin: 0 }}>{schema.description}</p>
+			{schema.references && schema.references.length > 0 && (
+				<ul style={{ margin: '8px 0 0' }}>
+					{schema.references.map((ref) => (
+						<li key={ref.url}>
+							<a href={ref.url} target="_blank" rel="noreferrer">
+								{ref.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			)}
+		</Notice>
+	);
+}
 
 type TableDataSettingsProps = {
 	attributes: BlockAttributes;
@@ -147,6 +187,7 @@ export default function TableDataSettings({
 
 	return (
 		<>
+			<SchemaGuidance schemaSlug={attributes.validationSchema} />
 			<PanelRow>
 				<Flex direction="column" gap={2} expanded>
 					<FlexItem>

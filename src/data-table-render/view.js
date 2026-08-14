@@ -8,63 +8,29 @@ import {
 	getContext,
 	getElement,
 	getServerState,
-	watch,
 } from '@wordpress/interactivity';
 import { select } from '@prc/d3';
 import {
 	appendDisplayRows,
 	getDropdownColumnConfig,
+	resolveMobileHeaderColumn,
 } from './row-dropdown-utils';
 import { formatDisplayCellPair } from './cell-display-format';
+import {
+	MOBILE_BREAKPOINT,
+	isMobileViewport,
+	resolveDisplayColumns,
+	resolveMobileCellTrackCount,
+} from './mobile-columns';
 
-const MOBILE_BREAKPOINT = '(max-width: 781.98px)';
 const DATA_TABLE_STORE = 'prc-block/data-table';
 
 /**
- * @return {boolean} True when viewport is at or below the mobile table breakpoint.
- */
-function isMobileViewport() {
-	return window.matchMedia(MOBILE_BREAKPOINT).matches;
-}
-
-/**
- * Merge saved column order with base columns (unknown keys dropped; missing appended).
+ * Instance ids whose syncOnNavigation watch has already run its initial pass.
  *
- * @param {string[]} baseCols   Desktop-ordered visible columns.
- * @param {string[]} savedOrder Preferred order keys.
- * @return {string[]} Effective column order.
+ * @type {Set<string>}
  */
-function mergeColumnOrder(baseCols, savedOrder) {
-	const saved = Array.isArray(savedOrder) ? savedOrder : [];
-	const ordered = saved.filter((col) => baseCols.includes(col));
-	const tail = baseCols.filter((col) => !ordered.includes(col));
-	return [...ordered, ...tail];
-}
-
-/**
- * Resolve left-to-right column keys for the current viewport.
- *
- * @param {Object} tableState      Table instance state.
- * @param {Object} activeSheetData Active sheet data with desktop columns.
- * @return {string[]} Display column keys.
- */
-function resolveDisplayColumns(tableState, activeSheetData) {
-	const baseCols = activeSheetData.columns
-		? activeSheetData.columns.filter((col) => col !== 'row_id')
-		: [];
-	const mobileColumnSortMode = tableState.mobileColumnSortMode ?? 'inherit';
-	const mobileColumnOrder = tableState.mobileColumnOrder ?? [];
-
-	if (
-		!isMobileViewport() ||
-		mobileColumnSortMode === 'inherit' ||
-		mobileColumnOrder.length === 0
-	) {
-		return baseCols;
-	}
-
-	return mergeColumnOrder(baseCols, mobileColumnOrder);
-}
+const navSeededIds = new Set();
 
 /**
  * Ensure a persistent polite live region exists as a sibling of the table
@@ -224,10 +190,17 @@ function drawTable(mount, tableId, tablesState) {
 		enableHeaderSpecialBorders = false,
 		headerSpecialBorderColors = {},
 		mobileColumnColors = {},
+		mobileColumnHeaders = {},
 		mobileHeaderColumn = '',
+		mobileHiddenColumns = [],
 		enableColumnSorting = true,
+		hiddenColumnHeaders = [],
+		tableTextAlign = 'center',
 	} = tableState;
 	const valueFormatExcluded = new Set(valueFormatExcludedColumns);
+	const hiddenHeaderSet = new Set(
+		Array.isArray(hiddenColumnHeaders) ? hiddenColumnHeaders : []
+	);
 	const keyMap = tableState.keyMap;
 	const showRowKey =
 		keyMap &&
@@ -236,8 +209,8 @@ function drawTable(mount, tableId, tablesState) {
 		keyMap.colors &&
 		typeof keyMap.colors === 'object';
 
-	const cols = resolveDisplayColumns(tableState, activeSheetData);
-	if (!cols.length) {
+	const orderedCols = resolveDisplayColumns(tableState, activeSheetData);
+	if (!orderedCols.length) {
 		const rootEmpty = select(mount);
 		rootEmpty.selectAll('*').remove();
 		rootEmpty
@@ -246,6 +219,17 @@ function drawTable(mount, tableId, tablesState) {
 			.text('No table data.');
 		return;
 	}
+
+	const mobileHeaderCol = resolveMobileHeaderColumn(
+		orderedCols,
+		mobileHeaderColumn
+	);
+	const mobileHiddenSet = new Set(
+		Array.isArray(mobileHiddenColumns) ? mobileHiddenColumns : []
+	);
+	const cols = isMobileViewport()
+		? orderedCols.filter((col) => !mobileHiddenSet.has(col))
+		: orderedCols;
 
 	const displayRows = getSortedRows(tableState);
 	const root = select(mount);
@@ -283,7 +267,17 @@ function drawTable(mount, tableId, tablesState) {
 	const table = root
 		.append('table')
 		.attr('class', 'prc-data-table')
-		.classed('prc-data-table--row-dropdowns', dropdownEnabled);
+		.classed('prc-data-table--row-dropdowns', dropdownEnabled)
+		.style(
+			'--prc-data-table-cell-text-align',
+			['left', 'center', 'right'].includes(tableTextAlign)
+				? tableTextAlign
+				: 'center'
+		)
+		.style(
+			'--prc-data-table-mobile-track-count',
+			String(resolveMobileCellTrackCount(tableState))
+		);
 
 	const captionText =
 		activeSheetName && activeSheetName !== 'default'
@@ -329,7 +323,13 @@ function drawTable(mount, tableId, tablesState) {
 		// With sorting disabled, headers are plain, non-interactive labels
 		// (no button, no aria-sort; th has no pointer cursor — only the sort button does).
 		if (!enableColumnSorting) {
-			th.append('span').text(col);
+			if (hiddenHeaderSet.has(col)) {
+				th.append('span')
+					.attr('class', 'prc-data-table__sr-only')
+					.text(col);
+			} else {
+				th.append('span').text(col);
+			}
 			return;
 		}
 
@@ -344,7 +344,15 @@ function drawTable(mount, tableId, tablesState) {
 			.attr('data-col', col)
 			.classed('prc-data-table__sort-asc', sorted === 'asc')
 			.classed('prc-data-table__sort-desc', sorted === 'desc');
-		sortButton.append('span').text(col);
+		if (hiddenHeaderSet.has(col)) {
+			sortButton.attr('aria-label', `Sort by ${col}`);
+			sortButton
+				.append('span')
+				.attr('class', 'prc-data-table__sr-only')
+				.text(col);
+		} else {
+			sortButton.append('span').text(col);
+		}
 
 		sortButton.on('click', () => {
 			if (!tableState) {
@@ -387,7 +395,10 @@ function drawTable(mount, tableId, tablesState) {
 		mount,
 		tableId,
 		mobileColumnColors,
+		mobileColumnHeaders,
 		mobileHeaderColumn,
+		resolvedMobileHeaderCol: mobileHeaderCol,
+		hiddenColumnHeaders,
 	});
 
 	if (focusedCol) {
@@ -426,9 +437,9 @@ function cloneTableSlice(slice) {
 function readFreshServerTableSlice(instanceId) {
 	let serverState;
 	try {
-		// Always pass the namespace. Router reconcile often runs outside an
-		// interactive scope (e.g. after queueMicrotask), where getNamespace()
-		// is empty and getServerState() would return the wrong store.
+		// Always pass the namespace. syncOnNavigation can run outside an
+		// interactive scope, where getNamespace() is empty and getServerState()
+		// would return the wrong store.
 		serverState = getServerState(DATA_TABLE_STORE);
 	} catch {
 		return { kind: 'missing' };
@@ -533,52 +544,7 @@ function connectTable(wrapper, instanceId) {
 	};
 	mql.addEventListener('change', onViewportChange);
 
-	let routerStore = null;
-	try {
-		routerStore = store('core/router');
-	} catch {
-		routerStore = null;
-	}
-
-	let isFirstRun = true;
-	let navigationGeneration = 0;
-	const disposeRouterWatch = watch(() => {
-		// Subscribe inside the watch: router URL + getServerState(navigationSignal).
-		// Do not read live table fields — that would wipe in-page filter clicks.
-		const routerUrl = routerStore?.state?.url;
-		const serverState = getServerState(DATA_TABLE_STORE);
-		// Keep both reads live for minifiers that drop bare `void` expressions.
-		const navigationKey = `${routerUrl ?? ''}:${
-			serverState?.tables?.[instanceId] ? '1' : '0'
-		}`;
-
-		if (isFirstRun) {
-			isFirstRun = false;
-			void navigationKey;
-			return;
-		}
-
-		void navigationKey;
-
-		const slice = serverState?.tables?.[instanceId];
-		if (slice && typeof slice === 'object' && slice.sheets) {
-			applyServerTableSlice(instanceId, cloneTableSlice(slice));
-		} else {
-			delete state.tables[instanceId];
-		}
-
-		const generation = ++navigationGeneration;
-		queueMicrotask(() => {
-			if (!wrapper.isConnected || generation !== navigationGeneration) {
-				return;
-			}
-			scheduleTableDraw(wrapper, instanceId);
-		});
-	});
-
 	return () => {
-		navigationGeneration += 1;
-		disposeRouterWatch();
 		mql.removeEventListener('change', onViewportChange);
 		cancelScheduledDraw(wrapper);
 	};
@@ -591,7 +557,7 @@ const { state } = store(DATA_TABLE_STORE, {
 	callbacks: {
 		/**
 		 * Connect this render wrapper: reconcile server slice, draw, and
-		 * attach viewport + router watchers. Returns a dispose fn.
+		 * attach viewport listener. Returns a dispose fn.
 		 *
 		 * @return {(() => void)|undefined} Cleanup for data-wp-init.
 		 */
@@ -605,8 +571,32 @@ const { state } = store(DATA_TABLE_STORE, {
 			return connectTable(ref, id);
 		},
 		/**
+		 * Re-seed the live table slice from server state after router navigation.
+		 *
+		 * getServerState() reads the interactivity-router navigation signal, so
+		 * this watch re-runs after every client-side navigation. Skip the first
+		 * pass because onTableMount already reconciled on mount.
+		 */
+		syncOnNavigation() {
+			const context = getContext();
+			const id = context.dataTableInstanceId;
+			const { ref } = getElement();
+			if (!id || !ref) {
+				return;
+			}
+
+			void getServerState(DATA_TABLE_STORE);
+
+			if (!navSeededIds.has(id)) {
+				navSeededIds.add(id);
+				return;
+			}
+
+			reconcileTable(ref, id, 'router-navigation');
+		},
+		/**
 		 * Redraw when same-route table state changes (sheet, filters, key, sheets).
-		 * Does not read getServerState — navigation reconcile owns that path.
+		 * Does not read getServerState — syncOnNavigation owns that path.
 		 */
 		watchTableState() {
 			const context = getContext();

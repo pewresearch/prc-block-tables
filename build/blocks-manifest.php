@@ -59,6 +59,12 @@ return array(
 					
 				)
 			),
+			'hiddenColumnHeaders' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
 			'jsonColumns' => array(
 				'type' => 'array',
 				'default' => array(
@@ -78,6 +84,12 @@ return array(
 			'mobileHeaderColumn' => array(
 				'type' => 'string',
 				'default' => ''
+			),
+			'mobileHiddenColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
 			),
 			'columnSortMode' => array(
 				'type' => 'string',
@@ -103,6 +115,10 @@ return array(
 				'type' => 'number',
 				'default' => -1
 			),
+			'autoSortRowValue' => array(
+				'type' => 'string',
+				'default' => ''
+			),
 			'autoSortExcludedColumns' => array(
 				'type' => 'array',
 				'default' => array(
@@ -126,6 +142,10 @@ return array(
 			'mobileAutoSortRowIndex' => array(
 				'type' => 'number',
 				'default' => -1
+			),
+			'mobileAutoSortRowValue' => array(
+				'type' => 'string',
+				'default' => ''
 			),
 			'mobileAutoSortExcludedColumns' => array(
 				'type' => 'array',
@@ -195,6 +215,16 @@ return array(
 					
 				)
 			),
+			'mobileColumnHeaders' => array(
+				'type' => 'object',
+				'default' => array(
+					
+				)
+			),
+			'tableTextAlign' => array(
+				'type' => 'string',
+				'default' => 'center'
+			),
 			'firebasePath' => array(
 				'type' => 'string',
 				'default' => ''
@@ -262,9 +292,11 @@ return array(
 			'prc-block/dataTableColumns' => 'jsonColumns',
 			'prc-block/dataTableColumnOrder' => 'columnOrder',
 			'prc-block/dataTableHiddenColumns' => 'hiddenColumns',
+			'prc-block/dataTableHiddenColumnHeaders' => 'hiddenColumnHeaders',
 			'prc-block/dataTableEnableHeaderSpecialBorders' => 'enableHeaderSpecialBorders',
 			'prc-block/dataTableHeaderSpecialBorderColors' => 'headerSpecialBorderColors',
-			'prc-block/dataTableEnableColumnSorting' => 'enableColumnSorting'
+			'prc-block/dataTableEnableColumnSorting' => 'enableColumnSorting',
+			'prc-block/dataTableTextAlign' => 'tableTextAlign'
 		),
 		'usesContext' => array(
 			'prc-block/dataTableData',
@@ -561,9 +593,11 @@ return array(
 			'prc-block/dataTableColumns',
 			'prc-block/dataTableColumnOrder',
 			'prc-block/dataTableHiddenColumns',
+			'prc-block/dataTableHiddenColumnHeaders',
 			'prc-block/dataTableEnableHeaderSpecialBorders',
 			'prc-block/dataTableHeaderSpecialBorderColors',
-			'prc-block/dataTableEnableColumnSorting'
+			'prc-block/dataTableEnableColumnSorting',
+			'prc-block/dataTableTextAlign'
 		),
 		'textdomain' => 'data-table-render',
 		'editorScript' => 'file:./index.js',
@@ -1000,6 +1034,10 @@ return array(
 			'isValid' => array(
 				'type' => 'boolean',
 				'default' => true
+			),
+			'validationMessage' => array(
+				'type' => 'string',
+				'default' => ''
 			),
 			'columnRoundDecimals' => array(
 				'type' => 'array',

@@ -59,7 +59,6 @@ import type { ApiResponse, StoreOptions } from '../../store';
 
 type Props = {
 	options: StoreOptions;
-	isAdministrator: boolean;
 	setIsSettingModalOpen: Dispatch<SetStateAction<boolean>>;
 };
 
@@ -70,7 +69,6 @@ interface NoticeInfo {
 
 export default function SettingModal({
 	options,
-	isAdministrator,
 	setIsSettingModalOpen,
 }: Props) {
 	const [noticeInfo, setNoticeInfo] = useState<NoticeInfo | undefined>(
@@ -203,10 +201,7 @@ export default function SettingModal({
 
 	return (
 		<Modal
-			title={__(
-				'Flexible Table Block Global setting',
-				'flexible-table-block'
-			)}
+			title={__('Power Table Global setting', 'flexible-table-block')}
 			className="ftb-global-setting-modal"
 			onRequestClose={() => setIsSettingModalOpen(false)}
 		>
@@ -939,28 +934,6 @@ export default function SettingModal({
 									}}
 									__nextHasNoMarginBottom
 								/>
-								{isAdministrator && (
-									<ToggleControl
-										label={__(
-											'Show Global setting button to non-administrative users',
-											'flexible-table-block'
-										)}
-										help={__(
-											'By turning it on, you can prevent non-administrative users from changing Global setting.',
-											'flexible-table-block'
-										)}
-										checked={
-											!!currentOptions.show_global_setting
-										}
-										onChange={(value) => {
-											setCurrentOptions({
-												...currentOptions,
-												show_global_setting: value,
-											});
-										}}
-										__nextHasNoMarginBottom
-									/>
-								)}
 							</VStack>
 						)}
 					</Spacer>

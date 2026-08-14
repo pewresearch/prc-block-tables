@@ -5,16 +5,10 @@
 	"version": "1.1.0",
 	"title": "Power Table",
 	"category": "text",
-	"keywords": [
-		"table",
-		"cell",
-		"data"
-	],
+	"keywords": ["table", "cell", "data"],
 	"description": "Create a powerful and flexible table complete with responsive design and sorting/filtering options.",
 	"textdomain": "prc-block-tables",
-	"usesContext": [
-		"remote-data-blocks/remoteData"
-	],
+	"usesContext": ["remote-data-blocks/remoteData"],
 	"attributes": {
 		"metadata": {
 			"type": "object",
@@ -127,12 +121,7 @@
 							"attribute": "headers"
 						},
 						"scope": {
-							"enum": [
-								"row",
-								"col",
-								"rowgroup",
-								"colgroup"
-							],
+							"enum": ["row", "col", "rowgroup", "colgroup"],
 							"source": "attribute",
 							"attribute": "scope"
 						},
@@ -198,12 +187,7 @@
 							"attribute": "headers"
 						},
 						"scope": {
-							"enum": [
-								"row",
-								"col",
-								"rowgroup",
-								"colgroup"
-							],
+							"enum": ["row", "col", "rowgroup", "colgroup"],
 							"source": "attribute",
 							"attribute": "scope"
 						},
@@ -269,12 +253,7 @@
 							"attribute": "headers"
 						},
 						"scope": {
-							"enum": [
-								"row",
-								"col",
-								"rowgroup",
-								"colgroup"
-							],
+							"enum": ["row", "col", "rowgroup", "colgroup"],
 							"source": "attribute",
 							"attribute": "scope"
 						},
@@ -308,6 +287,10 @@
 		"isValid": {
 			"type": "boolean",
 			"default": true
+		},
+		"validationMessage": {
+			"type": "string",
+			"default": ""
 		},
 		"columnRoundDecimals": {
 			"type": "array",
@@ -404,12 +387,7 @@
 	"supports": {
 		"anchor": true,
 		"interactivity": true,
-		"align": [
-			"left",
-			"right",
-			"wide",
-			"full"
-		],
+		"align": ["left", "right", "wide", "full"],
 		"color": {
 			"__experimentalSkipSerialization": [
 				"text",
@@ -459,10 +437,7 @@
 		"prc-block/table/validationSchema": "validationSchema",
 		"prc-block/table/isValid": "isValid"
 	},
-	"editorScript": [
-		"ais-ai",
-		"file:./index.js"
-	],
+	"editorScript": ["ais-ai", "file:./index.js"],
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",
 	"viewScriptModule": "file:./view.js"

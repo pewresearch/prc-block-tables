@@ -25,6 +25,13 @@ export interface ValidationError {
 	message: string;
 }
 
+export interface SchemaReference {
+	/** Link text shown to the producer. */
+	label: string;
+	/** URL the link points to (reference doc or sample CSV). */
+	url: string;
+}
+
 export interface ValidationSchema {
 	/** Machine-readable slug, e.g. "geo-state" */
 	slug: string;
@@ -35,6 +42,14 @@ export interface ValidationSchema {
 	 * At least one column in columnMeta must declare each required type.
 	 */
 	requiredTypes: ColumnDataType[];
+	/**
+	 * Optional plain-text guidance shown alongside the table's import/export
+	 * controls when this schema is active (e.g. "Your data must include a
+	 * column named ISO …"). Registered by the consuming plugin.
+	 */
+	description?: string;
+	/** Optional reference links (docs, sample CSVs) shown with the guidance. */
+	references?: SchemaReference[];
 }
 
 export interface CellValidationResult {
@@ -1631,6 +1646,84 @@ const TYPE_MESSAGES: Record<ColumnDataType, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Geo column-header recognition
+// ---------------------------------------------------------------------------
+// Some schema-required types (the geo codes) are tied to a specific column
+// *header* rather than a producer-declared column type — the chart map
+// renderer keys data rows off exact header names like `ISO` or `FIPS`. We use
+// these to flag tables whose geo column is named something the renderer won't
+// recognise, even when the producer hasn't explicitly set the column's data
+// type. Names are matched case-insensitively against the trimmed header text.
+
+const GEO_HEADER_NAMES: Partial<Record<ColumnDataType, string[]>> = {
+	fips: ['fips'],
+	cbsa: ['cbsa', 'geoid'],
+	iso3alpha: ['iso'],
+	iso3numeric: ['iso'],
+};
+
+/** Friendly header name to suggest when a geo column is missing/misnamed. */
+const GEO_HEADER_HINT: Partial<Record<ColumnDataType, string>> = {
+	fips: 'FIPS',
+	cbsa: 'CBSA (or GEOID)',
+	iso3alpha: 'ISO',
+	iso3numeric: 'ISO',
+};
+
+/**
+ * Map the trimmed, lower-cased text of every header cell in the table to the
+ * virtual column index it occupies.
+ */
+function collectHeaderNames(attributes: BlockAttributes): Map<string, number> {
+	const names = new Map<string, number>();
+	for (const row of attributes.head ?? []) {
+		let vColCursor = 0;
+		for (const cell of row.cells ?? []) {
+			const text = stripHtmlToPlain(cell.content ?? '')
+				.trim()
+				.toLowerCase();
+			if (text && !names.has(text)) names.set(text, vColCursor);
+			vColCursor += Number(cell.colSpan ?? 1);
+		}
+	}
+	return names;
+}
+
+/** Validate every body/foot cell of one virtual column against `dataType`. */
+function validateColumnCells(
+	attributes: BlockAttributes,
+	vColIndex: number,
+	dataType: ColumnDataType
+): ValidationError[] {
+	const errors: ValidationError[] = [];
+
+	for (const section of ['body', 'foot'] as const) {
+		(attributes[section] ?? []).forEach((row, rowIndex) => {
+			let vColCursor = 0;
+			row.cells.forEach((cell) => {
+				const isTarget = vColCursor === vColIndex;
+				vColCursor += Number(cell.colSpan ?? 1);
+				if (!isTarget) return;
+
+				const result = validateCell(cell.content ?? '', dataType);
+				if (!result.valid) {
+					errors.push({
+						section,
+						rowIndex,
+						vColIndex,
+						message:
+							result.message ??
+							`Invalid value for type "${dataType}"`,
+					});
+				}
+			});
+		});
+	}
+
+	return errors;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -1746,17 +1839,75 @@ export function validateSchema(
 	const declaredTypes = new Set(
 		(attributes.columnMeta ?? []).map((m) => m?.dataType ?? 'auto')
 	);
+	const headerNames = collectHeaderNames(attributes);
 
 	for (const required of schema.requiredTypes) {
-		if (!declaredTypes.has(required)) {
+		// Satisfied when a column explicitly declares the required type.
+		if (declaredTypes.has(required)) {
+			continue;
+		}
+
+		// For geo codes, also accept a recognised column header so producers
+		// don't have to manually tag the column — but flag headers the map
+		// renderer won't match (e.g. "ISO Code" instead of "ISO").
+		const geoHeaderNames = GEO_HEADER_NAMES[required];
+		if (geoHeaderNames) {
+			const geoColIndex = geoHeaderNames
+				.map((name) => headerNames.get(name))
+				.find((index) => index !== undefined);
+
+			if (geoColIndex !== undefined) {
+				// The column isn't tagged with the required type, so
+				// validateTable skipped its cells — check them here so wrong
+				// geo codes (e.g. "USA" where numeric codes are needed) fail.
+				const { dataType } = getEffectiveColumnMeta(
+					geoColIndex,
+					attributes
+				);
+				if (dataType === 'auto' || dataType === 'text') {
+					errors.push(
+						...validateColumnCells(
+							attributes,
+							geoColIndex,
+							required
+						)
+					);
+				}
+				continue;
+			}
 			errors.push({
 				section: 'schema',
 				rowIndex: -1,
 				vColIndex: -1,
-				message: `Schema "${schema.label}" requires a column of type "${required}" but none is declared.`,
+				message: `Required field: ${GEO_HEADER_HINT[required]}`,
 			});
+			continue;
 		}
+
+		errors.push({
+			section: 'schema',
+			rowIndex: -1,
+			vColIndex: -1,
+			message: `Schema "${schema.label}" requires a column of type "${required}" but none is declared.`,
+		});
 	}
 
 	return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Short summary for editor notices: prefer the first schema-level error,
+ * otherwise the first error, otherwise empty when valid.
+ */
+export function getValidationSummaryMessage(
+	result: TableValidationResult
+): string {
+	if (result.valid) {
+		return '';
+	}
+
+	const schemaError = result.errors.find(
+		(error) => error.section === 'schema'
+	);
+	return schemaError?.message ?? result.errors[0]?.message ?? '';
 }

@@ -36,6 +36,7 @@ import {
 	TableDataDropzone,
 	TableTitleSettings,
 	TableValidationSettings,
+	GlobalSettings,
 } from './settings';
 import {
 	Table,
@@ -51,7 +52,11 @@ import {
 	type VSelectedLine,
 	type VSelectedCells,
 } from './utils/table-state';
-import { validateTable, validateSchema } from './utils/validation';
+import {
+	validateTable,
+	validateSchema,
+	getValidationSummaryMessage,
+} from './utils/validation';
 import type { ValidationSchema } from './utils/validation';
 import { normalizeBlockAttributes } from './utils/table-attribute-normalize';
 import { convertToObject } from './utils/style-converter';
@@ -130,8 +135,15 @@ function TableEdit(props: BlockEditProps<BlockAttributes>) {
 		const result = activeSchema
 			? validateSchema(attributes, activeSchema)
 			: validateTable(attributes);
-		if (result.valid !== attributes.isValid) {
-			setAttributes({ isValid: result.valid });
+		const nextValidationMessage = getValidationSummaryMessage(result);
+		if (
+			result.valid !== attributes.isValid ||
+			nextValidationMessage !== (attributes.validationMessage ?? '')
+		) {
+			setAttributes({
+				isValid: result.valid,
+				validationMessage: nextValidationMessage,
+			});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
@@ -319,6 +331,7 @@ function TableEdit(props: BlockEditProps<BlockAttributes>) {
 								setAttributes={setAttributes}
 							/>
 						</PanelBody>
+						<GlobalSettings />
 					</InspectorControls>
 				</>
 			)}

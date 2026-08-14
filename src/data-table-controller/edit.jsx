@@ -59,9 +59,11 @@ import {
 	getFormatableColumns,
 	getValueFormatColumns,
 	getAutoSortRowOptions,
+	resolveAutoSortRowIndex,
 	computeAutoSortOrder,
-	getExcludedOrder,
+	getExcludedSides,
 	buildAutoColumnOrder,
+	normalizeAutoColumnOrder,
 	columnOrdersEqual,
 	mergeColumnOrder,
 } from './edit-utils';
@@ -79,6 +81,7 @@ import ValueFormatRules from './value-format-rules';
 import MobileValueFormatRules from './mobile-value-format-rules';
 import HeaderSpecialBorders from './header-special-borders';
 import MobileColumnColors from './mobile-column-colors';
+import MobileColumnHeaders from './mobile-column-headers';
 
 /**
  * Resolve pre-pivot sheets from the active data source.
@@ -144,21 +147,26 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		jsonTable,
 		hiddenColumns,
 		hiddenColumnsBySheet = {},
+		hiddenColumnHeaders = [],
+		tableTextAlign = 'center',
 		jsonColumns,
 		columnOrder,
 		defaultJsonSheet,
 		mobileHeaderColumn,
+		mobileHiddenColumns = [],
 		enableColumnSorting = true,
 		defaultSortColumn = '',
 		defaultSortDirection = 'asc',
 		columnSortMode = 'custom',
 		autoSortVariable = '',
 		autoSortRowIndex = -1,
+		autoSortRowValue = '',
 		autoSortExcludedColumns = [],
 		mobileColumnSortMode = 'inherit',
 		mobileColumnOrder = [],
 		mobileAutoSortVariable = '',
 		mobileAutoSortRowIndex = -1,
+		mobileAutoSortRowValue = '',
 		mobileAutoSortExcludedColumns = [],
 		valuePrefix = '',
 		valueSuffix = '',
@@ -172,6 +180,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		enableHeaderSpecialBorders = false,
 		headerSpecialBorderColors = {},
 		mobileColumnColors = {},
+		mobileColumnHeaders = {},
 		firebasePath = '',
 		pivotEnabled = false,
 		pivotIndexColumn = '',
@@ -181,9 +190,6 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		pivotExtraColumns = [],
 	} = attributes;
 
-	const isAutoSort = dataSource === 'json' && columnSortMode === 'auto';
-	const isMobileAutoSort =
-		dataSource === 'json' && mobileColumnSortMode === 'auto';
 	const isMobileConfigured = mobileColumnSortMode !== 'inherit';
 	const autoSortExcluded = useMemo(
 		() =>
@@ -238,6 +244,16 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		pivotValueFields,
 	});
 
+	const contextLike = dataSource === 'context' || dataSource === 'firebase';
+	const supportsColumnSortingSources =
+		dataSource === 'json' ||
+		contextLike ||
+		(dataSource === 'csv' && pivotActive);
+	const isAutoSort =
+		supportsColumnSortingSources && columnSortMode === 'auto';
+	const isMobileAutoSort =
+		supportsColumnSortingSources && mobileColumnSortMode === 'auto';
+
 	// Backfill jsonColumns for posts saved before this attribute existed.
 	// Skipped while pivot is active — pivoted columns are synced separately.
 	useEffect(() => {
@@ -279,8 +295,6 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		remoteContext &&
 		Array.isArray(remoteContext.results) &&
 		remoteContext.results.length > 0;
-
-	const contextLike = dataSource === 'context' || dataSource === 'firebase';
 
 	const [firebaseData, setFirebaseData] = useState(null);
 	const [firebaseStatus, setFirebaseStatus] = useState('idle'); // idle | loading | ready | error
@@ -705,6 +719,60 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 	}, [jsonColumns, sheetNames, hiddenColumnsBySheet, setAttributes]);
 
 	useEffect(() => {
+		if (!Array.isArray(jsonColumns) || jsonColumns.length === 0) {
+			return;
+		}
+		if (
+			!Array.isArray(hiddenColumnHeaders) ||
+			hiddenColumnHeaders.length === 0
+		) {
+			return;
+		}
+		const cols = new Set(jsonColumns);
+		const pruned = hiddenColumnHeaders.filter((col) => cols.has(col));
+		if (pruned.length !== hiddenColumnHeaders.length) {
+			setAttributes({ hiddenColumnHeaders: pruned });
+		}
+	}, [jsonColumns, hiddenColumnHeaders, setAttributes]);
+
+	useEffect(() => {
+		if (
+			!Array.isArray(mobileHiddenColumns) ||
+			mobileHiddenColumns.length === 0
+		) {
+			return;
+		}
+		const visible = new Set(visibleColumns);
+		const pruned = mobileHiddenColumns.filter((col) => visible.has(col));
+		if (pruned.length !== mobileHiddenColumns.length) {
+			setAttributes({ mobileHiddenColumns: pruned });
+		}
+	}, [visibleColumns, mobileHiddenColumns, setAttributes]);
+
+	useEffect(() => {
+		if (
+			!mobileColumnHeaders ||
+			typeof mobileColumnHeaders !== 'object' ||
+			Object.keys(mobileColumnHeaders).length === 0
+		) {
+			return;
+		}
+		const visible = new Set(visibleColumns);
+		const pruned = {};
+		let changed = false;
+		Object.entries(mobileColumnHeaders).forEach(([col, label]) => {
+			if (visible.has(col)) {
+				pruned[col] = label;
+			} else {
+				changed = true;
+			}
+		});
+		if (changed) {
+			setAttributes({ mobileColumnHeaders: pruned });
+		}
+	}, [visibleColumns, mobileColumnHeaders, setAttributes]);
+
+	useEffect(() => {
 		if (!defaultSortColumn) {
 			return;
 		}
@@ -739,71 +807,111 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		[previewRows, mobileAutoSortVariable]
 	);
 
-	const excludedOrder = useMemo(() => {
-		if (!isAutoSort) {
-			return [];
-		}
-		return getExcludedOrder({
-			columnOrder,
-			excluded: autoSortExcluded,
-			visible: visibleColumns,
-		});
-	}, [isAutoSort, columnOrder, autoSortExcluded, visibleColumns]);
+	const resolvedAutoSortRowIndex = useMemo(
+		() =>
+			resolveAutoSortRowIndex({
+				rows: previewRows,
+				variable: autoSortVariable,
+				rowValue: autoSortRowValue,
+				rowIndex: autoSortRowIndex,
+			}),
+		[previewRows, autoSortVariable, autoSortRowValue, autoSortRowIndex]
+	);
+
+	const resolvedMobileAutoSortRowIndex = useMemo(
+		() =>
+			resolveAutoSortRowIndex({
+				rows: previewRows,
+				variable: mobileAutoSortVariable,
+				rowValue: mobileAutoSortRowValue,
+				rowIndex: mobileAutoSortRowIndex,
+			}),
+		[
+			previewRows,
+			mobileAutoSortVariable,
+			mobileAutoSortRowValue,
+			mobileAutoSortRowIndex,
+		]
+	);
 
 	const autoSortedOrder = useMemo(() => {
-		if (!isAutoSort || autoSortRowIndex < 0) {
+		if (!isAutoSort || resolvedAutoSortRowIndex === null) {
 			return [];
 		}
 		return computeAutoSortOrder({
 			rows: previewRows,
-			rowIndex: autoSortRowIndex,
+			rowIndex: resolvedAutoSortRowIndex,
 			columns: jsonColumns,
 			excluded: autoSortExcluded,
 			hidden: hiddenColumns,
 		});
 	}, [
 		isAutoSort,
-		autoSortRowIndex,
+		resolvedAutoSortRowIndex,
 		previewRows,
 		jsonColumns,
 		autoSortExcluded,
 		hiddenColumns,
 	]);
 
-	const mobileExcludedOrder = useMemo(() => {
-		if (!isMobileAutoSort) {
-			return [];
-		}
-		return getExcludedOrder({
-			columnOrder: mobileColumnOrder,
-			excluded: mobileAutoSortExcluded,
-			visible: visibleColumns,
-		});
-	}, [
-		isMobileAutoSort,
-		mobileColumnOrder,
-		mobileAutoSortExcluded,
-		visibleColumns,
-	]);
+	const { beforeOrder: excludedBefore, afterOrder: excludedAfter } =
+		useMemo(() => {
+			if (!isAutoSort) {
+				return { beforeOrder: [], afterOrder: [] };
+			}
+			return getExcludedSides({
+				columnOrder,
+				excluded: autoSortExcluded,
+				visible: visibleColumns,
+				autoOrder: autoSortedOrder,
+			});
+		}, [
+			isAutoSort,
+			columnOrder,
+			autoSortExcluded,
+			visibleColumns,
+			autoSortedOrder,
+		]);
 
 	const mobileAutoSortedOrder = useMemo(() => {
-		if (!isMobileAutoSort || mobileAutoSortRowIndex < 0) {
+		if (!isMobileAutoSort || resolvedMobileAutoSortRowIndex === null) {
 			return [];
 		}
 		return computeAutoSortOrder({
 			rows: previewRows,
-			rowIndex: mobileAutoSortRowIndex,
+			rowIndex: resolvedMobileAutoSortRowIndex,
 			columns: jsonColumns,
 			excluded: mobileAutoSortExcluded,
 			hidden: hiddenColumns,
 		});
 	}, [
 		isMobileAutoSort,
-		mobileAutoSortRowIndex,
+		resolvedMobileAutoSortRowIndex,
 		previewRows,
 		jsonColumns,
 		mobileAutoSortExcluded,
 		hiddenColumns,
+	]);
+
+	const {
+		beforeOrder: mobileExcludedBefore,
+		afterOrder: mobileExcludedAfter,
+	} = useMemo(() => {
+		if (!isMobileAutoSort) {
+			return { beforeOrder: [], afterOrder: [] };
+		}
+		return getExcludedSides({
+			columnOrder: mobileColumnOrder,
+			excluded: mobileAutoSortExcluded,
+			visible: visibleColumns,
+			autoOrder: mobileAutoSortedOrder,
+		});
+	}, [
+		isMobileAutoSort,
+		mobileColumnOrder,
+		mobileAutoSortExcluded,
+		visibleColumns,
+		mobileAutoSortedOrder,
 	]);
 
 	const computedAutoColumnOrder = useMemo(() => {
@@ -811,23 +919,30 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 			return [];
 		}
 		return buildAutoColumnOrder({
-			excludedOrder,
+			beforeOrder: excludedBefore,
 			autoOrder: autoSortedOrder,
+			afterOrder: excludedAfter,
 		});
-	}, [isAutoSort, excludedOrder, autoSortedOrder]);
+	}, [isAutoSort, excludedBefore, excludedAfter, autoSortedOrder]);
 
 	const computedMobileAutoColumnOrder = useMemo(() => {
 		if (!isMobileAutoSort) {
 			return [];
 		}
 		return buildAutoColumnOrder({
-			excludedOrder: mobileExcludedOrder,
+			beforeOrder: mobileExcludedBefore,
 			autoOrder: mobileAutoSortedOrder,
+			afterOrder: mobileExcludedAfter,
 		});
-	}, [isMobileAutoSort, mobileExcludedOrder, mobileAutoSortedOrder]);
+	}, [
+		isMobileAutoSort,
+		mobileExcludedBefore,
+		mobileExcludedAfter,
+		mobileAutoSortedOrder,
+	]);
 
 	useEffect(() => {
-		if (!isAutoSort || autoSortRowIndex < 0) {
+		if (!isAutoSort || resolvedAutoSortRowIndex === null) {
 			return;
 		}
 		if (!columnOrdersEqual(columnOrder, computedAutoColumnOrder)) {
@@ -835,14 +950,14 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		}
 	}, [
 		isAutoSort,
-		autoSortRowIndex,
+		resolvedAutoSortRowIndex,
 		computedAutoColumnOrder,
 		columnOrder,
 		setAttributes,
 	]);
 
 	useEffect(() => {
-		if (!isMobileAutoSort || mobileAutoSortRowIndex < 0) {
+		if (!isMobileAutoSort || resolvedMobileAutoSortRowIndex === null) {
 			return;
 		}
 		if (
@@ -854,70 +969,84 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		}
 	}, [
 		isMobileAutoSort,
-		mobileAutoSortRowIndex,
+		resolvedMobileAutoSortRowIndex,
 		computedMobileAutoColumnOrder,
 		mobileColumnOrder,
 		setAttributes,
 	]);
 
 	const sortReferenceRow =
-		autoSortRowIndex >= 0 ? previewRows[autoSortRowIndex] : null;
+		resolvedAutoSortRowIndex !== null
+			? previewRows[resolvedAutoSortRowIndex]
+			: null;
 
 	const mobileSortReferenceRow =
-		mobileAutoSortRowIndex >= 0
-			? previewRows[mobileAutoSortRowIndex]
+		resolvedMobileAutoSortRowIndex !== null
+			? previewRows[resolvedMobileAutoSortRowIndex]
 			: null;
 
 	const handleAutoExcludedDragEnd = ({ active, over }) => {
 		if (!over || active.id === over.id) {
 			return;
 		}
-		const oldIndex = excludedOrder.indexOf(active.id);
-		const newIndex = excludedOrder.indexOf(over.id);
+		const previewItems = [
+			...excludedBefore,
+			...autoSortedOrder,
+			...excludedAfter,
+		];
+		const oldIndex = previewItems.indexOf(active.id);
+		const newIndex = previewItems.indexOf(over.id);
 		if (oldIndex < 0 || newIndex < 0) {
 			return;
 		}
-		const nextExcluded = arrayMove(excludedOrder, oldIndex, newIndex);
-		setAttributes({
-			columnOrder: buildAutoColumnOrder({
-				excludedOrder: nextExcluded,
-				autoOrder: autoSortedOrder,
-			}),
-		});
+		const nextOrder = normalizeAutoColumnOrder(
+			arrayMove(previewItems, oldIndex, newIndex),
+			autoSortedOrder,
+			autoSortExcluded
+		);
+		setAttributes({ columnOrder: nextOrder });
 	};
 
 	const handleMobileAutoExcludedDragEnd = ({ active, over }) => {
 		if (!over || active.id === over.id) {
 			return;
 		}
-		const oldIndex = mobileExcludedOrder.indexOf(active.id);
-		const newIndex = mobileExcludedOrder.indexOf(over.id);
+		const previewItems = [
+			...mobileExcludedBefore,
+			...mobileAutoSortedOrder,
+			...mobileExcludedAfter,
+		];
+		const oldIndex = previewItems.indexOf(active.id);
+		const newIndex = previewItems.indexOf(over.id);
 		if (oldIndex < 0 || newIndex < 0) {
 			return;
 		}
-		const nextExcluded = arrayMove(mobileExcludedOrder, oldIndex, newIndex);
-		setAttributes({
-			mobileColumnOrder: buildAutoColumnOrder({
-				excludedOrder: nextExcluded,
-				autoOrder: mobileAutoSortedOrder,
-			}),
-		});
+		const nextOrder = normalizeAutoColumnOrder(
+			arrayMove(previewItems, oldIndex, newIndex),
+			mobileAutoSortedOrder,
+			mobileAutoSortExcluded
+		);
+		setAttributes({ mobileColumnOrder: nextOrder });
 	};
 
 	const jsonColumnList = Array.isArray(jsonColumns) ? jsonColumns : [];
 	const showColumnOrderUi =
-		(dataSource === 'json' &&
-			(isAutoSort
-				? excludedOrder.length + autoSortedOrder.length > 1
-				: effectiveOrder.length > 1)) ||
-		((contextLike || (dataSource === 'csv' && pivotActive)) &&
-			effectiveOrder.length > 1);
+		supportsColumnSortingSources &&
+		(isAutoSort
+			? excludedBefore.length +
+					excludedAfter.length +
+					autoSortedOrder.length >
+				1
+			: effectiveOrder.length > 1);
 
 	const showMobileColumnOrderUi =
 		isMobileConfigured &&
-		dataSource === 'json' &&
+		supportsColumnSortingSources &&
 		(isMobileAutoSort
-			? mobileExcludedOrder.length + mobileAutoSortedOrder.length > 1
+			? mobileExcludedBefore.length +
+					mobileExcludedAfter.length +
+					mobileAutoSortedOrder.length >
+				1
 			: mobileEffectiveOrder.length > 1);
 
 	const hiddenCount =
@@ -940,7 +1069,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		[dataSource, jsonColumns, csvTable, hiddenColumns, resolvedContextData]
 	);
 
-	const showMobileHeaderControl = mobileHeaderColumnOptions.length > 1;
+	const showMobileLayoutPanel = visibleColumns.length > 0;
 
 	const allTableColumns = useMemo(
 		() =>
@@ -2104,6 +2233,37 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 									}}
 								/>
 							))}
+							<hr />
+							<p className="prc-data-table-controller-help">
+								{__(
+									'Uncheck column names to hide header text only. Column data still displays.',
+									'data-table-controller'
+								)}
+							</p>
+							{visibleColumns.map((col) => (
+								<CheckboxControl
+									key={`header-${col}`}
+									__nextHasNoMarginBottom
+									label={col}
+									checked={
+										!hiddenColumnHeaders?.includes(col)
+									}
+									onChange={(showHeaderName) => {
+										const next = showHeaderName
+											? (
+													hiddenColumnHeaders || []
+												).filter((c) => c !== col)
+											: [
+													...(hiddenColumnHeaders ||
+														[]),
+													col,
+												];
+										setAttributes({
+											hiddenColumnHeaders: next,
+										});
+									}}
+								/>
+							))}
 							{Array.isArray(sheetNames) &&
 								sheetNames.length > 1 && (
 									<>
@@ -2182,7 +2342,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 								)}
 						</PanelBody>
 					)}
-				{dataSource === 'json' && jsonColumnList.length > 0 && (
+				{supportsColumnSortingSources && jsonColumnList.length > 0 && (
 					<PanelBody
 						title={__(
 							'Column sorting (desktop)',
@@ -2197,7 +2357,9 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 							}
 							isAutoSort={isAutoSort}
 							autoSortVariable={autoSortVariable}
-							autoSortRowIndex={autoSortRowIndex}
+							autoSortRowIndex={
+								resolvedAutoSortRowIndex ?? autoSortRowIndex
+							}
 							autoSortExcluded={autoSortExcluded}
 							autoSortRowOptions={autoSortRowOptions}
 							visibleColumns={visibleColumns}
@@ -2206,14 +2368,27 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 								setAttributes({
 									autoSortVariable: value,
 									autoSortRowIndex: -1,
+									autoSortRowValue: '',
 								})
 							}
-							onAutoSortRowIndexChange={(value) =>
+							onAutoSortRowIndexChange={(value) => {
+								const index =
+									value === '' ? -1 : parseInt(value, 10);
+								const rowValue =
+									index >= 0 &&
+									autoSortVariable &&
+									previewRows[index]
+										? String(
+												previewRows[index][
+													autoSortVariable
+												] ?? ''
+											)
+										: '';
 								setAttributes({
-									autoSortRowIndex:
-										value === '' ? -1 : parseInt(value, 10),
-								})
-							}
+									autoSortRowIndex: index,
+									autoSortRowValue: rowValue,
+								});
+							}}
 							onAutoSortExcludedChange={(next) =>
 								setAttributes({
 									autoSortExcludedColumns: next,
@@ -2222,7 +2397,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 						/>
 					</PanelBody>
 				)}
-				{dataSource === 'json' && jsonColumnList.length > 0 && (
+				{supportsColumnSortingSources && jsonColumnList.length > 0 && (
 					<PanelBody
 						title={__(
 							'Column sorting (mobile)',
@@ -2249,6 +2424,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 										mobileColumnSortMode: value,
 										mobileColumnOrder: [],
 										mobileAutoSortRowIndex: -1,
+										mobileAutoSortRowValue: '',
 									});
 									return;
 								}
@@ -2256,7 +2432,10 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 							}}
 							isAutoSort={isMobileAutoSort}
 							autoSortVariable={mobileAutoSortVariable}
-							autoSortRowIndex={mobileAutoSortRowIndex}
+							autoSortRowIndex={
+								resolvedMobileAutoSortRowIndex ??
+								mobileAutoSortRowIndex
+							}
 							autoSortExcluded={mobileAutoSortExcluded}
 							autoSortRowOptions={mobileAutoSortRowOptions}
 							visibleColumns={visibleColumns}
@@ -2266,14 +2445,27 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 								setAttributes({
 									mobileAutoSortVariable: value,
 									mobileAutoSortRowIndex: -1,
+									mobileAutoSortRowValue: '',
 								})
 							}
-							onAutoSortRowIndexChange={(value) =>
+							onAutoSortRowIndexChange={(value) => {
+								const index =
+									value === '' ? -1 : parseInt(value, 10);
+								const rowValue =
+									index >= 0 &&
+									mobileAutoSortVariable &&
+									previewRows[index]
+										? String(
+												previewRows[index][
+													mobileAutoSortVariable
+												] ?? ''
+											)
+										: '';
 								setAttributes({
-									mobileAutoSortRowIndex:
-										value === '' ? -1 : parseInt(value, 10),
-								})
-							}
+									mobileAutoSortRowIndex: index,
+									mobileAutoSortRowValue: rowValue,
+								});
+							}}
 							onAutoSortExcludedChange={(next) =>
 								setAttributes({
 									mobileAutoSortExcludedColumns: next,
@@ -2282,25 +2474,60 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 						/>
 					</PanelBody>
 				)}
-				{showMobileHeaderControl && (
+				{showMobileLayoutPanel && (
 					<PanelBody
 						title={__('Mobile layout', 'data-table-controller')}
 						initialOpen={false}
 					>
-						<SelectControl
-							label={__(
-								'Mobile card header column',
+						{mobileHeaderColumnOptions.length > 1 && (
+							<SelectControl
+								label={__(
+									'Mobile card header column',
+									'data-table-controller'
+								)}
+								value={mobileHeaderColumn || ''}
+								options={mobileHeaderColumnOptions}
+								onChange={(value) =>
+									setAttributes({ mobileHeaderColumn: value })
+								}
+								help={__(
+									'On small screens, each row becomes a card with this column as the title.',
+									'data-table-controller'
+								)}
+							/>
+						)}
+						<p className="prc-data-table-controller-help">
+							{__(
+								'Uncheck columns to hide them on small screens only. Desktop column visibility is unchanged.',
 								'data-table-controller'
 							)}
-							value={mobileHeaderColumn || ''}
-							options={mobileHeaderColumnOptions}
-							onChange={(value) =>
-								setAttributes({ mobileHeaderColumn: value })
+						</p>
+						{visibleColumns.map((col) => (
+							<CheckboxControl
+								key={`mobile-visible-${col}`}
+								__nextHasNoMarginBottom
+								label={col}
+								checked={!mobileHiddenColumns?.includes(col)}
+								onChange={(visible) => {
+									const next = visible
+										? (mobileHiddenColumns || []).filter(
+												(c) => c !== col
+											)
+										: [...(mobileHiddenColumns || []), col];
+									setAttributes({
+										mobileHiddenColumns: next,
+									});
+								}}
+							/>
+						))}
+						<MobileColumnHeaders
+							headers={mobileColumnHeaders}
+							columns={visibleColumns}
+							onHeadersChange={(nextHeaders) =>
+								setAttributes({
+									mobileColumnHeaders: nextHeaders,
+								})
 							}
-							help={__(
-								'On small screens, each row becomes a card with this column as the title.',
-								'data-table-controller'
-							)}
 						/>
 					</PanelBody>
 				)}
@@ -2608,6 +2835,39 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 					/>
 				</PanelBody>
 				<PanelBody
+					title={__('Text alignment', 'data-table-controller')}
+					initialOpen={false}
+				>
+					<SelectControl
+						label={__(
+							'Cell text alignment',
+							'data-table-controller'
+						)}
+						value={tableTextAlign || 'center'}
+						options={[
+							{
+								label: __('Left', 'data-table-controller'),
+								value: 'left',
+							},
+							{
+								label: __('Center', 'data-table-controller'),
+								value: 'center',
+							},
+							{
+								label: __('Right', 'data-table-controller'),
+								value: 'right',
+							},
+						]}
+						onChange={(value) =>
+							setAttributes({ tableTextAlign: value })
+						}
+						help={__(
+							'Applies to all header and data cells except the first column.',
+							'data-table-controller'
+						)}
+					/>
+				</PanelBody>
+				<PanelBody
 					title={__('Mobile styling', 'data-table-controller')}
 					initialOpen={false}
 				>
@@ -2638,7 +2898,8 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 					title={__('Desktop', 'data-table-controller')}
 					isAutoSort={isAutoSort}
 					effectiveOrder={effectiveOrder}
-					excludedOrder={excludedOrder}
+					excludedBefore={excludedBefore}
+					excludedAfter={excludedAfter}
 					autoSortedOrder={autoSortedOrder}
 					sortReferenceRow={sortReferenceRow}
 					sensors={sensors}
@@ -2651,7 +2912,8 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 					title={__('Mobile', 'data-table-controller')}
 					isAutoSort={isMobileAutoSort}
 					effectiveOrder={mobileEffectiveOrder}
-					excludedOrder={mobileExcludedOrder}
+					excludedBefore={mobileExcludedBefore}
+					excludedAfter={mobileExcludedAfter}
 					autoSortedOrder={mobileAutoSortedOrder}
 					sortReferenceRow={mobileSortReferenceRow}
 					sensors={sensors}

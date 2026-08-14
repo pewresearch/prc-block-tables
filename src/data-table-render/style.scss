@@ -49,9 +49,13 @@
 		vertical-align: middle;
 	}
 
+	th:not(.prc-data-table__first-col),
+	td:not(.prc-data-table__first-col) {
+		text-align: var(--prc-data-table-cell-text-align, center);
+	}
+
 	th {
 		font-weight: 700;
-		text-align: center;
 		user-select: none;
 		white-space: nowrap;
 
@@ -83,7 +87,7 @@
 		margin: 0;
 		padding: 0;
 		border: 0;
-		background: none;
+		background: #fff;
 		font: inherit;
 		color: inherit;
 		text-align: inherit;
@@ -93,10 +97,6 @@
 			outline: 2px solid rgba(0, 0, 0, 0.8);
 			outline-offset: -2px;
 		}
-	}
-
-	td {
-		text-align: right;
 	}
 
 	tbody tr {
@@ -122,14 +122,12 @@
 	.prc-data-table__key-header {
 		cursor: default;
 		user-select: none;
-		text-align: center;
 		width: 1.5rem;
 		padding-left: 4px;
 		padding-right: 4px;
 	}
 
 	.prc-data-table__key-cell {
-		text-align: center;
 		vertical-align: middle;
 		width: 1.5rem;
 		padding-left: 4px;
@@ -291,9 +289,13 @@
 			width: 100%;
 		}
 
-		tbody tr {
-			display: flex;
-			flex-wrap: wrap;
+		tbody tr,
+		&.prc-data-table--row-dropdowns tbody tr {
+			display: grid;
+			grid-template-columns: repeat(
+				var(--prc-data-table-mobile-track-count, 4),
+				minmax(0, 1fr)
+			);
 			margin-bottom: 24px;
 			border-bottom: none;
 			background: transparent;
@@ -303,27 +305,33 @@
 			background: transparent;
 		}
 
-		td {
-			flex: 1 0 21% !important;
+		td,
+		td.prc-data-table__first-col {
+			min-width: 0;
 			margin: 2px;
 			padding: 6px 8px;
 			background: var(--prc-data-table-cell-bg, rgb(0 0 0 / 5%));
+			font-size: 13px;
+			font-weight: 600;
 			text-align: center;
 			white-space: pre-line;
 			border-bottom: none;
+		}
+
+		.prc-data-table__dropdown-toggle {
+			text-align: center;
 		}
 
 		td::before {
 			content: attr(data-label);
 			display: block;
 			font-weight: 600;
-			font-size: 11px;
+			font-size: 13px;
 			line-height: 1.2;
 			margin-bottom: 2px;
 		}
 
-		.prc-data-table__key-cell,
-		.prc-data-table__first-col {
+		.prc-data-table__key-cell {
 			display: none;
 		}
 
@@ -331,7 +339,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			flex-basis: 100%;
+			grid-column: 1 / -1;
 			margin-bottom: 8px;
 			font-weight: 600;
 			font-size: 14px;

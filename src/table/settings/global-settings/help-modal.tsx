@@ -24,7 +24,7 @@ type Props = {
 export default function HelpModal({ setIsHelpModalOpen }: Props) {
 	return (
 		<Modal
-			title={__('Flexible Table Block help', 'flexible-table-block')}
+			title={__('Power Table help', 'flexible-table-block')}
 			className="ftb-global-help-modal"
 			onRequestClose={() => setIsHelpModalOpen(false)}
 		>
@@ -38,7 +38,7 @@ export default function HelpModal({ setIsHelpModalOpen }: Props) {
 					</Heading>
 					<Text as="p">
 						{__(
-							'Flexible Table Block is a block that allows you to create tables in various styles. First of all, it is recommended to set the default style of the table from "Global Setting".',
+							'Power Table is a block that allows you to create tables in various styles. First of all, it is recommended to set the default style of the table from "Global Setting".',
 							'flexible-table-block'
 						)}
 					</Text>

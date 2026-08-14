@@ -35,9 +35,11 @@
 		"prc-block/dataTableColumns",
 		"prc-block/dataTableColumnOrder",
 		"prc-block/dataTableHiddenColumns",
+		"prc-block/dataTableHiddenColumnHeaders",
 		"prc-block/dataTableEnableHeaderSpecialBorders",
 		"prc-block/dataTableHeaderSpecialBorderColors",
-		"prc-block/dataTableEnableColumnSorting"
+		"prc-block/dataTableEnableColumnSorting",
+		"prc-block/dataTableTextAlign"
 	],
 	"textdomain": "data-table-render",
 	"editorScript": "file:./index.js",

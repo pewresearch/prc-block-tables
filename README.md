@@ -40,7 +40,7 @@ Power Spreadsheet allows only `prc-block/table` as inner blocks, so every sheet 
 
 ### Remote Pivot Table
 
-`prc-block/remote-pivot-table` — Pivots tabular data from a Remote Data Blocks parent into tabbed `core/table` views. See [docs/remote-pivot-table.md](docs/remote-pivot-table.md).
+`prc-block/remote-pivot-table` — Pivots tabular data from a Remote Data Blocks parent into tabbed `core/table` views. See [remote-pivot-table.md](../../docs/plugins/prc-block-tables/blocks/remote-pivot-table.md).
 
 **Soft runtime dependencies** (not declared in `Requires Plugins` to avoid a circular header with block-library):
 

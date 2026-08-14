@@ -699,6 +699,312 @@ class Data_Table_Controller {
 	}
 
 	/**
+	 * Parse a table cell value for numeric descending auto column sort.
+	 *
+	 * Mirrors {@see parseNumericCell} in edit-utils.js.
+	 *
+	 * @param mixed $value Cell value.
+	 * @return float|null Parsed number, or null when not numeric.
+	 */
+	private function parse_numeric_cell( $value ): ?float {
+		if ( null === $value || '' === $value ) {
+			return null;
+		}
+
+		$str     = trim( (string) $value );
+		$cleaned = preg_replace( '/^[^0-9.\-+]+/', '', $str );
+		if ( null === $cleaned || '' === $cleaned || ! is_numeric( $cleaned ) ) {
+			return null;
+		}
+
+		$num = (float) $cleaned;
+		return is_finite( $num ) ? $num : null;
+	}
+
+	/**
+	 * Resolve the auto-sort reference row by variable value, with index fallback.
+	 *
+	 * Mirrors {@see resolveAutoSortRowIndex} in edit-utils.js.
+	 *
+	 * @param array  $rows       Sheet rows.
+	 * @param string $variable   Column key used to identify the row.
+	 * @param string $row_value  Saved cell value for the selected row.
+	 * @param int    $row_index  Saved zero-based row index fallback.
+	 * @return int|null Resolved row index, or null when unavailable.
+	 */
+	private function resolve_auto_sort_row_index( array $rows, string $variable, string $row_value, int $row_index ): ?int {
+		if ( '' !== $variable && '' !== $row_value ) {
+			foreach ( $rows as $index => $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$cell = $row[ $variable ] ?? '';
+				if ( (string) $cell === $row_value ) {
+					return (int) $index;
+				}
+			}
+		}
+
+		if ( $row_index >= 0 && isset( $rows[ $row_index ] ) && is_array( $rows[ $row_index ] ) ) {
+			return $row_index;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Order visible, non-excluded columns by numeric values in the selected row (descending).
+	 *
+	 * Mirrors {@see computeAutoSortOrder} in edit-utils.js.
+	 *
+	 * @param array    $rows       Sheet rows.
+	 * @param int      $row_index  Target row index.
+	 * @param string[] $columns    Visible column keys.
+	 * @param string[] $excluded   Columns excluded from auto sort.
+	 * @return string[] Sorted column keys.
+	 */
+	private function compute_auto_sort_order( array $rows, int $row_index, array $columns, array $excluded ): array {
+		if ( ! isset( $rows[ $row_index ] ) || ! is_array( $rows[ $row_index ] ) ) {
+			return array();
+		}
+
+		$row           = $rows[ $row_index ];
+		$excluded_flip = array_flip( array_map( 'strval', $excluded ) );
+		$sortable      = array();
+
+		foreach ( $columns as $original_index => $col ) {
+			$col = (string) $col;
+			if ( 'row_id' === $col || isset( $excluded_flip[ $col ] ) ) {
+				continue;
+			}
+
+			$sortable[] = array(
+				'col'            => $col,
+				'original_index' => (int) $original_index,
+				'num'            => $this->parse_numeric_cell( $row[ $col ] ?? null ),
+			);
+		}
+
+		usort(
+			$sortable,
+			function ( array $a, array $b ): int {
+				$a_nan = null === $a['num'];
+				$b_nan = null === $b['num'];
+				if ( $a_nan && $b_nan ) {
+					return $a['original_index'] <=> $b['original_index'];
+				}
+				if ( $a_nan ) {
+					return 1;
+				}
+				if ( $b_nan ) {
+					return -1;
+				}
+				if ( $b['num'] !== $a['num'] ) {
+					return $b['num'] <=> $a['num'];
+				}
+				return $a['original_index'] <=> $b['original_index'];
+			}
+		);
+
+		return array_map(
+			static function ( array $item ): string {
+				return $item['col'];
+			},
+			$sortable
+		);
+	}
+
+	/**
+	 * Split excluded columns into before/after groups relative to the auto-sorted block.
+	 *
+	 * Mirrors {@see getExcludedSides} in edit-utils.js.
+	 *
+	 * @param string[] $column_order Saved order.
+	 * @param string[] $excluded     Excluded column keys.
+	 * @param string[] $visible      Visible column keys.
+	 * @param string[] $auto_order   Locked auto-sorted column keys.
+	 * @return array{ before: string[], after: string[] } Excluded columns by side.
+	 */
+	private function get_excluded_sides( array $column_order, array $excluded, array $visible, array $auto_order ): array {
+		$excluded_flip    = array_flip( array_map( 'strval', $excluded ) );
+		$auto_flip        = array_flip( array_map( 'strval', $auto_order ) );
+		$excluded_visible = array_values(
+			array_filter(
+				$visible,
+				static function ( $col ) use ( $excluded_flip ): bool {
+					return isset( $excluded_flip[ (string) $col ] );
+				}
+			)
+		);
+		$before           = array();
+		$after            = array();
+		$placed           = array();
+		$seen_auto        = false;
+
+		foreach ( $column_order as $col ) {
+			$col = (string) $col;
+			if ( isset( $auto_flip[ $col ] ) ) {
+				$seen_auto = true;
+				continue;
+			}
+			if ( ! isset( $excluded_flip[ $col ] ) || isset( $placed[ $col ] ) ) {
+				continue;
+			}
+			if ( $seen_auto ) {
+				$after[] = $col;
+			} else {
+				$before[] = $col;
+			}
+			$placed[ $col ] = true;
+		}
+
+		foreach ( $excluded_visible as $col ) {
+			$col = (string) $col;
+			if ( ! isset( $placed[ $col ] ) ) {
+				$before[] = $col;
+			}
+		}
+
+		return array(
+			'before' => $before,
+			'after'  => $after,
+		);
+	}
+
+	/**
+	 * Merge excluded (manual) and auto-sorted column groups.
+	 *
+	 * Mirrors {@see buildAutoColumnOrder} in edit-utils.js.
+	 *
+	 * @param string[] $before_order Excluded columns before auto sort.
+	 * @param string[] $auto_order   Locked auto-sorted columns.
+	 * @param string[] $after_order  Excluded columns after auto sort.
+	 * @return string[] Full column order.
+	 */
+	private function build_auto_column_order( array $before_order, array $auto_order, array $after_order ): array {
+		return array_merge( $before_order, $auto_order, $after_order );
+	}
+
+	/**
+	 * Compute auto column order from the active sheet and auto-sort attributes.
+	 *
+	 * @param array    $attributes          Block attributes.
+	 * @param array    $sheet               Active sheet with filtered columns/rows.
+	 * @param string[] $saved_column_order  Saved attribute order used for excluded columns.
+	 * @param string   $variable_key        Attribute key for the row-label column.
+	 * @param string   $row_value_key       Attribute key for the saved row cell value.
+	 * @param string   $row_index_key       Attribute key for the saved row index.
+	 * @param string   $excluded_key        Attribute key for excluded columns.
+	 * @return string[] Effective column order, or the saved order when auto sort cannot run.
+	 */
+	private function compute_auto_column_order_from_sheet(
+		array $attributes,
+		array $sheet,
+		array $saved_column_order,
+		string $variable_key,
+		string $row_value_key,
+		string $row_index_key,
+		string $excluded_key
+	): array {
+		$variable = isset( $attributes[ $variable_key ] )
+			? sanitize_text_field( (string) $attributes[ $variable_key ] )
+			: '';
+		$row_value = isset( $attributes[ $row_value_key ] )
+			? (string) $attributes[ $row_value_key ]
+			: '';
+		$row_index = isset( $attributes[ $row_index_key ] )
+			? (int) $attributes[ $row_index_key ]
+			: -1;
+		$excluded  = isset( $attributes[ $excluded_key ] ) && is_array( $attributes[ $excluded_key ] )
+			? array_values( array_map( 'strval', $attributes[ $excluded_key ] ) )
+			: array();
+
+		$columns = isset( $sheet['columns'] ) && is_array( $sheet['columns'] )
+			? array_map( 'strval', $sheet['columns'] )
+			: array();
+		$rows    = isset( $sheet['rows'] ) && is_array( $sheet['rows'] )
+			? $sheet['rows']
+			: array();
+
+		if ( empty( $columns ) || empty( $rows ) ) {
+			return $saved_column_order;
+		}
+
+		$resolved_index = $this->resolve_auto_sort_row_index( $rows, $variable, $row_value, $row_index );
+		if ( null === $resolved_index ) {
+			return $saved_column_order;
+		}
+
+		$auto_sorted = $this->compute_auto_sort_order( $rows, $resolved_index, $columns, $excluded );
+		$sides       = $this->get_excluded_sides( $saved_column_order, $excluded, $columns, $auto_sorted );
+
+		return $this->build_auto_column_order( $sides['before'], $auto_sorted, $sides['after'] );
+	}
+
+	/**
+	 * Re-apply auto column order to every sheet when sort mode is `auto`.
+	 *
+	 * @param array<string, array{ columns: string[], rows: array }> $sheets              Processed sheets.
+	 * @param array                                                  $attributes          Block attributes.
+	 * @param string                                                 $active_sheet        Active sheet key.
+	 * @param string[]                                               $saved_column_order  Saved desktop column order.
+	 * @return array{0: array<string, array{ columns: string[], rows: array }>, 1: string[]} Updated sheets and effective order.
+	 */
+	private function apply_auto_column_order_to_sheets( array $sheets, array $attributes, string $active_sheet, array $saved_column_order ): array {
+		$sort_mode = isset( $attributes['columnSortMode'] )
+			? sanitize_text_field( (string) $attributes['columnSortMode'] )
+			: 'custom';
+
+		if ( 'auto' !== $sort_mode || ! isset( $sheets[ $active_sheet ] ) ) {
+			return array( $sheets, $saved_column_order );
+		}
+
+		$effective_order = $this->compute_auto_column_order_from_sheet(
+			$attributes,
+			$sheets[ $active_sheet ],
+			$saved_column_order,
+			'autoSortVariable',
+			'autoSortRowValue',
+			'autoSortRowIndex',
+			'autoSortExcludedColumns'
+		);
+
+		foreach ( $sheets as $sheet_name => $sheet ) {
+			$sheets[ $sheet_name ] = $this->apply_column_order( $sheet, $effective_order );
+		}
+
+		return array( $sheets, $effective_order );
+	}
+
+	/**
+	 * Recompute mobile auto column order from the active sheet when sort mode is `auto`.
+	 *
+	 * @param array    $attributes             Block attributes.
+	 * @param array    $active_sheet_data      Active sheet with filtered columns/rows.
+	 * @param string[] $saved_mobile_col_order Saved mobile column order attribute.
+	 * @return string[] Effective mobile column order.
+	 */
+	private function resolve_mobile_auto_column_order( array $attributes, array $active_sheet_data, array $saved_mobile_col_order ): array {
+		$sort_mode = isset( $attributes['mobileColumnSortMode'] )
+			? sanitize_text_field( (string) $attributes['mobileColumnSortMode'] )
+			: 'inherit';
+
+		if ( 'auto' !== $sort_mode ) {
+			return $saved_mobile_col_order;
+		}
+
+		return $this->compute_auto_column_order_from_sheet(
+			$attributes,
+			$active_sheet_data,
+			$saved_mobile_col_order,
+			'mobileAutoSortVariable',
+			'mobileAutoSortRowValue',
+			'mobileAutoSortRowIndex',
+			'mobileAutoSortExcludedColumns'
+		);
+	}
+
+	/**
 	 * Back-compat: derive global prefix/suffix + exclusions from columnValueFormats.
 	 *
 	 * @param array  $formats      Legacy columnValueFormats attribute.
@@ -1130,6 +1436,29 @@ class Data_Table_Controller {
 	}
 
 	/**
+	 * Sanitize mobileColumnHeaders block attribute for interactivity state.
+	 *
+	 * @param mixed $headers Raw attribute value.
+	 * @return array<string, string>
+	 */
+	private function sanitize_mobile_column_headers( $headers ): array {
+		if ( ! is_array( $headers ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+		foreach ( $headers as $column => $label ) {
+			$safe_column = sanitize_text_field( (string) $column );
+			$safe_label  = is_string( $label ) ? sanitize_text_field( trim( $label ) ) : '';
+			if ( '' !== $safe_column && '' !== $safe_label ) {
+				$sanitized[ $safe_column ] = $safe_label;
+			}
+		}
+
+		return $sanitized;
+	}
+
+	/**
 	 * Sanitize a hex color, including 8-digit alpha values.
 	 *
 	 * @param string $color Raw color value.
@@ -1169,6 +1498,21 @@ class Data_Table_Controller {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Sanitize tableTextAlign block attribute for interactivity state.
+	 *
+	 * @param mixed $align Raw attribute value.
+	 * @return string One of left, center, right; defaults to center.
+	 */
+	private function sanitize_table_text_align( $align ): string {
+		$safe_align = sanitize_text_field( (string) $align );
+		if ( in_array( $safe_align, array( 'left', 'center', 'right' ), true ) ) {
+			return $safe_align;
+		}
+
+		return 'center';
 	}
 
 	/**
@@ -1853,6 +2197,9 @@ class Data_Table_Controller {
 
 
 		$mobile_header_column = isset( $attributes['mobileHeaderColumn'] ) ? (string) $attributes['mobileHeaderColumn'] : '';
+		$mobile_hidden_columns  = isset( $attributes['mobileHiddenColumns'] ) && is_array( $attributes['mobileHiddenColumns'] )
+			? array_values( array_map( 'strval', $attributes['mobileHiddenColumns'] ) )
+			: array();
 		$value_prefix          = isset( $attributes['valuePrefix'] ) ? (string) $attributes['valuePrefix'] : '';
 		$value_suffix          = isset( $attributes['valueSuffix'] ) ? (string) $attributes['valueSuffix'] : '';
 		$value_format_sheets   = isset( $attributes['valueFormatSheets'] ) && is_array( $attributes['valueFormatSheets'] )
@@ -1876,6 +2223,25 @@ class Data_Table_Controller {
 			$activeSheet = $default_filters['activeSheet'];
 		}
 
+		list( $sheets, $col_order ) = $this->apply_auto_column_order_to_sheets(
+			$sheets,
+			$attributes,
+			(string) $activeSheet,
+			$col_order
+		);
+
+		$mobile_column_order = isset( $attributes['mobileColumnOrder'] ) && is_array( $attributes['mobileColumnOrder'] )
+			? array_values( array_map( 'strval', $attributes['mobileColumnOrder'] ) )
+			: array();
+
+		if ( isset( $sheets[ $activeSheet ] ) ) {
+			$mobile_column_order = $this->resolve_mobile_auto_column_order(
+				$attributes,
+				$sheets[ $activeSheet ],
+				$mobile_column_order
+			);
+		}
+
 		$enable_column_sorting = ! isset( $attributes['enableColumnSorting'] ) || ! empty( $attributes['enableColumnSorting'] );
 		$initial_sort          = $this->resolve_initial_sort_state( $attributes, $sheets, (string) $activeSheet, $enable_column_sorting );
 
@@ -1894,12 +2260,16 @@ class Data_Table_Controller {
 		$mobile_column_colors          = $this->sanitize_mobile_column_colors(
 			$attributes['mobileColumnColors'] ?? array()
 		);
+		$mobile_column_headers         = $this->sanitize_mobile_column_headers(
+			$attributes['mobileColumnHeaders'] ?? array()
+		);
 		$mobile_column_sort_mode = isset( $attributes['mobileColumnSortMode'] )
 			? sanitize_text_field( (string) $attributes['mobileColumnSortMode'] )
 			: 'inherit';
-		$mobile_column_order     = isset( $attributes['mobileColumnOrder'] ) && is_array( $attributes['mobileColumnOrder'] )
-			? array_values( array_map( 'strval', $attributes['mobileColumnOrder'] ) )
+		$hidden_column_headers   = isset( $attributes['hiddenColumnHeaders'] ) && is_array( $attributes['hiddenColumnHeaders'] )
+			? array_values( array_map( 'strval', $attributes['hiddenColumnHeaders'] ) )
 			: array();
+		$table_text_align        = $this->sanitize_table_text_align( $attributes['tableTextAlign'] ?? 'center' );
 
 		wp_interactivity_state(
 			'prc-block/data-table',
@@ -1910,6 +2280,7 @@ class Data_Table_Controller {
 						'activeSheet'          => $activeSheet,
 						'dataSource'           => $data_source,
 						'mobileHeaderColumn'   => $mobile_header_column,
+						'mobileHiddenColumns'  => $mobile_hidden_columns,
 						'valuePrefix'                => $value_prefix,
 						'valueSuffix'                => $value_suffix,
 						'valueFormatSheets'          => $value_format_sheets,
@@ -1928,8 +2299,11 @@ class Data_Table_Controller {
 						'enableHeaderSpecialBorders' => $enable_header_special_borders,
 						'headerSpecialBorderColors'  => $header_special_border_colors,
 						'mobileColumnColors'         => $mobile_column_colors,
+						'mobileColumnHeaders'        => $mobile_column_headers,
 						'mobileColumnSortMode'       => $mobile_column_sort_mode,
 						'mobileColumnOrder'          => $mobile_column_order,
+						'hiddenColumnHeaders'        => $hidden_column_headers,
+						'tableTextAlign'             => $table_text_align,
 					),
 				),
 			)

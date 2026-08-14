@@ -193,6 +193,29 @@
 	margin-bottom: 0;
 }
 
+.prc-data-table-controller-mobile-column-headers {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 16px;
+	border-top: 1px solid #e0e0e0;
+	padding-top: 12px;
+}
+
+.prc-data-table-controller-mobile-column-headers__row {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 0;
+	border-top: 1px solid #e0e0e0;
+}
+
+.prc-data-table-controller-mobile-column-headers__label {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+}
+
 .prc-data-table-controller-value-format-rules {
 	margin-top: 16px;
 	border-top: 1px solid #e0e0e0;

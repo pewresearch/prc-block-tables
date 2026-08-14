@@ -1,10 +1,10 @@
 
-> @prc/block-tables@1.1.0 build
+> @prc/block-tables@1.2.0 build
 > wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai
 
-assets by chunk 43 KiB (id hint: style) 14 assets
-assets by path [1m[32mtable/*.php[39m[22m 37.6 KiB 7 assets
-assets by chunk 121 KiB (name: data-table-controller/index) 4 assets
+assets by chunk 43.6 KiB (id hint: style) 14 assets
+assets by path [1m[32mtable/*.php[39m[22m 45.2 KiB 7 assets
+assets by chunk 126 KiB (name: data-table-controller/index) 4 assets
 assets by chunk 18.8 KiB (name: data-table-filter-select/index) 4 assets
 assets by chunk 15.2 KiB (name: data-table-key/index) 4 assets
 assets by path [1m[32mremote-pivot-table/[39m[22m 18.1 KiB 4 assets
@@ -12,23 +12,23 @@ assets by chunk 9.1 KiB (name: power-spreadsheet/index) 4 assets
 assets by chunk 7.68 KiB (name: data-table-filter/index)
   assets by path [1m[32mdata-table-filter/*.css[39m[22m 758 bytes 2 assets
   + 2 assets
-assets by chunk 5.45 KiB (name: data-table-render/index)
-  assets by path [1m[32mdata-table-render/*.css[39m[22m 1.57 KiB 2 assets
+assets by chunk 6.71 KiB (name: data-table-render/index)
+  assets by path [1m[32mdata-table-render/*.css[39m[22m 2.18 KiB 2 assets
   + 2 assets
 + 20 assets
-orphan modules 1.03 MiB (javascript) 12.9 KiB (runtime) [1m[33m[orphan][39m[22m 546 modules
+orphan modules 1.04 MiB (javascript) 12.9 KiB (runtime) [1m[33m[orphan][39m[22m 547 modules
 runtime modules 19.8 KiB 29 modules
-built modules 48.7 KiB (css/mini-extract) 843 KiB (javascript) [1m[33m[built][39m[22m
-  cacheable modules 48.7 KiB (css/mini-extract) 5.36 KiB (javascript)
-    modules by path [1m./src/[39m[22m 48.7 KiB 14 modules
+built modules 49.6 KiB (css/mini-extract) 862 KiB (javascript) [1m[33m[built][39m[22m
+  cacheable modules 49.6 KiB (css/mini-extract) 5.36 KiB (javascript)
+    modules by path [1m./src/[39m[22m 49.6 KiB 14 modules
     javascript modules 5.36 KiB
       [1m../../node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js[39m[22m 2.68 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js[39m[22m 196 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated)[39m[22m 2.49 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   + 8 modules
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 11488 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 64591 ms
 
-assets by path [1m[32mdata-table-render/[39m[22m 19.4 KiB 2 assets
+assets by path [1m[32mdata-table-render/[39m[22m 20.6 KiB 2 assets
 assets by path [1m[32mdata-table-filter-select/[39m[22m 4.36 KiB 2 assets
 assets by path [1m[32mtable/[39m[22m 3.92 KiB 2 assets
 assets by path [1m[32mdata-table-filter/[39m[22m 1.66 KiB
@@ -42,12 +42,12 @@ assets by path [1m[32mpower-spreadsheet/[39m[22m 590 bytes
   asset [1m[32mpower-spreadsheet/view.asset.php[39m[22m 130 bytes [1m[32m[emitted][39m[22m (name: power-spreadsheet/view)
 orphan modules 12.9 KiB [1m[33m[orphan][39m[22m 16 modules
 runtime modules 2.47 KiB 3 modules
-built modules 80.4 KiB [1m[33m[built][39m[22m
-  modules by path [1m./src/[39m[22m 80.3 KiB
-    cacheable modules 50.9 KiB
-      [1m./src/data-table-render/view.js[39m[22m 18.3 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-      [1m./src/data-table-render/row-dropdown-utils.js[39m[22m 8.37 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-      [1m./src/data-table-render/cell-display-format.js + 12 modules[39m[22m 24.3 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+built modules 84.2 KiB [1m[33m[built][39m[22m
+  modules by path [1m./src/[39m[22m 84.2 KiB
+    cacheable modules 54.8 KiB
+      [1m./src/data-table-render/view.js[39m[22m 17.6 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./src/data-table-render/row-dropdown-utils.js[39m[22m 9.96 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      + 2 modules
     [1m./src/data-table-filter/view.js + 1 modules[39m[22m 3.99 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
     [1m./src/data-table-filter-select/view.js + 1 modules[39m[22m 11.3 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
     [1m./src/data-table-key/view.js + 1 modules[39m[22m 1.57 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
@@ -55,10 +55,10 @@ built modules 80.4 KiB [1m[33m[built][39m[22m
     [1m./src/table/view.js + 1 modules[39m[22m 11.3 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   [1mexternal "@wordpress/interactivity"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   [1mexternal "@prc/d3"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 6116 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 30562 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
-> @prc/block-tables@1.1.0 build:ai
+> @prc/block-tables@1.2.0 build:ai
 > wp-scripts build --source-path=includes/ai-features/src/generate-tabular-data --output-path=includes/ai-features/build/generate-tabular-data
 
 asset [1m[32mindex.js[39m[22m 3.29 KiB [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m (name: index)
@@ -66,4 +66,4 @@ asset [1m[32mindex.asset.php[39m[22m 189 bytes [1m[32m[emitted][39m[22m 
 Entrypoint [1mindex[39m[22m 3.48 KiB = [1m[32mindex.js[39m[22m 3.29 KiB [1m[32mindex.asset.php[39m[22m 189 bytes
 orphan modules 6.29 KiB [1m[33m[orphan][39m[22m 8 modules
 [1m./includes/ai-features/src/generate-tabular-data/index.tsx + 8 modules[39m[22m 8.21 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 800 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 6704 ms

@@ -266,6 +266,7 @@ export default function ToolbarControls({
 			columnMeta: [],
 			validationSchema: '',
 			isValid: true,
+			validationMessage: '',
 		});
 		setSelectedCells(undefined);
 		setSelectedLine(undefined);

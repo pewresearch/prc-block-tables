@@ -20,6 +20,42 @@ function appendResponsiveValueSpans(parent, desktopText, mobileText) {
 }
 
 /**
+ * Column used as the mobile card title. Falls back to the first display column.
+ *
+ * @param {string[]} cols                Visible display column keys.
+ * @param {string}   mobileHeaderColumn  Configured mobile header column key.
+ * @return {string} Column key for the mobile card title.
+ */
+export function resolveMobileHeaderColumn(cols, mobileHeaderColumn) {
+	if (mobileHeaderColumn && cols.includes(mobileHeaderColumn)) {
+		return mobileHeaderColumn;
+	}
+	return cols[0] ?? '';
+}
+
+/**
+ * Resolve the mobile cell label shown above each value on small screens.
+ *
+ * @param {string}   col                 Column key.
+ * @param {Object}   mobileColumnHeaders Optional column-to-label map.
+ * @param {Set}      hiddenHeaderSet     Columns with hidden header labels.
+ * @return {string} Label for data-label attribute.
+ */
+export function resolveMobileColumnHeader(
+	col,
+	mobileColumnHeaders,
+	hiddenHeaderSet
+) {
+	if (hiddenHeaderSet.has(col)) {
+		return '';
+	}
+	const substitute = mobileColumnHeaders?.[col];
+	return typeof substitute === 'string' && substitute.trim()
+		? substitute.trim()
+		: col;
+}
+
+/**
  * @param {Object} tableState     Table interactivity state slice.
  * @param {string} identityColumn Row identity column key.
  * @return {{ filterCols: string[], dropdownCols: string[] }} Filter and dropdown column keys.
@@ -130,7 +166,10 @@ export function handleRowDropdownToggle(mount, button) {
  * @param {HTMLElement} params.mount                 Table mount node.
  * @param {string}      params.tableId               Table instance id.
  * @param {Object}      params.mobileColumnColors    Column-to-mobile-background map.
- * @param {string}      [params.mobileHeaderColumn]  Column key for mobile card title.
+ * @param {Object}      [params.mobileColumnHeaders] Column-to-mobile-header map.
+ * @param {string}      [params.mobileHeaderColumn]        Configured mobile header column key.
+ * @param {string}      [params.resolvedMobileHeaderCol]   Pre-resolved card title column key.
+ * @param {string[]}    [params.hiddenColumnHeaders] Column keys with hidden header labels.
  */
 export function appendDisplayRows({
 	tbody,
@@ -149,12 +188,17 @@ export function appendDisplayRows({
 	mount,
 	tableId,
 	mobileColumnColors = {},
+	mobileColumnHeaders = {},
 	mobileHeaderColumn = '',
+	resolvedMobileHeaderCol = '',
+	hiddenColumnHeaders = [],
 }) {
+	const hiddenHeaderSet = new Set(
+		Array.isArray(hiddenColumnHeaders) ? hiddenColumnHeaders : []
+	);
 	const mobileHeaderCol =
-		mobileHeaderColumn && cols.includes(mobileHeaderColumn)
-			? mobileHeaderColumn
-			: cols[0];
+		resolvedMobileHeaderCol ||
+		resolveMobileHeaderColumn(cols, mobileHeaderColumn);
 
 	displayRows.forEach((row, rowIndex) => {
 		const tr = tbody.append('tr');
@@ -235,7 +279,14 @@ export function appendDisplayRows({
 			const display = formatDisplayCellPair(row[col], col, formatOptions);
 			const td = tr
 				.append('td')
-				.attr('data-label', col)
+				.attr(
+					'data-label',
+					resolveMobileColumnHeader(
+						col,
+						mobileColumnHeaders,
+						hiddenHeaderSet
+					)
+				)
 				.classed('prc-data-table__first-col', col === cols[0]);
 
 			const cellColor = mobileColumnColors?.[col];

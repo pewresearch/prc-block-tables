@@ -18,6 +18,55 @@ namespace PRC\Platform\Blocks\Table;
  */
 class Settings {
 
+	/**
+	 * Allowed units for table width / max-width.
+	 *
+	 * @var string[]
+	 */
+	const TABLE_WIDTH_UNITS = array( 'px', 'em', 'rem', '%' );
+
+	/**
+	 * Allowed units for cell border width.
+	 *
+	 * @var string[]
+	 */
+	const BORDER_WIDTH_UNITS = array( 'px', 'em', 'rem' );
+
+	/**
+	 * Allowed units for cell padding.
+	 *
+	 * @var string[]
+	 */
+	const PADDING_UNITS = array( 'px', '%', 'em', 'rem', 'vw', 'vh' );
+
+	/**
+	 * Allowed border-collapse values.
+	 *
+	 * @var string[]
+	 */
+	const BORDER_COLLAPSE_VALUES = array( 'collapse', 'separate' );
+
+	/**
+	 * Allowed border-style values.
+	 *
+	 * @var string[]
+	 */
+	const BORDER_STYLE_VALUES = array( 'solid', 'dotted', 'dashed', 'double' );
+
+	/**
+	 * Allowed text-align values.
+	 *
+	 * @var string[]
+	 */
+	const TEXT_ALIGN_VALUES = array( 'left', 'center', 'right' );
+
+	/**
+	 * Allowed vertical-align values.
+	 *
+	 * @var string[]
+	 */
+	const VERTICAL_ALIGN_VALUES = array( 'top', 'middle', 'bottom' );
+
 	// Default options.
 	const OPTIONS = array(
 
@@ -51,7 +100,7 @@ class Settings {
 			'type'    => 'boolean',
 			'default' => false,
 		),
-		// Show Global setting button to non-administrative users.
+		// Legacy: previously delegated Global setting UI to non-admins. Kept for GET compatibility; no longer used for auth.
 		'show_global_setting'   => array(
 			'type'    => 'boolean',
 			'default' => false,
@@ -118,7 +167,7 @@ class Settings {
 		}
 
 		// Convert cell padding of string values to array.
-		if ( 'string' === gettype( $options['block_style']['cell_padding'] ) ) {
+		if ( isset( $options['block_style']['cell_padding'] ) && 'string' === gettype( $options['block_style']['cell_padding'] ) ) {
 			$padding_value = $options['block_style']['cell_padding'];
 
 			$options['block_style']['cell_padding'] = array(
@@ -130,5 +179,283 @@ class Settings {
 		}
 
 		return $options;
+	}
+
+	/**
+	 * Sanitize a single option value for persistence.
+	 *
+	 * Invalid values are skipped (return null) so partial updates continue.
+	 *
+	 * @param string $key   Option key from Settings::OPTIONS.
+	 * @param mixed  $value Raw request value.
+	 * @return mixed|null Sanitized value, or null to skip updating this key.
+	 */
+	public static function sanitize_option_value( $key, $value ) {
+		if ( ! array_key_exists( $key, self::OPTIONS ) ) {
+			return null;
+		}
+
+		$type = self::OPTIONS[ $key ]['type'];
+
+		if ( 'boolean' === $type ) {
+			return $value ? 1 : 0;
+		}
+
+		if ( 'number' === $type ) {
+			if ( ! is_numeric( $value ) ) {
+				return null;
+			}
+			$value = (float) $value;
+			if ( isset( self::OPTIONS[ $key ]['range'] ) ) {
+				$min   = self::OPTIONS[ $key ]['range']['min'];
+				$max   = self::OPTIONS[ $key ]['range']['max'];
+				$value = min( max( $value, $min ), $max );
+			}
+			return (int) round( $value );
+		}
+
+		if ( 'array' === $type ) {
+			if ( ! is_array( $value ) ) {
+				return null;
+			}
+			if ( 'block_style' === $key ) {
+				return self::sanitize_block_style( $value );
+			}
+			return null;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Sanitize the block_style option array.
+	 *
+	 * @param array $value Raw block_style payload.
+	 * @return array Filtered and validated block_style.
+	 */
+	public static function sanitize_block_style( array $value ) {
+		$defaults  = self::OPTIONS['block_style']['default'];
+		$sanitized = array();
+
+		foreach ( $value as $array_key => $array_value ) {
+			if ( ! array_key_exists( $array_key, $defaults ) ) {
+				continue;
+			}
+
+			$clean = self::sanitize_block_style_field( $array_key, $array_value );
+			if ( null !== $clean ) {
+				$sanitized[ $array_key ] = $clean;
+			}
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Sanitize one block_style field. Returns null to omit the field.
+	 *
+	 * @param string $key   Field name.
+	 * @param mixed  $value Field value.
+	 * @return mixed|null
+	 */
+	public static function sanitize_block_style_field( $key, $value ) {
+		if ( null === $value || '' === $value ) {
+			// Preserve explicit null/empty for optional color fields.
+			if ( in_array( $key, array( 'cell_text_color_th', 'cell_text_color_td' ), true ) ) {
+				return null;
+			}
+			return null;
+		}
+
+		switch ( $key ) {
+			case 'table_width':
+			case 'table_max_width':
+				return self::sanitize_dimension( $value, self::TABLE_WIDTH_UNITS );
+
+			case 'cell_border_width':
+				return self::sanitize_dimension( $value, self::BORDER_WIDTH_UNITS );
+
+			case 'cell_padding':
+				return self::sanitize_padding( $value );
+
+			case 'table_border_collapse':
+				return self::sanitize_enum( $value, self::BORDER_COLLAPSE_VALUES );
+
+			case 'cell_border_style':
+				return self::sanitize_enum( $value, self::BORDER_STYLE_VALUES );
+
+			case 'cell_text_align':
+				return self::sanitize_enum( $value, self::TEXT_ALIGN_VALUES );
+
+			case 'cell_vertical_align':
+				return self::sanitize_enum( $value, self::VERTICAL_ALIGN_VALUES );
+
+			case 'row_odd_color':
+			case 'row_even_color':
+			case 'cell_text_color_th':
+			case 'cell_text_color_td':
+			case 'cell_background_color_th':
+			case 'cell_background_color_td':
+			case 'cell_hover_background_color':
+			case 'cell_border_color':
+				return self::sanitize_color( $value );
+
+			case 'table_font_family':
+				return self::sanitize_font_family( $value );
+
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Sanitize a CSS dimension (number + unit).
+	 *
+	 * @param mixed    $value Raw value.
+	 * @param string[] $units Allowed units.
+	 * @return string|null
+	 */
+	public static function sanitize_dimension( $value, array $units ) {
+		if ( ! is_string( $value ) && ! is_numeric( $value ) ) {
+			return null;
+		}
+
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return null;
+		}
+
+		if ( '0' === $value ) {
+			return '0';
+		}
+
+		if ( ! preg_match( '/^(\d+(?:\.\d+)?)([a-z%]+)$/i', $value, $matches ) ) {
+			return null;
+		}
+
+		$number = $matches[1];
+		$unit   = strtolower( $matches[2] );
+
+		if ( ! in_array( $unit, $units, true ) ) {
+			return null;
+		}
+
+		if ( (float) $number < 0 ) {
+			return null;
+		}
+
+		return $number . $unit;
+	}
+
+	/**
+	 * Sanitize cell padding (string or four-side array).
+	 *
+	 * @param mixed $value Raw padding.
+	 * @return array|string|null
+	 */
+	public static function sanitize_padding( $value ) {
+		if ( is_string( $value ) ) {
+			return self::sanitize_dimension( $value, self::PADDING_UNITS );
+		}
+
+		if ( ! is_array( $value ) ) {
+			return null;
+		}
+
+		$sides     = array( 'top', 'right', 'bottom', 'left' );
+		$sanitized = array();
+
+		foreach ( $sides as $side ) {
+			if ( ! array_key_exists( $side, $value ) ) {
+				continue;
+			}
+			if ( '' === $value[ $side ] || null === $value[ $side ] ) {
+				$sanitized[ $side ] = '';
+				continue;
+			}
+			$clean = self::sanitize_dimension( $value[ $side ], self::PADDING_UNITS );
+			if ( null === $clean ) {
+				return null;
+			}
+			$sanitized[ $side ] = $clean;
+		}
+
+		return empty( $sanitized ) ? null : $sanitized;
+	}
+
+	/**
+	 * Sanitize a color value for CSS.
+	 *
+	 * @param mixed $value Raw color.
+	 * @return string|null
+	 */
+	public static function sanitize_color( $value ) {
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+
+		$value = trim( $value );
+		if ( '' === $value ) {
+			return null;
+		}
+
+		if ( 'transparent' === strtolower( $value ) ) {
+			return 'transparent';
+		}
+
+		// Hex: #rgb, #rrggbb, #rrggbbaa.
+		if ( preg_match( '/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $value ) ) {
+			return strtolower( $value );
+		}
+
+		// CSS custom property: var(--token) or var(--token, fallback).
+		// Fallback limited to safe CSS token chars (blocks </style> breakout).
+		if ( preg_match( '/^var\(\s*--[a-zA-Z0-9_-]+(?:\s*,\s*[#a-zA-Z0-9%._\-\s]+)?\s*\)$/', $value ) ) {
+			return $value;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Sanitize font-family for CSS (CSS vars only to avoid injection).
+	 *
+	 * @param mixed $value Raw font-family.
+	 * @return string|null
+	 */
+	public static function sanitize_font_family( $value ) {
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+
+		$value = trim( $value );
+		if ( '' === $value ) {
+			return null;
+		}
+
+		// Same var() allowlist as sanitize_color.
+		if ( preg_match( '/^var\(\s*--[a-zA-Z0-9_-]+(?:\s*,\s*[#a-zA-Z0-9%._\-\s]+)?\s*\)$/', $value ) ) {
+			return $value;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Sanitize an enum string value.
+	 *
+	 * @param mixed    $value   Raw value.
+	 * @param string[] $allowed Allowed values.
+	 * @return string|null
+	 */
+	public static function sanitize_enum( $value, array $allowed ) {
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+		$value = trim( $value );
+		if ( ! in_array( $value, $allowed, true ) ) {
+			return null;
+		}
+		return $value;
 	}
 }

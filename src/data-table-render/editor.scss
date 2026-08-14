@@ -43,6 +43,15 @@ th.prc-data-table__header-special-border {
 	td {
 		border: 1px dashed #ccc;
 		padding: 8px;
+	}
+
+	th:not(.prc-data-table__first-col),
+	td:not(.prc-data-table__first-col) {
+		text-align: var(--prc-data-table-cell-text-align, center);
+	}
+
+	th.prc-data-table__first-col,
+	td.prc-data-table__first-col {
 		text-align: left;
 	}
 }

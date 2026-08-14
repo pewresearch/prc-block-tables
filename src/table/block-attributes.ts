@@ -108,6 +108,8 @@ export interface BlockAttributes extends TableAttributes {
 	validationSchema?: string;
 	/** Derived: true when all column types and the active schema pass validation. Never set directly by the editor. */
 	isValid?: boolean;
+	/** Derived: short summary of the first validation error, or empty when valid. Never set directly by the editor. */
+	validationMessage?: string;
 	// ---------------------------------------------------------------------------
 	// @deprecated — kept for migration period only; use columnMeta instead.
 	// ---------------------------------------------------------------------------

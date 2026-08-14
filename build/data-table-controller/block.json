@@ -44,6 +44,10 @@
       "type": "object",
       "default": {}
     },
+    "hiddenColumnHeaders": {
+      "type": "array",
+      "default": []
+    },
     "jsonColumns": {
       "type": "array",
       "default": []
@@ -59,6 +63,10 @@
     "mobileHeaderColumn": {
       "type": "string",
       "default": ""
+    },
+    "mobileHiddenColumns": {
+      "type": "array",
+      "default": []
     },
     "columnSortMode": {
       "type": "string",
@@ -84,6 +92,10 @@
       "type": "number",
       "default": -1
     },
+    "autoSortRowValue": {
+      "type": "string",
+      "default": ""
+    },
     "autoSortExcludedColumns": {
       "type": "array",
       "default": []
@@ -103,6 +115,10 @@
     "mobileAutoSortRowIndex": {
       "type": "number",
       "default": -1
+    },
+    "mobileAutoSortRowValue": {
+      "type": "string",
+      "default": ""
     },
     "mobileAutoSortExcludedColumns": {
       "type": "array",
@@ -155,6 +171,14 @@
     "mobileColumnColors": {
       "type": "object",
       "default": {}
+    },
+    "mobileColumnHeaders": {
+      "type": "object",
+      "default": {}
+    },
+    "tableTextAlign": {
+      "type": "string",
+      "default": "center"
     },
     "firebasePath": {
       "type": "string",
@@ -217,9 +241,11 @@
     "prc-block/dataTableColumns": "jsonColumns",
     "prc-block/dataTableColumnOrder": "columnOrder",
     "prc-block/dataTableHiddenColumns": "hiddenColumns",
+    "prc-block/dataTableHiddenColumnHeaders": "hiddenColumnHeaders",
     "prc-block/dataTableEnableHeaderSpecialBorders": "enableHeaderSpecialBorders",
     "prc-block/dataTableHeaderSpecialBorderColors": "headerSpecialBorderColors",
-    "prc-block/dataTableEnableColumnSorting": "enableColumnSorting"
+    "prc-block/dataTableEnableColumnSorting": "enableColumnSorting",
+    "prc-block/dataTableTextAlign": "tableTextAlign"
   },
   "usesContext": [
     "prc-block/dataTableData",

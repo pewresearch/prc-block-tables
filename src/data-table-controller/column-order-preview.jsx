@@ -20,7 +20,8 @@ import { SortableColumnChip } from './edit-utils';
  * @param {string}      [props.title]               Optional group title above the strip.
  * @param {boolean}     props.isAutoSort            Whether auto sort mode is active.
  * @param {string[]}    props.effectiveOrder        Custom mode column order.
- * @param {string[]}    props.excludedOrder         Auto mode excluded columns.
+ * @param {string[]}    props.excludedBefore        Auto mode excluded columns before auto sort.
+ * @param {string[]}    props.excludedAfter         Auto mode excluded columns after auto sort.
  * @param {string[]}    props.autoSortedOrder       Auto mode locked columns.
  * @param {Object|null} props.sortReferenceRow      Row used for auto sort value suffixes.
  * @param {Object}      props.sensors               dnd-kit sensors.
@@ -31,13 +32,41 @@ export default function ColumnOrderPreview({
 	title = '',
 	isAutoSort,
 	effectiveOrder,
-	excludedOrder,
+	excludedBefore,
+	excludedAfter,
 	autoSortedOrder,
 	sortReferenceRow,
 	sensors,
 	onCustomDragEnd,
 	onAutoExcludedDragEnd,
 }) {
+	const autoPreviewItems = [
+		...excludedBefore,
+		...autoSortedOrder,
+		...excludedAfter,
+	];
+
+	const renderAutoChip = (colKey, disabled = false) => {
+		const cellValue = sortReferenceRow?.[colKey];
+		const suffix =
+			disabled &&
+			cellValue !== undefined &&
+			cellValue !== null &&
+			cellValue !== ''
+				? ` (${cellValue})`
+				: '';
+
+		return (
+			<SortableColumnChip
+				key={colKey}
+				id={colKey}
+				label={colKey}
+				disabled={disabled}
+				suffix={suffix}
+			/>
+		);
+	};
+
 	return (
 		<div className="prc-data-table-controller-column-order">
 			{title ? (
@@ -49,76 +78,36 @@ export default function ColumnOrderPreview({
 				<>
 					<p className="prc-data-table-controller-column-order__help">
 						{__(
-							'Excluded columns can be reordered. Remaining columns are auto-sorted by the selected row (descending).',
+							'Drag excluded columns before or after the auto-sorted group. Remaining columns are sorted by the selected row (descending).',
 							'data-table-controller'
 						)}
 					</p>
-					{excludedOrder.length > 0 && (
-						<div className="prc-data-table-controller-column-order__group">
-							<p className="prc-data-table-controller-column-order__group-title">
-								{__(
-									'Excluded from auto sort',
-									'data-table-controller'
-								)}
-							</p>
-							<DndContext
-								sensors={sensors}
-								collisionDetection={closestCenter}
-								onDragEnd={onAutoExcludedDragEnd}
+					{autoPreviewItems.length > 0 && (
+						<DndContext
+							sensors={sensors}
+							collisionDetection={closestCenter}
+							onDragEnd={onAutoExcludedDragEnd}
+						>
+							<SortableContext
+								items={autoPreviewItems}
+								strategy={horizontalListSortingStrategy}
 							>
-								<SortableContext
-									items={excludedOrder}
-									strategy={horizontalListSortingStrategy}
+								<div
+									className="prc-data-table-controller-column-order__list"
+									role="list"
 								>
-									<div
-										className="prc-data-table-controller-column-order__list"
-										role="list"
-									>
-										{excludedOrder.map((colKey) => (
-											<SortableColumnChip
-												key={colKey}
-												id={colKey}
-												label={colKey}
-											/>
-										))}
-									</div>
-								</SortableContext>
-							</DndContext>
-						</div>
-					)}
-					{autoSortedOrder.length > 0 && (
-						<div className="prc-data-table-controller-column-order__group">
-							<p className="prc-data-table-controller-column-order__group-title">
-								{__(
-									'Auto-sorted (locked)',
-									'data-table-controller'
-								)}
-							</p>
-							<div
-								className="prc-data-table-controller-column-order__list prc-data-table-controller-column-order__list--locked"
-								role="list"
-							>
-								{autoSortedOrder.map((colKey) => {
-									const cellValue =
-										sortReferenceRow?.[colKey];
-									const suffix =
-										cellValue !== undefined &&
-										cellValue !== null &&
-										cellValue !== ''
-											? ` (${cellValue})`
-											: '';
-									return (
-										<SortableColumnChip
-											key={colKey}
-											id={colKey}
-											label={colKey}
-											disabled
-											suffix={suffix}
-										/>
-									);
-								})}
-							</div>
-						</div>
+									{excludedBefore.map((colKey) =>
+										renderAutoChip(colKey)
+									)}
+									{autoSortedOrder.map((colKey) =>
+										renderAutoChip(colKey, true)
+									)}
+									{excludedAfter.map((colKey) =>
+										renderAutoChip(colKey)
+									)}
+								</div>
+							</SortableContext>
+						</DndContext>
 					)}
 				</>
 			) : (

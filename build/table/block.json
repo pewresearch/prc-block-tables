@@ -309,6 +309,10 @@
       "type": "boolean",
       "default": true
     },
+    "validationMessage": {
+      "type": "string",
+      "default": ""
+    },
     "columnRoundDecimals": {
       "type": "array",
       "default": [],
