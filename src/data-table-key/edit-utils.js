@@ -1,14 +1,14 @@
 /**
  * Internal Dependencies
  */
-import { normalizeContextData } from '../data-table-controller/context-data';
+import { normalizeContextData } from '../data-table-controller/lib/context-data';
 import {
 	isPivotConfigured,
 	normalizePivotColumns,
 	normalizePivotExtraColumns,
 	normalizePivotValueFields,
 	pivotSheets,
-} from '../data-table-controller/pivot';
+} from '../data-table-controller/lib/pivot';
 
 /**
  * Default categorical palette (Tableau-style), max 20 categories.

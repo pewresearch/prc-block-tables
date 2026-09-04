@@ -2,24 +2,6 @@
 /* eslint-disable max-lines-per-function */
 /* global FileReader */
 /**
- * External dependencies
- */
-import {
-	DndContext,
-	KeyboardSensor,
-	PointerSensor,
-	closestCenter,
-	useSensor,
-	useSensors,
-} from '@dnd-kit/core';
-import {
-	SortableContext,
-	arrayMove,
-	horizontalListSortingStrategy,
-	sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable';
-
-/**
  * WordPress Dependencies
  */
 import { __, sprintf } from '@wordpress/i18n';
@@ -38,7 +20,6 @@ import {
 	SelectControl,
 	Button,
 	Notice,
-	CheckboxControl,
 	TextControl,
 	ToggleControl,
 	Spinner,
@@ -47,10 +28,12 @@ import {
 /**
  * Internal Dependencies
  */
-import { parseCsvToTable, parseJsonToTable, unionSheetColumns } from './utils';
-import { normalizeContextData, unionContextSheetColumns } from './context-data';
+import { parseCsvToTable, parseJsonToTable } from './lib/utils';
 import {
-	SortableColumnChip,
+	normalizeContextData,
+	unionContextSheetColumns,
+} from './lib/context-data';
+import {
 	insertSheetFilterBlocks,
 	jsonParsedAttributes,
 	getEditorTablePreview,
@@ -58,30 +41,25 @@ import {
 	getAllTableColumns,
 	getFormatableColumns,
 	getValueFormatColumns,
-	getAutoSortRowOptions,
-	resolveAutoSortRowIndex,
-	computeAutoSortOrder,
-	getExcludedSides,
-	buildAutoColumnOrder,
-	normalizeAutoColumnOrder,
-	columnOrdersEqual,
-	mergeColumnOrder,
-} from './edit-utils';
-import ColumnSortingControls from './column-sorting-controls';
-import ColumnOrderPreview from './column-order-preview';
-import {
-	getDistinctValues,
-	isPivotConfigured,
-	normalizePivotColumns,
-	normalizePivotExtraColumns,
-	normalizePivotValueFields,
-	pivotSheets,
-} from './pivot';
-import ValueFormatRules from './value-format-rules';
-import MobileValueFormatRules from './mobile-value-format-rules';
-import HeaderSpecialBorders from './header-special-borders';
-import MobileColumnColors from './mobile-column-colors';
-import MobileColumnHeaders from './mobile-column-headers';
+} from './lib/edit-utils';
+import ColumnSortingPanel from './inspector/column-sorting-panel';
+import ColumnOrderPreview from './controls/column-order-preview';
+import { useColumnOrdering } from './hooks/use-column-ordering';
+import { isPivotConfigured } from './lib/pivot';
+import { usePivot } from './hooks/use-pivot';
+import { useSyncedTableAttributes } from './hooks/use-synced-table-attributes';
+import PivotPanel from './inspector/pivot-panel';
+import TableBehaviorPanel from './inspector/table-behavior-panel';
+import SheetsPanel from './inspector/sheets-panel';
+import ColumnVisibilityPanel from './inspector/column-visibility-panel';
+import MobileLayoutPanel from './inspector/mobile-layout-panel';
+import ValueFormattingPanel from './inspector/value-formatting-panel';
+import TextAlignmentPanel from './inspector/text-alignment-panel';
+import HeaderSpecialBorders from './controls/header-special-borders';
+import MobileColumnColors from './controls/mobile-column-colors';
+import MobileColumnColorsLocked from './controls/mobile-column-colors-locked';
+import BoldColumns from './controls/bold-columns';
+import RowDropdownControls from './inspector/row-dropdown-controls';
 
 /**
  * Resolve pre-pivot sheets from the active data source.
@@ -149,6 +127,8 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		hiddenColumnsBySheet = {},
 		hiddenColumnHeaders = [],
 		tableTextAlign = 'center',
+		tableHeaderTextAlign = '',
+		boldColumns = [],
 		jsonColumns,
 		columnOrder,
 		defaultJsonSheet,
@@ -173,12 +153,14 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		valueFormatSheets = [],
 		valueFormatExcludedColumns = [],
 		valueFormatRules = [],
+		enableDesktopAbbreviation = false,
+		valueAbbreviationRules = [],
 		mobileValueFormatRules = [],
 		enableRowDropdowns = false,
 		rowDropdownIdentityColumn = '',
 		rowDropdownColumns = [],
+		rowDropdownColumnsBySheet = {},
 		enableHeaderSpecialBorders = false,
-		headerSpecialBorderColors = {},
 		mobileColumnColors = {},
 		mobileColumnHeaders = {},
 		firebasePath = '',
@@ -188,23 +170,8 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		pivotColumns = [],
 		pivotValueFields = [],
 		pivotExtraColumns = [],
+		allowDataDownload = true,
 	} = attributes;
-
-	const isMobileConfigured = mobileColumnSortMode !== 'inherit';
-	const autoSortExcluded = useMemo(
-		() =>
-			Array.isArray(autoSortExcludedColumns)
-				? autoSortExcludedColumns
-				: [],
-		[autoSortExcludedColumns]
-	);
-	const mobileAutoSortExcluded = useMemo(
-		() =>
-			Array.isArray(mobileAutoSortExcludedColumns)
-				? mobileAutoSortExcludedColumns
-				: [],
-		[mobileAutoSortExcludedColumns]
-	);
 
 	const blockProps = useBlockProps();
 	const { insertBlocks } = useDispatch('core/block-editor');
@@ -249,37 +216,6 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		dataSource === 'json' ||
 		contextLike ||
 		(dataSource === 'csv' && pivotActive);
-	const isAutoSort =
-		supportsColumnSortingSources && columnSortMode === 'auto';
-	const isMobileAutoSort =
-		supportsColumnSortingSources && mobileColumnSortMode === 'auto';
-
-	// Backfill jsonColumns for posts saved before this attribute existed.
-	// Skipped while pivot is active — pivoted columns are synced separately.
-	useEffect(() => {
-		if (pivotActive || dataSource !== 'json') {
-			return;
-		}
-
-		if (
-			jsonTable?.sheets &&
-			(!Array.isArray(jsonColumns) || jsonColumns.length === 0)
-		) {
-			const cols = unionSheetColumns(jsonTable.sheets);
-			if (cols.length > 0) {
-				setAttributes({ jsonColumns: cols });
-			}
-			return;
-		}
-
-		if (
-			Array.isArray(jsonTable?.columns) &&
-			jsonTable.columns.length > 0 &&
-			(!Array.isArray(jsonColumns) || jsonColumns.length === 0)
-		) {
-			setAttributes({ jsonColumns: jsonTable.columns });
-		}
-	}, [pivotActive, dataSource, jsonTable, jsonColumns, setAttributes]);
 
 	const innerBlocksProps = useInnerBlocksProps(
 		{ className: 'prc-data-table-controller-inner' },
@@ -299,7 +235,6 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 	const [firebaseData, setFirebaseData] = useState(null);
 	const [firebaseStatus, setFirebaseStatus] = useState('idle'); // idle | loading | ready | error
 	const [firebaseError, setFirebaseError] = useState('');
-	const [columnVisibilitySheet, setColumnVisibilitySheet] = useState('');
 
 	useEffect(() => {
 		if (dataSource !== 'firebase') {
@@ -354,6 +289,38 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 	const resolvedContextData =
 		dataSource === 'firebase' ? firebaseData : providerContext;
 
+	const contextMobileCellBackground =
+		dataSource === 'context' &&
+		providerContext &&
+		typeof providerContext === 'object' &&
+		typeof providerContext.mobileCellBackground === 'string'
+			? providerContext.mobileCellBackground.trim()
+			: '';
+
+	const contextMobileWorldCellBackground =
+		dataSource === 'context' &&
+		providerContext &&
+		typeof providerContext === 'object' &&
+		typeof providerContext.mobileWorldCellBackground === 'string'
+			? providerContext.mobileWorldCellBackground.trim()
+			: '';
+
+	const contextMobileHeaderFormat =
+		dataSource === 'context' &&
+		providerContext &&
+		typeof providerContext === 'object' &&
+		providerContext.mobileHeaderFormat &&
+		typeof providerContext.mobileHeaderFormat === 'object' &&
+		typeof providerContext.mobileHeaderFormat.nameColumn === 'string' &&
+		typeof providerContext.mobileHeaderFormat.yearColumn === 'string'
+			? {
+					nameColumn:
+						providerContext.mobileHeaderFormat.nameColumn.trim(),
+					yearColumn:
+						providerContext.mobileHeaderFormat.yearColumn.trim(),
+				}
+			: null;
+
 	const rawSourceSheets = useMemo(
 		() =>
 			getRawSourceSheets({
@@ -383,152 +350,28 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 	const hasContextData =
 		contextLike && contextSheets && Object.keys(contextSheets).length > 0;
 
-	const normalizedPivotColumns = useMemo(
-		() => normalizePivotColumns(pivotColumns),
-		[pivotColumns]
-	);
-	const normalizedPivotValueFields = useMemo(
-		() => normalizePivotValueFields(pivotValueFields),
-		[pivotValueFields]
-	);
-	const normalizedPivotExtraColumns = useMemo(
-		() =>
-			normalizePivotExtraColumns(pivotExtraColumns, {
-				indexColumn: pivotIndexColumn,
-				columnField: pivotColumnField,
-				pivotColumns,
-				valueFields: pivotValueFields,
-			}),
-		[
-			pivotExtraColumns,
-			pivotIndexColumn,
-			pivotColumnField,
-			pivotColumns,
-			pivotValueFields,
-		]
-	);
-
-	const pivotedSheets = useMemo(() => {
-		if (!pivotActive) {
-			return null;
-		}
-		return pivotSheets(rawSourceSheets, {
-			indexColumn: pivotIndexColumn,
-			columnField: pivotColumnField,
-			pivotColumns: normalizedPivotColumns,
-			valueFields: normalizedPivotValueFields,
-			extraColumns: normalizedPivotExtraColumns,
-		});
-	}, [
-		pivotActive,
-		rawSourceSheets,
-		pivotIndexColumn,
-		pivotColumnField,
+	const {
+		pivotedSheets,
 		normalizedPivotColumns,
 		normalizedPivotValueFields,
 		normalizedPivotExtraColumns,
-	]);
-
-	const pivotDistinctColumnValues = useMemo(() => {
-		if (!pivotColumnField) {
-			return [];
-		}
-		return getDistinctValues(rawSourceSheets, pivotColumnField);
-	}, [rawSourceSheets, pivotColumnField]);
-
-	const pivotExtraColumnOptions = useMemo(() => {
-		const valueFieldNames = new Set(
-			normalizedPivotValueFields.map((entry) => entry.field)
-		);
-		return rawSourceColumns.filter(
-			(col) =>
-				col !== pivotIndexColumn &&
-				col !== pivotColumnField &&
-				!valueFieldNames.has(col)
-		);
-	}, [
-		rawSourceColumns,
+		pivotDistinctColumnValues,
+		pivotExtraColumnOptions,
+	} = usePivot({
+		pivotActive,
 		pivotIndexColumn,
 		pivotColumnField,
-		normalizedPivotValueFields,
-	]);
-
-	// Backfill jsonColumns from provider / Firebase context for editor controls.
-	// Skipped while pivot is active — pivoted columns are synced separately.
-	useEffect(() => {
-		if (pivotActive || !contextLike) {
-			return;
-		}
-
-		const sheets = normalizeContextData(resolvedContextData);
-		const cols = unionContextSheetColumns(sheets);
-		if (
-			cols.length > 0 &&
-			(!Array.isArray(jsonColumns) || jsonColumns.length === 0)
-		) {
-			setAttributes({ jsonColumns: cols });
-		}
-	}, [
-		pivotActive,
-		contextLike,
-		resolvedContextData,
-		jsonColumns,
-		setAttributes,
-	]);
-
-	// Sync jsonColumns + default sheet from pivot output.
-	useEffect(() => {
-		if (!pivotActive || !pivotedSheets) {
-			return;
-		}
-		const sheetNames = Object.keys(pivotedSheets);
-		const firstSheet = pivotedSheets[sheetNames[0]];
-		const nextColumns = Array.isArray(firstSheet?.columns)
-			? firstSheet.columns
-			: [];
-		if (nextColumns.length === 0) {
-			return;
-		}
-		const colsChanged = !columnOrdersEqual(jsonColumns, nextColumns);
-		const nextDefault =
-			defaultJsonSheet && pivotedSheets[defaultJsonSheet]
-				? defaultJsonSheet
-				: sheetNames[0] || '';
-		const defaultChanged = defaultJsonSheet !== nextDefault;
-		if (colsChanged || defaultChanged) {
-			setAttributes({
-				...(colsChanged ? { jsonColumns: nextColumns } : {}),
-				...(defaultChanged ? { defaultJsonSheet: nextDefault } : {}),
-			});
-		}
-	}, [
-		pivotActive,
-		pivotedSheets,
+		pivotColumns,
+		pivotValueFields,
+		pivotExtraColumns,
+		rawSourceSheets,
+		rawSourceColumns,
 		jsonColumns,
 		defaultJsonSheet,
 		setAttributes,
-	]);
-
-	// Insert sheet-filter blocks for pivot value-field sheets.
-	useEffect(() => {
-		if (!pivotActive || !pivotedSheets) {
-			return;
-		}
-		const sheetNames = Object.keys(pivotedSheets);
-		if (sheetNames.length === 0) {
-			return;
-		}
-		const defaultSheet =
-			defaultJsonSheet && pivotedSheets[defaultJsonSheet]
-				? defaultJsonSheet
-				: sheetNames[0];
-		insertSheetFilterBlocks(
-			clientId,
-			insertBlocks,
-			sheetNames,
-			defaultSheet
-		);
-	}, [pivotActive, pivotedSheets, clientId, insertBlocks, defaultJsonSheet]);
+		clientId,
+		insertBlocks,
+	});
 
 	const onCsvFile = (file) => {
 		const reader = new FileReader();
@@ -547,59 +390,6 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 			handleJsonParsed(parseJsonToTable(text));
 		};
 		reader.readAsText(file);
-	};
-
-	const effectiveOrder = useMemo(
-		() =>
-			mergeColumnOrder({
-				columns: jsonColumns,
-				savedOrder: columnOrder,
-				hidden: hiddenColumns,
-			}),
-		[jsonColumns, hiddenColumns, columnOrder]
-	);
-
-	const mobileEffectiveOrder = useMemo(
-		() =>
-			mergeColumnOrder({
-				columns: jsonColumns,
-				savedOrder: mobileColumnOrder,
-				hidden: hiddenColumns,
-			}),
-		[jsonColumns, hiddenColumns, mobileColumnOrder]
-	);
-
-	const sensors = useSensors(
-		useSensor(PointerSensor),
-		useSensor(KeyboardSensor, {
-			coordinateGetter: sortableKeyboardCoordinates,
-		})
-	);
-
-	const handleColumnOrderDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const oldIndex = effectiveOrder.indexOf(active.id);
-		const newIndex = effectiveOrder.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		const next = arrayMove(effectiveOrder, oldIndex, newIndex);
-		setAttributes({ columnOrder: next });
-	};
-
-	const handleMobileColumnOrderDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const oldIndex = mobileEffectiveOrder.indexOf(active.id);
-		const newIndex = mobileEffectiveOrder.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		const next = arrayMove(mobileEffectiveOrder, oldIndex, newIndex);
-		setAttributes({ mobileColumnOrder: next });
 	};
 
 	const {
@@ -649,405 +439,38 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		return visibleColumns.filter((col) => !sheetHidden.has(col));
 	}, [visibleColumns, hiddenColumnsBySheet, resolvedDefaultSheet]);
 
-	const perSheetHiddenColumns = useMemo(() => {
-		const bySheet =
-			hiddenColumnsBySheet &&
-			typeof hiddenColumnsBySheet === 'object' &&
-			!Array.isArray(hiddenColumnsBySheet)
-				? hiddenColumnsBySheet
-				: {};
-		return bySheet[columnVisibilitySheet] || [];
-	}, [hiddenColumnsBySheet, columnVisibilitySheet]);
-
-	useEffect(() => {
-		if (!Array.isArray(sheetNames) || sheetNames.length <= 1) {
-			return;
-		}
-		if (
-			!columnVisibilitySheet ||
-			!sheetNames.includes(columnVisibilitySheet)
-		) {
-			setColumnVisibilitySheet(
-				resolvedDefaultSheet || sheetNames[0] || ''
-			);
-		}
-	}, [sheetNames, columnVisibilitySheet, resolvedDefaultSheet]);
-
-	useEffect(() => {
-		// Empty lists are not authoritative (e.g. Firebase/context still loading,
-		// or jsonColumns not yet backfilled). Pruning against them would wipe
-		// saved per-sheet visibility.
-		if (!Array.isArray(sheetNames) || sheetNames.length === 0) {
-			return;
-		}
-		if (!Array.isArray(jsonColumns) || jsonColumns.length === 0) {
-			return;
-		}
-
-		const cols = new Set(jsonColumns);
-		const names = new Set(sheetNames);
-		const bySheet =
-			hiddenColumnsBySheet &&
-			typeof hiddenColumnsBySheet === 'object' &&
-			!Array.isArray(hiddenColumnsBySheet)
-				? hiddenColumnsBySheet
-				: {};
-		let changed = false;
-		const next = {};
-
-		Object.entries(bySheet).forEach(([sheet, hidden]) => {
-			if (!names.has(sheet)) {
-				changed = true;
-				return;
-			}
-			const pruned = (Array.isArray(hidden) ? hidden : []).filter((col) =>
-				cols.has(col)
-			);
-			if (pruned.length !== (Array.isArray(hidden) ? hidden.length : 0)) {
-				changed = true;
-			}
-			if (pruned.length > 0) {
-				next[sheet] = pruned;
-			} else if (Array.isArray(hidden) && hidden.length > 0) {
-				changed = true;
-			}
-		});
-
-		if (changed) {
-			setAttributes({ hiddenColumnsBySheet: next });
-		}
-	}, [jsonColumns, sheetNames, hiddenColumnsBySheet, setAttributes]);
-
-	useEffect(() => {
-		if (!Array.isArray(jsonColumns) || jsonColumns.length === 0) {
-			return;
-		}
-		if (
-			!Array.isArray(hiddenColumnHeaders) ||
-			hiddenColumnHeaders.length === 0
-		) {
-			return;
-		}
-		const cols = new Set(jsonColumns);
-		const pruned = hiddenColumnHeaders.filter((col) => cols.has(col));
-		if (pruned.length !== hiddenColumnHeaders.length) {
-			setAttributes({ hiddenColumnHeaders: pruned });
-		}
-	}, [jsonColumns, hiddenColumnHeaders, setAttributes]);
-
-	useEffect(() => {
-		if (
-			!Array.isArray(mobileHiddenColumns) ||
-			mobileHiddenColumns.length === 0
-		) {
-			return;
-		}
-		const visible = new Set(visibleColumns);
-		const pruned = mobileHiddenColumns.filter((col) => visible.has(col));
-		if (pruned.length !== mobileHiddenColumns.length) {
-			setAttributes({ mobileHiddenColumns: pruned });
-		}
-	}, [visibleColumns, mobileHiddenColumns, setAttributes]);
-
-	useEffect(() => {
-		if (
-			!mobileColumnHeaders ||
-			typeof mobileColumnHeaders !== 'object' ||
-			Object.keys(mobileColumnHeaders).length === 0
-		) {
-			return;
-		}
-		const visible = new Set(visibleColumns);
-		const pruned = {};
-		let changed = false;
-		Object.entries(mobileColumnHeaders).forEach(([col, label]) => {
-			if (visible.has(col)) {
-				pruned[col] = label;
-			} else {
-				changed = true;
-			}
-		});
-		if (changed) {
-			setAttributes({ mobileColumnHeaders: pruned });
-		}
-	}, [visibleColumns, mobileColumnHeaders, setAttributes]);
-
-	useEffect(() => {
-		if (!defaultSortColumn) {
-			return;
-		}
-		if (
-			!enableColumnSorting ||
-			!defaultSheetVisibleColumns.includes(defaultSortColumn)
-		) {
-			setAttributes({ defaultSortColumn: '' });
-		}
-	}, [
-		defaultSortColumn,
-		enableColumnSorting,
-		defaultSheetVisibleColumns,
-		setAttributes,
-	]);
-
-	const autoSortRowOptions = useMemo(
-		() =>
-			getAutoSortRowOptions({
-				rows: previewRows,
-				variable: autoSortVariable,
-			}),
-		[previewRows, autoSortVariable]
-	);
-
-	const mobileAutoSortRowOptions = useMemo(
-		() =>
-			getAutoSortRowOptions({
-				rows: previewRows,
-				variable: mobileAutoSortVariable,
-			}),
-		[previewRows, mobileAutoSortVariable]
-	);
-
-	const resolvedAutoSortRowIndex = useMemo(
-		() =>
-			resolveAutoSortRowIndex({
-				rows: previewRows,
-				variable: autoSortVariable,
-				rowValue: autoSortRowValue,
-				rowIndex: autoSortRowIndex,
-			}),
-		[previewRows, autoSortVariable, autoSortRowValue, autoSortRowIndex]
-	);
-
-	const resolvedMobileAutoSortRowIndex = useMemo(
-		() =>
-			resolveAutoSortRowIndex({
-				rows: previewRows,
-				variable: mobileAutoSortVariable,
-				rowValue: mobileAutoSortRowValue,
-				rowIndex: mobileAutoSortRowIndex,
-			}),
-		[
-			previewRows,
-			mobileAutoSortVariable,
-			mobileAutoSortRowValue,
-			mobileAutoSortRowIndex,
-		]
-	);
-
-	const autoSortedOrder = useMemo(() => {
-		if (!isAutoSort || resolvedAutoSortRowIndex === null) {
-			return [];
-		}
-		return computeAutoSortOrder({
-			rows: previewRows,
-			rowIndex: resolvedAutoSortRowIndex,
-			columns: jsonColumns,
-			excluded: autoSortExcluded,
-			hidden: hiddenColumns,
-		});
-	}, [
-		isAutoSort,
-		resolvedAutoSortRowIndex,
-		previewRows,
+	const desktopOrdering = useColumnOrdering({
+		viewport: 'desktop',
+		enabled: supportsColumnSortingSources,
+		sortMode: columnSortMode,
+		autoSortVariable,
+		autoSortRowIndex,
+		autoSortRowValue,
+		autoSortExcludedColumns,
+		savedOrder: columnOrder,
 		jsonColumns,
-		autoSortExcluded,
 		hiddenColumns,
-	]);
-
-	const { beforeOrder: excludedBefore, afterOrder: excludedAfter } =
-		useMemo(() => {
-			if (!isAutoSort) {
-				return { beforeOrder: [], afterOrder: [] };
-			}
-			return getExcludedSides({
-				columnOrder,
-				excluded: autoSortExcluded,
-				visible: visibleColumns,
-				autoOrder: autoSortedOrder,
-			});
-		}, [
-			isAutoSort,
-			columnOrder,
-			autoSortExcluded,
-			visibleColumns,
-			autoSortedOrder,
-		]);
-
-	const mobileAutoSortedOrder = useMemo(() => {
-		if (!isMobileAutoSort || resolvedMobileAutoSortRowIndex === null) {
-			return [];
-		}
-		return computeAutoSortOrder({
-			rows: previewRows,
-			rowIndex: resolvedMobileAutoSortRowIndex,
-			columns: jsonColumns,
-			excluded: mobileAutoSortExcluded,
-			hidden: hiddenColumns,
-		});
-	}, [
-		isMobileAutoSort,
-		resolvedMobileAutoSortRowIndex,
-		previewRows,
-		jsonColumns,
-		mobileAutoSortExcluded,
-		hiddenColumns,
-	]);
-
-	const {
-		beforeOrder: mobileExcludedBefore,
-		afterOrder: mobileExcludedAfter,
-	} = useMemo(() => {
-		if (!isMobileAutoSort) {
-			return { beforeOrder: [], afterOrder: [] };
-		}
-		return getExcludedSides({
-			columnOrder: mobileColumnOrder,
-			excluded: mobileAutoSortExcluded,
-			visible: visibleColumns,
-			autoOrder: mobileAutoSortedOrder,
-		});
-	}, [
-		isMobileAutoSort,
-		mobileColumnOrder,
-		mobileAutoSortExcluded,
 		visibleColumns,
-		mobileAutoSortedOrder,
-	]);
-
-	const computedAutoColumnOrder = useMemo(() => {
-		if (!isAutoSort) {
-			return [];
-		}
-		return buildAutoColumnOrder({
-			beforeOrder: excludedBefore,
-			autoOrder: autoSortedOrder,
-			afterOrder: excludedAfter,
-		});
-	}, [isAutoSort, excludedBefore, excludedAfter, autoSortedOrder]);
-
-	const computedMobileAutoColumnOrder = useMemo(() => {
-		if (!isMobileAutoSort) {
-			return [];
-		}
-		return buildAutoColumnOrder({
-			beforeOrder: mobileExcludedBefore,
-			autoOrder: mobileAutoSortedOrder,
-			afterOrder: mobileExcludedAfter,
-		});
-	}, [
-		isMobileAutoSort,
-		mobileExcludedBefore,
-		mobileExcludedAfter,
-		mobileAutoSortedOrder,
-	]);
-
-	useEffect(() => {
-		if (!isAutoSort || resolvedAutoSortRowIndex === null) {
-			return;
-		}
-		if (!columnOrdersEqual(columnOrder, computedAutoColumnOrder)) {
-			setAttributes({ columnOrder: computedAutoColumnOrder });
-		}
-	}, [
-		isAutoSort,
-		resolvedAutoSortRowIndex,
-		computedAutoColumnOrder,
-		columnOrder,
+		previewRows,
 		setAttributes,
-	]);
-
-	useEffect(() => {
-		if (!isMobileAutoSort || resolvedMobileAutoSortRowIndex === null) {
-			return;
-		}
-		if (
-			!columnOrdersEqual(mobileColumnOrder, computedMobileAutoColumnOrder)
-		) {
-			setAttributes({
-				mobileColumnOrder: computedMobileAutoColumnOrder,
-			});
-		}
-	}, [
-		isMobileAutoSort,
-		resolvedMobileAutoSortRowIndex,
-		computedMobileAutoColumnOrder,
-		mobileColumnOrder,
+	});
+	const mobileOrdering = useColumnOrdering({
+		viewport: 'mobile',
+		enabled: supportsColumnSortingSources,
+		sortMode: mobileColumnSortMode,
+		autoSortVariable: mobileAutoSortVariable,
+		autoSortRowIndex: mobileAutoSortRowIndex,
+		autoSortRowValue: mobileAutoSortRowValue,
+		autoSortExcludedColumns: mobileAutoSortExcludedColumns,
+		savedOrder: mobileColumnOrder,
+		jsonColumns,
+		hiddenColumns,
+		visibleColumns,
+		previewRows,
 		setAttributes,
-	]);
-
-	const sortReferenceRow =
-		resolvedAutoSortRowIndex !== null
-			? previewRows[resolvedAutoSortRowIndex]
-			: null;
-
-	const mobileSortReferenceRow =
-		resolvedMobileAutoSortRowIndex !== null
-			? previewRows[resolvedMobileAutoSortRowIndex]
-			: null;
-
-	const handleAutoExcludedDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const previewItems = [
-			...excludedBefore,
-			...autoSortedOrder,
-			...excludedAfter,
-		];
-		const oldIndex = previewItems.indexOf(active.id);
-		const newIndex = previewItems.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		const nextOrder = normalizeAutoColumnOrder(
-			arrayMove(previewItems, oldIndex, newIndex),
-			autoSortedOrder,
-			autoSortExcluded
-		);
-		setAttributes({ columnOrder: nextOrder });
-	};
-
-	const handleMobileAutoExcludedDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const previewItems = [
-			...mobileExcludedBefore,
-			...mobileAutoSortedOrder,
-			...mobileExcludedAfter,
-		];
-		const oldIndex = previewItems.indexOf(active.id);
-		const newIndex = previewItems.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		const nextOrder = normalizeAutoColumnOrder(
-			arrayMove(previewItems, oldIndex, newIndex),
-			mobileAutoSortedOrder,
-			mobileAutoSortExcluded
-		);
-		setAttributes({ mobileColumnOrder: nextOrder });
-	};
+	});
 
 	const jsonColumnList = Array.isArray(jsonColumns) ? jsonColumns : [];
-	const showColumnOrderUi =
-		supportsColumnSortingSources &&
-		(isAutoSort
-			? excludedBefore.length +
-					excludedAfter.length +
-					autoSortedOrder.length >
-				1
-			: effectiveOrder.length > 1);
-
-	const showMobileColumnOrderUi =
-		isMobileConfigured &&
-		supportsColumnSortingSources &&
-		(isMobileAutoSort
-			? mobileExcludedBefore.length +
-					mobileExcludedAfter.length +
-					mobileAutoSortedOrder.length >
-				1
-			: mobileEffectiveOrder.length > 1);
 
 	const hiddenCount =
 		dataSource === 'json' ||
@@ -1068,8 +491,6 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 			}),
 		[dataSource, jsonColumns, csvTable, hiddenColumns, resolvedContextData]
 	);
-
-	const showMobileLayoutPanel = visibleColumns.length > 0;
 
 	const allTableColumns = useMemo(
 		() =>
@@ -1103,21 +524,6 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		]
 	);
 
-	const valueFormatExcluded = useMemo(
-		() =>
-			Array.isArray(valueFormatExcludedColumns)
-				? valueFormatExcludedColumns
-				: [],
-		[valueFormatExcludedColumns]
-	);
-	const valueFormatSelectedSheets = useMemo(
-		() =>
-			Array.isArray(valueFormatSheets)
-				? valueFormatSheets.map(String)
-				: [],
-		[valueFormatSheets]
-	);
-
 	const rowDropdownColumnList = useMemo(
 		() => (Array.isArray(rowDropdownColumns) ? rowDropdownColumns : []),
 		[rowDropdownColumns]
@@ -1129,179 +535,48 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 				formatableColumns,
 				enableRowDropdowns,
 				rowDropdownColumns: rowDropdownColumnList,
+				rowDropdownColumnsBySheet,
 				rowDropdownIdentityColumn,
 			}),
 		[
 			formatableColumns,
 			enableRowDropdowns,
 			rowDropdownColumnList,
+			rowDropdownColumnsBySheet,
 			rowDropdownIdentityColumn,
 		]
 	);
 
-	const rowDropdownSortableColumns = useMemo(
-		() =>
-			rowDropdownColumnList.filter(
-				(col) => col !== rowDropdownIdentityColumn
-			),
-		[rowDropdownColumnList, rowDropdownIdentityColumn]
-	);
-
-	const handleRowDropdownColumnDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const oldIndex = rowDropdownSortableColumns.indexOf(active.id);
-		const newIndex = rowDropdownSortableColumns.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		setAttributes({
-			rowDropdownColumns: arrayMove(
-				rowDropdownSortableColumns,
-				oldIndex,
-				newIndex
-			),
-		});
-	};
-
-	// Default dropdown columns to all table columns except the identity column.
-	useEffect(() => {
-		if (!enableRowDropdowns || allTableColumns.length === 0) {
-			return;
-		}
-		if (rowDropdownColumnList.length > 0) {
-			return;
-		}
-		const initial = allTableColumns.filter(
-			(col) => col !== rowDropdownIdentityColumn
-		);
-		if (initial.length > 0) {
-			setAttributes({ rowDropdownColumns: initial });
-		}
-	}, [
+	useSyncedTableAttributes({
+		pivotActive,
+		dataSource,
+		jsonTable,
+		jsonColumns,
+		contextLike,
+		resolvedContextData,
+		sheetNames,
+		hiddenColumnsBySheet,
+		rowDropdownColumnsBySheet,
+		hiddenColumnHeaders,
+		boldColumns,
+		mobileHiddenColumns,
+		mobileColumnHeaders,
+		visibleColumns,
+		defaultSortColumn,
+		enableColumnSorting,
+		defaultSheetVisibleColumns,
 		enableRowDropdowns,
 		allTableColumns,
-		rowDropdownColumnList.length,
+		rowDropdownColumnList,
 		rowDropdownIdentityColumn,
-		setAttributes,
-	]);
-
-	// Keep identity column out of dropdown column selection.
-	useEffect(() => {
-		if (!rowDropdownIdentityColumn || rowDropdownColumnList.length === 0) {
-			return;
-		}
-		if (!rowDropdownColumnList.includes(rowDropdownIdentityColumn)) {
-			return;
-		}
-		setAttributes({
-			rowDropdownColumns: rowDropdownColumnList.filter(
-				(col) => col !== rowDropdownIdentityColumn
-			),
-		});
-	}, [rowDropdownIdentityColumn, rowDropdownColumnList, setAttributes]);
-
-	const handlePivotColumnsDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const values = normalizedPivotColumns.map((col) => col.value);
-		const oldIndex = values.indexOf(active.id);
-		const newIndex = values.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		setAttributes({
-			pivotColumns: arrayMove(normalizedPivotColumns, oldIndex, newIndex),
-		});
-	};
-
-	const handlePivotValueFieldsDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const fields = normalizedPivotValueFields.map((entry) => entry.field);
-		const oldIndex = fields.indexOf(active.id);
-		const newIndex = fields.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		setAttributes({
-			pivotValueFields: arrayMove(
-				normalizedPivotValueFields,
-				oldIndex,
-				newIndex
-			),
-		});
-	};
-
-	const handlePivotExtraColumnsDragEnd = ({ active, over }) => {
-		if (!over || active.id === over.id) {
-			return;
-		}
-		const oldIndex = normalizedPivotExtraColumns.indexOf(active.id);
-		const newIndex = normalizedPivotExtraColumns.indexOf(over.id);
-		if (oldIndex < 0 || newIndex < 0) {
-			return;
-		}
-		setAttributes({
-			pivotExtraColumns: arrayMove(
-				normalizedPivotExtraColumns,
-				oldIndex,
-				newIndex
-			),
-		});
-	};
-
-	const showPivotPanel = rawSourceColumns.length > 0;
-
-	// Migrate per-column columnValueFormats to global prefix/suffix + exclusions.
-	useEffect(() => {
-		const legacyFormats = attributes.columnValueFormats;
-		if (
-			!legacyFormats ||
-			typeof legacyFormats !== 'object' ||
-			Array.isArray(legacyFormats) ||
-			Object.keys(legacyFormats).length === 0
-		) {
-			return;
-		}
-		if (valuePrefix || valueSuffix) {
-			return;
-		}
-		const entries = Object.entries(legacyFormats);
-		const firstFormat =
-			entries[0][1] && typeof entries[0][1] === 'object'
-				? entries[0][1]
-				: {};
-		const prefix = firstFormat.prefix ?? '';
-		const suffix = firstFormat.suffix ?? '';
-		const excluded = new Set();
-		entries.forEach(([col, fmt]) => {
-			const row = fmt && typeof fmt === 'object' ? fmt : {};
-			if (row.prefix !== prefix || row.suffix !== suffix) {
-				excluded.add(col);
-			}
-		});
-		formatableColumns.forEach((col) => {
-			if (!legacyFormats[col]) {
-				excluded.add(col);
-			}
-		});
-		setAttributes({
-			valuePrefix: prefix,
-			valueSuffix: suffix,
-			valueFormatExcludedColumns: [...excluded],
-			columnValueFormats: {},
-		});
-	}, [
-		attributes.columnValueFormats,
+		columnValueFormats: attributes.columnValueFormats,
 		valuePrefix,
 		valueSuffix,
 		formatableColumns,
+		mobileValueFormatRules,
+		valueAbbreviationRules,
 		setAttributes,
-	]);
+	});
 
 	return (
 		<div {...blockProps}>
@@ -1311,6 +586,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 					initialOpen
 				>
 					<SelectControl
+						__next40pxDefaultSize
 						label={__('Source', 'data-table-controller')}
 						value={dataSource}
 						options={[
@@ -1354,6 +630,20 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 							setAttributes({ dataSource: value })
 						}
 					/>
+					<ToggleControl
+						label={__(
+							'Allow data download',
+							'data-table-controller'
+						)}
+						help={__(
+							'Show a visitor-facing link to download the current table as a CSV file.',
+							'data-table-controller'
+						)}
+						checked={allowDataDownload}
+						onChange={(value) =>
+							setAttributes({ allowDataDownload: value })
+						}
+					/>
 					{dataSource === 'csv' && (
 						<>
 							<p className="prc-data-table-controller-help">
@@ -1385,6 +675,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 									allowedTypes={['text', 'text/csv']}
 									render={({ open }) => (
 										<Button
+											__next40pxDefaultSize
 											variant="secondary"
 											onClick={open}
 										>
@@ -1442,6 +733,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 									allowedTypes={['application/json']}
 									render={({ open }) => (
 										<Button
+											__next40pxDefaultSize
 											variant="secondary"
 											onClick={open}
 										>
@@ -1480,6 +772,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 								)}
 							</p>
 							<TextControl
+								__next40pxDefaultSize
 								label={__(
 									'Firebase path',
 									'data-table-controller'
@@ -1587,1297 +880,167 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 						</>
 					)}
 				</PanelBody>
-				{showPivotPanel && (
-					<PanelBody
-						title={__(
-							'Data reshaping (Pivot)',
-							'data-table-controller'
-						)}
-						initialOpen={false}
-					>
-						<ToggleControl
-							label={__(
-								'Reshape long data into wide columns',
-								'data-table-controller'
-							)}
-							help={__(
-								'Turn rows sharing an identity (e.g. country) into one row, with values of another field (e.g. religion) becoming columns. Each value field becomes a toggleable sheet.',
-								'data-table-controller'
-							)}
-							checked={pivotEnabled}
-							onChange={(value) => {
-								if (!value) {
-									setAttributes({
-										pivotEnabled: false,
-										pivotExtraColumns: [],
-										jsonColumns: rawSourceColumns,
-										columnOrder: [],
-										defaultJsonSheet: '',
-									});
-									return;
-								}
-								setAttributes({ pivotEnabled: true });
-							}}
-						/>
-						{pivotEnabled && (
-							<>
-								<SelectControl
-									label={__(
-										'Row identity column',
-										'data-table-controller'
-									)}
-									value={pivotIndexColumn}
-									options={[
-										{
-											label: __(
-												'Select a column…',
-												'data-table-controller'
-											),
-											value: '',
-										},
-										...rawSourceColumns.map((col) => ({
-											label: col,
-											value: col,
-										})),
-									]}
-									onChange={(value) =>
-										setAttributes({
-											pivotIndexColumn: value ?? '',
-										})
-									}
-									help={__(
-										'Each distinct value becomes one table row (e.g. country).',
-										'data-table-controller'
-									)}
-								/>
-								<SelectControl
-									label={__(
-										'Column field',
-										'data-table-controller'
-									)}
-									value={pivotColumnField}
-									options={[
-										{
-											label: __(
-												'Select a column…',
-												'data-table-controller'
-											),
-											value: '',
-										},
-										...rawSourceColumns.map((col) => ({
-											label: col,
-											value: col,
-										})),
-									]}
-									onChange={(value) => {
-										const nextField = value ?? '';
-										const distinct = nextField
-											? getDistinctValues(
-													rawSourceSheets,
-													nextField
-												)
-											: [];
-										const defaultExtras = nextField
-											? rawSourceColumns.filter(
-													(col) =>
-														col !==
-															pivotIndexColumn &&
-														col !== nextField
-												)
-											: [];
-										setAttributes({
-											pivotColumnField: nextField,
-											pivotColumns: distinct.map(
-												(entry) => ({
-													value: entry,
-													label: entry,
-												})
-											),
-											pivotExtraColumns: defaultExtras,
-										});
-									}}
-									help={__(
-										'Distinct values of this field become columns (e.g. religion).',
-										'data-table-controller'
-									)}
-								/>
-								{pivotColumnField &&
-									pivotDistinctColumnValues.length > 0 && (
-										<>
-											<p className="prc-data-table-controller-help">
-												{__(
-													'Choose which values become columns. Customize the header label for each.',
-													'data-table-controller'
-												)}
-											</p>
-											{pivotDistinctColumnValues.map(
-												(value) => {
-													const selected =
-														normalizedPivotColumns.find(
-															(col) =>
-																col.value ===
-																value
-														);
-													return (
-														<div
-															key={`pivot-col-${value}`}
-															className="prc-data-table-controller-pivot-column"
-														>
-															<CheckboxControl
-																__nextHasNoMarginBottom
-																label={value}
-																checked={
-																	!!selected
-																}
-																onChange={(
-																	checked
-																) => {
-																	const next =
-																		checked
-																			? [
-																					...normalizedPivotColumns.filter(
-																						(
-																							col
-																						) =>
-																							col.value !==
-																							value
-																					),
-																					{
-																						value,
-																						label:
-																							selected?.label ||
-																							value,
-																					},
-																				]
-																			: normalizedPivotColumns.filter(
-																					(
-																						col
-																					) =>
-																						col.value !==
-																						value
-																				);
-																	setAttributes(
-																		{
-																			pivotColumns:
-																				next,
-																		}
-																	);
-																}}
-															/>
-															{selected && (
-																<TextControl
-																	label={__(
-																		'Column label',
-																		'data-table-controller'
-																	)}
-																	value={
-																		selected.label
-																	}
-																	onChange={(
-																		label
-																	) => {
-																		setAttributes(
-																			{
-																				pivotColumns:
-																					normalizedPivotColumns.map(
-																						(
-																							col
-																						) =>
-																							col.value ===
-																							value
-																								? {
-																										...col,
-																										label:
-																											label ||
-																											value,
-																									}
-																								: col
-																					),
-																			}
-																		);
-																	}}
-																/>
-															)}
-														</div>
-													);
-												}
-											)}
-											{normalizedPivotColumns.length >
-												1 && (
-												<>
-													<p className="prc-data-table-controller-column-order__help">
-														{__(
-															'Drag to set column order after the identity column.',
-															'data-table-controller'
-														)}
-													</p>
-													<DndContext
-														sensors={sensors}
-														collisionDetection={
-															closestCenter
-														}
-														onDragEnd={
-															handlePivotColumnsDragEnd
-														}
-													>
-														<SortableContext
-															items={normalizedPivotColumns.map(
-																(col) =>
-																	col.value
-															)}
-															strategy={
-																horizontalListSortingStrategy
-															}
-														>
-															<div
-																className="prc-data-table-controller-column-order__list"
-																role="list"
-															>
-																{normalizedPivotColumns.map(
-																	(col) => (
-																		<SortableColumnChip
-																			key={`pivot-order-${col.value}`}
-																			id={
-																				col.value
-																			}
-																			label={
-																				col.label
-																			}
-																		/>
-																	)
-																)}
-															</div>
-														</SortableContext>
-													</DndContext>
-												</>
-											)}
-										</>
-									)}
-								{pivotExtraColumnOptions.length > 0 && (
-									<>
-										<p className="prc-data-table-controller-help">
-											{__(
-												'Also group by these fields (e.g. year, direction). Each unique combination with the row identity becomes its own row. Hide columns via Column visibility if needed.',
-												'data-table-controller'
-											)}
-										</p>
-										{pivotExtraColumnOptions.map((col) => (
-											<CheckboxControl
-												key={`pivot-extra-${col}`}
-												__nextHasNoMarginBottom
-												label={col}
-												checked={normalizedPivotExtraColumns.includes(
-													col
-												)}
-												onChange={(checked) => {
-													const next = checked
-														? [
-																...normalizedPivotExtraColumns.filter(
-																	(entry) =>
-																		entry !==
-																		col
-																),
-																col,
-															]
-														: normalizedPivotExtraColumns.filter(
-																(entry) =>
-																	entry !==
-																	col
-															);
-													setAttributes({
-														pivotExtraColumns: next,
-													});
-												}}
-											/>
-										))}
-										{normalizedPivotExtraColumns.length >
-											1 && (
-											<>
-												<p className="prc-data-table-controller-column-order__help">
-													{__(
-														'Drag to set column order after the identity column.',
-														'data-table-controller'
-													)}
-												</p>
-												<DndContext
-													sensors={sensors}
-													collisionDetection={
-														closestCenter
-													}
-													onDragEnd={
-														handlePivotExtraColumnsDragEnd
-													}
-												>
-													<SortableContext
-														items={
-															normalizedPivotExtraColumns
-														}
-														strategy={
-															horizontalListSortingStrategy
-														}
-													>
-														<div
-															className="prc-data-table-controller-column-order__list"
-															role="list"
-														>
-															{normalizedPivotExtraColumns.map(
-																(col) => (
-																	<SortableColumnChip
-																		key={`pivot-extra-order-${col}`}
-																		id={col}
-																		label={
-																			col
-																		}
-																	/>
-																)
-															)}
-														</div>
-													</SortableContext>
-												</DndContext>
-											</>
-										)}
-									</>
-								)}
-								<p className="prc-data-table-controller-help">
-									{__(
-										'Choose value fields. Each selected field becomes a sheet readers can toggle between.',
-										'data-table-controller'
-									)}
-								</p>
-								{rawSourceColumns.map((field) => {
-									const selected =
-										normalizedPivotValueFields.find(
-											(entry) => entry.field === field
-										);
-									return (
-										<div
-											key={`pivot-value-${field}`}
-											className="prc-data-table-controller-pivot-column"
-										>
-											<CheckboxControl
-												__nextHasNoMarginBottom
-												label={field}
-												checked={!!selected}
-												onChange={(checked) => {
-													const next = checked
-														? [
-																...normalizedPivotValueFields.filter(
-																	(entry) =>
-																		entry.field !==
-																		field
-																),
-																{
-																	field,
-																	label:
-																		selected?.label ||
-																		field,
-																},
-															]
-														: normalizedPivotValueFields.filter(
-																(entry) =>
-																	entry.field !==
-																	field
-															);
-													setAttributes({
-														pivotValueFields: next,
-														...(checked
-															? {
-																	pivotExtraColumns:
-																		pivotExtraColumns.filter(
-																			(
-																				col
-																			) =>
-																				col !==
-																				field
-																		),
-																}
-															: {}),
-													});
-												}}
-											/>
-											{selected && (
-												<TextControl
-													label={__(
-														'Sheet label',
-														'data-table-controller'
-													)}
-													value={selected.label}
-													onChange={(label) => {
-														setAttributes({
-															pivotValueFields:
-																normalizedPivotValueFields.map(
-																	(entry) =>
-																		entry.field ===
-																		field
-																			? {
-																					...entry,
-																					label:
-																						label ||
-																						field,
-																				}
-																			: entry
-																),
-														});
-													}}
-												/>
-											)}
-										</div>
-									);
-								})}
-								{normalizedPivotValueFields.length > 1 && (
-									<>
-										<p className="prc-data-table-controller-column-order__help">
-											{__(
-												'Drag to set sheet order.',
-												'data-table-controller'
-											)}
-										</p>
-										<DndContext
-											sensors={sensors}
-											collisionDetection={closestCenter}
-											onDragEnd={
-												handlePivotValueFieldsDragEnd
-											}
-										>
-											<SortableContext
-												items={normalizedPivotValueFields.map(
-													(entry) => entry.field
-												)}
-												strategy={
-													horizontalListSortingStrategy
-												}
-											>
-												<div
-													className="prc-data-table-controller-column-order__list"
-													role="list"
-												>
-													{normalizedPivotValueFields.map(
-														(entry) => (
-															<SortableColumnChip
-																key={`pivot-value-order-${entry.field}`}
-																id={entry.field}
-																label={
-																	entry.label
-																}
-															/>
-														)
-													)}
-												</div>
-											</SortableContext>
-										</DndContext>
-									</>
-								)}
-							</>
-						)}
-					</PanelBody>
-				)}
-				<PanelBody
-					title={__('Table behavior', 'data-table-controller')}
-					initialOpen={false}
-				>
-					<ToggleControl
-						label={__(
-							'Enable column sorting',
-							'data-table-controller'
-						)}
-						help={__(
-							'When enabled, readers can sort the table by clicking column headers. Disable to render static, non-sortable headers.',
-							'data-table-controller'
-						)}
-						checked={enableColumnSorting}
-						onChange={(value) =>
-							setAttributes({
-								enableColumnSorting: value,
-								...(value ? {} : { defaultSortColumn: '' }),
-							})
-						}
-					/>
-					{enableColumnSorting &&
-						defaultSheetVisibleColumns.length > 0 && (
-							<>
-								<SelectControl
-									label={__(
-										'Default sort column',
-										'data-table-controller'
-									)}
-									help={__(
-										'Sort rows by this column when the table first loads. Sheet and filter changes clear the sort.',
-										'data-table-controller'
-									)}
-									value={defaultSortColumn || ''}
-									options={[
-										{
-											label: __(
-												'None',
-												'data-table-controller'
-											),
-											value: '',
-										},
-										...defaultSheetVisibleColumns.map(
-											(col) => ({
-												label: col,
-												value: col,
-											})
-										),
-									]}
-									onChange={(value) =>
-										setAttributes({
-											defaultSortColumn: value || '',
-										})
-									}
-								/>
-								{defaultSortColumn && (
-									<SelectControl
-										label={__(
-											'Default sort direction',
-											'data-table-controller'
-										)}
-										value={defaultSortDirection || 'asc'}
-										options={[
-											{
-												label: __(
-													'Ascending',
-													'data-table-controller'
-												),
-												value: 'asc',
-											},
-											{
-												label: __(
-													'Descending',
-													'data-table-controller'
-												),
-												value: 'desc',
-											},
-										]}
-										onChange={(value) =>
-											setAttributes({
-												defaultSortDirection:
-													value || 'asc',
-											})
-										}
-									/>
-								)}
-							</>
-						)}
-				</PanelBody>
-				{isMultiSheetJson && sheetNames.length > 0 && (
-					<PanelBody
-						title={__('Sheets', 'data-table-controller')}
-						initialOpen={false}
-					>
-						<SelectControl
-							label={__('Default sheet', 'data-table-controller')}
-							value={resolvedDefaultSheet}
-							options={sheetNames.map((name) => ({
-								label: name,
-								value: name,
-							}))}
-							onChange={(value) =>
-								setAttributes({ defaultJsonSheet: value })
-							}
-						/>
-						<p className="prc-data-table-controller-help">
-							{sprintf(
-								/* translators: %s: comma-separated sheet names */
-								__(
-									'Detected sheets: %s. Filter buttons toggle between them on the frontend.',
-									'data-table-controller'
-								),
-								sheetNames.join(', ')
-							)}
-						</p>
-					</PanelBody>
-				)}
-				{(dataSource === 'json' ||
-					contextLike ||
-					(dataSource === 'csv' && pivotActive)) &&
-					jsonColumnList.length > 0 && (
-						<PanelBody
-							title={__(
-								'Column visibility',
-								'data-table-controller'
-							)}
-							initialOpen={false}
-						>
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Uncheck columns to hide them from the rendered table on every sheet.',
-									'data-table-controller'
-								)}
-							</p>
-							{(Array.isArray(jsonColumns)
-								? jsonColumns
-								: []
-							).map((col) => (
-								<CheckboxControl
-									key={col}
-									__nextHasNoMarginBottom
-									label={col}
-									checked={!hiddenColumns?.includes(col)}
-									onChange={(visible) => {
-										const next = visible
-											? (hiddenColumns || []).filter(
-													(c) => c !== col
-												)
-											: [...(hiddenColumns || []), col];
-										const nextHidden = next;
-										setAttributes({
-											hiddenColumns: nextHidden,
-											columnOrder: (
-												columnOrder || []
-											).filter(
-												(key) =>
-													!nextHidden.includes(key)
-											),
-										});
-									}}
-								/>
-							))}
-							<hr />
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Uncheck column names to hide header text only. Column data still displays.',
-									'data-table-controller'
-								)}
-							</p>
-							{visibleColumns.map((col) => (
-								<CheckboxControl
-									key={`header-${col}`}
-									__nextHasNoMarginBottom
-									label={col}
-									checked={
-										!hiddenColumnHeaders?.includes(col)
-									}
-									onChange={(showHeaderName) => {
-										const next = showHeaderName
-											? (
-													hiddenColumnHeaders || []
-												).filter((c) => c !== col)
-											: [
-													...(hiddenColumnHeaders ||
-														[]),
-													col,
-												];
-										setAttributes({
-											hiddenColumnHeaders: next,
-										});
-									}}
-								/>
-							))}
-							{Array.isArray(sheetNames) &&
-								sheetNames.length > 1 && (
-									<>
-										<hr />
-										<p className="prc-data-table-controller-help">
-											{__(
-												'Hide columns only when a specific sheet is active.',
-												'data-table-controller'
-											)}
-										</p>
-										<SelectControl
-											label={__(
-												'Sheet',
-												'data-table-controller'
-											)}
-											value={
-												columnVisibilitySheet ||
-												resolvedDefaultSheet ||
-												sheetNames[0] ||
-												''
-											}
-											options={sheetNames.map((name) => ({
-												label: name,
-												value: name,
-											}))}
-											onChange={setColumnVisibilitySheet}
-										/>
-										{visibleColumns.map((col) => (
-											<CheckboxControl
-												key={`${columnVisibilitySheet}-${col}`}
-												__nextHasNoMarginBottom
-												label={col}
-												checked={
-													!perSheetHiddenColumns.includes(
-														col
-													)
-												}
-												onChange={(visible) => {
-													const sheet =
-														columnVisibilitySheet ||
-														resolvedDefaultSheet ||
-														sheetNames[0] ||
-														'';
-													if (!sheet) {
-														return;
-													}
-													const current =
-														hiddenColumnsBySheet?.[
-															sheet
-														] || [];
-													const nextHidden = visible
-														? current.filter(
-																(c) => c !== col
-															)
-														: [...current, col];
-													const nextBySheet = {
-														...(hiddenColumnsBySheet ||
-															{}),
-													};
-													if (nextHidden.length > 0) {
-														nextBySheet[sheet] =
-															nextHidden;
-													} else {
-														delete nextBySheet[
-															sheet
-														];
-													}
-													setAttributes({
-														hiddenColumnsBySheet:
-															nextBySheet,
-													});
-												}}
-											/>
-										))}
-									</>
-								)}
-						</PanelBody>
-					)}
-				{supportsColumnSortingSources && jsonColumnList.length > 0 && (
-					<PanelBody
-						title={__(
-							'Column sorting (desktop)',
-							'data-table-controller'
-						)}
-						initialOpen={false}
-					>
-						<ColumnSortingControls
-							sortMode={columnSortMode}
-							onSortModeChange={(value) =>
-								setAttributes({ columnSortMode: value })
-							}
-							isAutoSort={isAutoSort}
-							autoSortVariable={autoSortVariable}
-							autoSortRowIndex={
-								resolvedAutoSortRowIndex ?? autoSortRowIndex
-							}
-							autoSortExcluded={autoSortExcluded}
-							autoSortRowOptions={autoSortRowOptions}
-							visibleColumns={visibleColumns}
-							jsonColumnList={jsonColumnList}
-							onAutoSortVariableChange={(value) =>
-								setAttributes({
-									autoSortVariable: value,
-									autoSortRowIndex: -1,
-									autoSortRowValue: '',
-								})
-							}
-							onAutoSortRowIndexChange={(value) => {
-								const index =
-									value === '' ? -1 : parseInt(value, 10);
-								const rowValue =
-									index >= 0 &&
-									autoSortVariable &&
-									previewRows[index]
-										? String(
-												previewRows[index][
-													autoSortVariable
-												] ?? ''
-											)
-										: '';
-								setAttributes({
-									autoSortRowIndex: index,
-									autoSortRowValue: rowValue,
-								});
-							}}
-							onAutoSortExcludedChange={(next) =>
-								setAttributes({
-									autoSortExcludedColumns: next,
-								})
-							}
-						/>
-					</PanelBody>
-				)}
-				{supportsColumnSortingSources && jsonColumnList.length > 0 && (
-					<PanelBody
-						title={__(
-							'Column sorting (mobile)',
-							'data-table-controller'
-						)}
-						initialOpen={false}
-					>
-						<ColumnSortingControls
-							sortMode={mobileColumnSortMode}
-							includeInheritOption
-							onSortModeChange={(value) => {
-								if (
-									value === 'custom' &&
-									mobileColumnSortMode === 'inherit'
-								) {
-									setAttributes({
-										mobileColumnSortMode: value,
-										mobileColumnOrder: effectiveOrder,
-									});
-									return;
-								}
-								if (value === 'auto') {
-									setAttributes({
-										mobileColumnSortMode: value,
-										mobileColumnOrder: [],
-										mobileAutoSortRowIndex: -1,
-										mobileAutoSortRowValue: '',
-									});
-									return;
-								}
-								setAttributes({ mobileColumnSortMode: value });
-							}}
-							isAutoSort={isMobileAutoSort}
-							autoSortVariable={mobileAutoSortVariable}
-							autoSortRowIndex={
-								resolvedMobileAutoSortRowIndex ??
-								mobileAutoSortRowIndex
-							}
-							autoSortExcluded={mobileAutoSortExcluded}
-							autoSortRowOptions={mobileAutoSortRowOptions}
-							visibleColumns={visibleColumns}
-							jsonColumnList={jsonColumnList}
-							excludeCheckboxKeyPrefix="mobile-auto-exclude"
-							onAutoSortVariableChange={(value) =>
-								setAttributes({
-									mobileAutoSortVariable: value,
-									mobileAutoSortRowIndex: -1,
-									mobileAutoSortRowValue: '',
-								})
-							}
-							onAutoSortRowIndexChange={(value) => {
-								const index =
-									value === '' ? -1 : parseInt(value, 10);
-								const rowValue =
-									index >= 0 &&
-									mobileAutoSortVariable &&
-									previewRows[index]
-										? String(
-												previewRows[index][
-													mobileAutoSortVariable
-												] ?? ''
-											)
-										: '';
-								setAttributes({
-									mobileAutoSortRowIndex: index,
-									mobileAutoSortRowValue: rowValue,
-								});
-							}}
-							onAutoSortExcludedChange={(next) =>
-								setAttributes({
-									mobileAutoSortExcludedColumns: next,
-								})
-							}
-						/>
-					</PanelBody>
-				)}
-				{showMobileLayoutPanel && (
-					<PanelBody
-						title={__('Mobile layout', 'data-table-controller')}
-						initialOpen={false}
-					>
-						{mobileHeaderColumnOptions.length > 1 && (
-							<SelectControl
-								label={__(
-									'Mobile card header column',
-									'data-table-controller'
-								)}
-								value={mobileHeaderColumn || ''}
-								options={mobileHeaderColumnOptions}
-								onChange={(value) =>
-									setAttributes({ mobileHeaderColumn: value })
-								}
-								help={__(
-									'On small screens, each row becomes a card with this column as the title.',
-									'data-table-controller'
-								)}
-							/>
-						)}
-						<p className="prc-data-table-controller-help">
-							{__(
-								'Uncheck columns to hide them on small screens only. Desktop column visibility is unchanged.',
-								'data-table-controller'
-							)}
-						</p>
-						{visibleColumns.map((col) => (
-							<CheckboxControl
-								key={`mobile-visible-${col}`}
-								__nextHasNoMarginBottom
-								label={col}
-								checked={!mobileHiddenColumns?.includes(col)}
-								onChange={(visible) => {
-									const next = visible
-										? (mobileHiddenColumns || []).filter(
-												(c) => c !== col
-											)
-										: [...(mobileHiddenColumns || []), col];
-									setAttributes({
-										mobileHiddenColumns: next,
-									});
-								}}
-							/>
-						))}
-						<MobileColumnHeaders
-							headers={mobileColumnHeaders}
-							columns={visibleColumns}
-							onHeadersChange={(nextHeaders) =>
-								setAttributes({
-									mobileColumnHeaders: nextHeaders,
-								})
-							}
-						/>
-					</PanelBody>
-				)}
-				<PanelBody
-					title={__('Row dropdowns', 'data-table-controller')}
-					initialOpen={false}
-				>
-					<ToggleControl
-						label={__(
-							'Enable row dropdown tables',
-							'data-table-controller'
-						)}
-						help={__(
-							'When enabled, each row can expand to show all dataset rows that share the same identity column value (including filtered-out rows).',
-							'data-table-controller'
-						)}
-						checked={enableRowDropdowns}
-						onChange={(value) =>
-							setAttributes({ enableRowDropdowns: value })
-						}
-					/>
-					{enableRowDropdowns && (
-						<SelectControl
-							label={__(
-								'Row identity column',
-								'data-table-controller'
-							)}
-							value={rowDropdownIdentityColumn || ''}
-							options={[
-								{
-									label: __(
-										'Select column…',
-										'data-table-controller'
-									),
-									value: '',
-								},
-								...allTableColumns.map((col) => ({
-									label: col,
-									value: col,
-								})),
-							]}
-							onChange={(value) =>
-								setAttributes({
-									rowDropdownIdentityColumn: value ?? '',
-								})
-							}
-							help={__(
-								'Rows with the same value in this column are grouped; expanding a row shows every matching row from the full dataset.',
-								'data-table-controller'
-							)}
-						/>
-					)}
-					{enableRowDropdowns && allTableColumns.length > 0 && (
-						<>
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Choose which columns appear in the expandable dropdown tables. The identity column is always excluded.',
-									'data-table-controller'
-								)}
-							</p>
-							{allTableColumns.map((col) => (
-								<CheckboxControl
-									key={`row-dropdown-col-${col}`}
-									__nextHasNoMarginBottom
-									label={col}
-									checked={
-										col !== rowDropdownIdentityColumn &&
-										rowDropdownColumnList.includes(col)
-									}
-									disabled={col === rowDropdownIdentityColumn}
-									onChange={(visible) => {
-										const next = visible
-											? [
-													...rowDropdownColumnList.filter(
-														(c) => c !== col
-													),
-													col,
-												]
-											: rowDropdownColumnList.filter(
-													(c) => c !== col
-												);
-										setAttributes({
-											rowDropdownColumns: next,
-										});
-									}}
-								/>
-							))}
-							{rowDropdownSortableColumns.length > 1 && (
-								<>
-									<p className="prc-data-table-controller-column-order__help">
-										{__(
-											'Drag to set column order in dropdown rows.',
-											'data-table-controller'
-										)}
-									</p>
-									<DndContext
-										sensors={sensors}
-										collisionDetection={closestCenter}
-										onDragEnd={
-											handleRowDropdownColumnDragEnd
-										}
-									>
-										<SortableContext
-											items={rowDropdownSortableColumns}
-											strategy={
-												horizontalListSortingStrategy
-											}
-										>
-											<div
-												className="prc-data-table-controller-column-order__list"
-												role="list"
-											>
-												{rowDropdownSortableColumns.map(
-													(colKey) => (
-														<SortableColumnChip
-															key={`row-dropdown-order-${colKey}`}
-															id={colKey}
-															label={colKey}
-														/>
-													)
-												)}
-											</div>
-										</SortableContext>
-									</DndContext>
-								</>
-							)}
-						</>
-					)}
-				</PanelBody>
-				<PanelBody
-					title={__('Value formatting', 'data-table-controller')}
-					initialOpen={false}
-				>
-					<TextControl
-						label={__('Prefix', 'data-table-controller')}
-						value={valuePrefix}
-						onChange={(value) =>
-							setAttributes({ valuePrefix: value ?? '' })
-						}
-						help={__(
-							'Added before each value, e.g. $',
-							'data-table-controller'
-						)}
-					/>
-					<TextControl
-						label={__('Suffix', 'data-table-controller')}
-						value={valueSuffix}
-						onChange={(value) =>
-							setAttributes({ valueSuffix: value ?? '' })
-						}
-						help={__(
-							'Added after each value, e.g. %',
-							'data-table-controller'
-						)}
-					/>
-					{Array.isArray(sheetNames) && sheetNames.length > 1 && (
-						<>
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Sheets (none selected = all sheets)',
-									'data-table-controller'
-								)}
-							</p>
-							{sheetNames.map((sheet) => (
-								<CheckboxControl
-									key={`value-format-sheet-${sheet}`}
-									__nextHasNoMarginBottom
-									label={sheet}
-									checked={valueFormatSelectedSheets.includes(
-										sheet
-									)}
-									onChange={(checked) => {
-										const next = checked
-											? [
-													...valueFormatSelectedSheets.filter(
-														(s) => s !== sheet
-													),
-													sheet,
-												]
-											: valueFormatSelectedSheets.filter(
-													(s) => s !== sheet
-												);
-										setAttributes({
-											valueFormatSheets: next,
-										});
-									}}
-								/>
-							))}
-						</>
-					)}
-					{valueFormatColumns.length > 0 && (
-						<>
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Check columns to exclude from prefix/suffix (e.g. row labels). Includes columns shown only in row dropdowns. Non-empty cells only; sorting and filtering use raw values.',
-									'data-table-controller'
-								)}
-							</p>
-							{valueFormatColumns.map((col) => (
-								<CheckboxControl
-									key={`value-format-exclude-${col}`}
-									__nextHasNoMarginBottom
-									label={sprintf(
-										/* translators: %s: column name */
-										__(
-											'Exclude %s',
-											'data-table-controller'
-										),
-										col
-									)}
-									checked={valueFormatExcluded.includes(col)}
-									onChange={(excluded) => {
-										const next = excluded
-											? [...valueFormatExcluded, col]
-											: valueFormatExcluded.filter(
-													(c) => c !== col
-												);
-										setAttributes({
-											valueFormatExcludedColumns: next,
-										});
-									}}
-								/>
-							))}
-						</>
-					)}
-					{dataSource === 'remote' &&
-						!hasRemoteResults &&
-						valueFormatColumns.length === 0 && (
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Load remote data to choose columns to exclude from formatting.',
-									'data-table-controller'
-								)}
-							</p>
-						)}
-					{dataSource === 'context' &&
-						!hasContextData &&
-						valueFormatColumns.length === 0 && (
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Load provider context data to choose columns to exclude from formatting.',
-									'data-table-controller'
-								)}
-							</p>
-						)}
-					{dataSource === 'firebase' &&
-						!hasContextData &&
-						valueFormatColumns.length === 0 && (
-							<p className="prc-data-table-controller-help">
-								{__(
-									'Load Firebase data to choose columns to exclude from formatting.',
-									'data-table-controller'
-								)}
-							</p>
-						)}
-					<ValueFormatRules
-						rules={valueFormatRules}
-						sheetNames={sheetNames}
-						formatableColumns={valueFormatColumns}
-						onChange={(nextRules) =>
-							setAttributes({ valueFormatRules: nextRules })
-						}
-					/>
-				</PanelBody>
-				<PanelBody
-					title={__(
-						'Mobile value formatting',
-						'data-table-controller'
-					)}
-					initialOpen={false}
-				>
-					<p className="prc-data-table-controller-help">
-						{__(
-							'Mobile-only formatting: conditional replacements override Value formatting replacements on small screens; k/M/B/T abbreviation for numbers ≥ 1,000. Display only; sorting and filtering use raw values.',
-							'data-table-controller'
-						)}
-					</p>
-					<MobileValueFormatRules
-						rules={mobileValueFormatRules}
-						sheetNames={sheetNames}
-						formatableColumns={valueFormatColumns}
-						onChange={(nextRules) =>
-							setAttributes({
-								mobileValueFormatRules: nextRules,
-							})
-						}
-					/>
-				</PanelBody>
+				<PivotPanel
+					pivotEnabled={pivotEnabled}
+					pivotIndexColumn={pivotIndexColumn}
+					pivotColumnField={pivotColumnField}
+					pivotExtraColumns={pivotExtraColumns}
+					rawSourceColumns={rawSourceColumns}
+					rawSourceSheets={rawSourceSheets}
+					normalizedPivotColumns={normalizedPivotColumns}
+					normalizedPivotValueFields={normalizedPivotValueFields}
+					normalizedPivotExtraColumns={normalizedPivotExtraColumns}
+					pivotDistinctColumnValues={pivotDistinctColumnValues}
+					pivotExtraColumnOptions={pivotExtraColumnOptions}
+					setAttributes={setAttributes}
+				/>
+				<TableBehaviorPanel
+					enableColumnSorting={enableColumnSorting}
+					defaultSheetVisibleColumns={defaultSheetVisibleColumns}
+					defaultSortColumn={defaultSortColumn}
+					defaultSortDirection={defaultSortDirection}
+					setAttributes={setAttributes}
+				/>
+				<SheetsPanel
+					isMultiSheetJson={isMultiSheetJson}
+					sheetNames={sheetNames}
+					resolvedDefaultSheet={resolvedDefaultSheet}
+					setAttributes={setAttributes}
+				/>
+				<ColumnVisibilityPanel
+					enabled={
+						supportsColumnSortingSources &&
+						jsonColumnList.length > 0
+					}
+					jsonColumnList={jsonColumnList}
+					hiddenColumns={hiddenColumns}
+					columnOrder={columnOrder}
+					visibleColumns={visibleColumns}
+					hiddenColumnHeaders={hiddenColumnHeaders}
+					sheetNames={sheetNames}
+					resolvedDefaultSheet={resolvedDefaultSheet}
+					hiddenColumnsBySheet={hiddenColumnsBySheet}
+					setAttributes={setAttributes}
+				/>
+				<ColumnSortingPanel
+					viewport="desktop"
+					enabled={
+						supportsColumnSortingSources &&
+						jsonColumnList.length > 0
+					}
+					sortMode={columnSortMode}
+					isAutoSort={desktopOrdering.isAutoSort}
+					autoSortVariable={autoSortVariable}
+					autoSortRowIndex={desktopOrdering.controlRowIndex}
+					autoSortExcluded={desktopOrdering.autoSortExcluded}
+					autoSortRowOptions={desktopOrdering.autoSortRowOptions}
+					visibleColumns={visibleColumns}
+					jsonColumnList={jsonColumnList}
+					previewRows={previewRows}
+					setAttributes={setAttributes}
+				/>
+				<ColumnSortingPanel
+					viewport="mobile"
+					enabled={
+						supportsColumnSortingSources &&
+						jsonColumnList.length > 0
+					}
+					sortMode={mobileColumnSortMode}
+					isAutoSort={mobileOrdering.isAutoSort}
+					autoSortVariable={mobileAutoSortVariable}
+					autoSortRowIndex={mobileOrdering.controlRowIndex}
+					autoSortExcluded={mobileOrdering.autoSortExcluded}
+					autoSortRowOptions={mobileOrdering.autoSortRowOptions}
+					visibleColumns={visibleColumns}
+					jsonColumnList={jsonColumnList}
+					previewRows={previewRows}
+					desktopEffectiveOrder={desktopOrdering.effectiveOrder}
+					setAttributes={setAttributes}
+				/>
+				<MobileLayoutPanel
+					enabled={visibleColumns.length > 0}
+					contextMobileHeaderFormat={contextMobileHeaderFormat}
+					mobileHeaderColumnOptions={mobileHeaderColumnOptions}
+					mobileHeaderColumn={mobileHeaderColumn}
+					visibleColumns={visibleColumns}
+					mobileHiddenColumns={mobileHiddenColumns}
+					mobileColumnHeaders={mobileColumnHeaders}
+					setAttributes={setAttributes}
+				/>
+				<RowDropdownControls
+					enableRowDropdowns={enableRowDropdowns}
+					setAttributes={setAttributes}
+					rowDropdownIdentityColumn={rowDropdownIdentityColumn}
+					rowDropdownColumns={rowDropdownColumns}
+					rowDropdownColumnsBySheet={rowDropdownColumnsBySheet}
+					allTableColumns={allTableColumns}
+					sheetNames={sheetNames}
+					resolvedDefaultSheet={resolvedDefaultSheet}
+				/>
+				<ValueFormattingPanel
+					valuePrefix={valuePrefix}
+					valueSuffix={valueSuffix}
+					valueFormatSheets={valueFormatSheets}
+					valueFormatExcludedColumns={valueFormatExcludedColumns}
+					valueFormatColumns={valueFormatColumns}
+					sheetNames={sheetNames}
+					dataSource={dataSource}
+					hasRemoteResults={hasRemoteResults}
+					hasContextData={hasContextData}
+					valueFormatRules={valueFormatRules}
+					enableDesktopAbbreviation={enableDesktopAbbreviation}
+					valueAbbreviationRules={valueAbbreviationRules}
+					mobileValueFormatRules={mobileValueFormatRules}
+					setAttributes={setAttributes}
+				/>
 				<PanelBody
 					title={__('Header styling', 'data-table-controller')}
 					initialOpen={false}
 				>
 					<HeaderSpecialBorders
 						enabled={enableHeaderSpecialBorders}
-						colors={headerSpecialBorderColors}
-						columns={formatableColumns}
 						onEnabledChange={(value) =>
 							setAttributes({ enableHeaderSpecialBorders: value })
 						}
-						onColorsChange={(nextColors) =>
-							setAttributes({
-								headerSpecialBorderColors: nextColors,
-							})
-						}
 					/>
 				</PanelBody>
+				<TextAlignmentPanel
+					tableHeaderTextAlign={tableHeaderTextAlign}
+					tableTextAlign={tableTextAlign}
+					setAttributes={setAttributes}
+				/>
 				<PanelBody
-					title={__('Text alignment', 'data-table-controller')}
+					title={__('Bold columns', 'data-table-controller')}
 					initialOpen={false}
 				>
-					<SelectControl
-						label={__(
-							'Cell text alignment',
-							'data-table-controller'
-						)}
-						value={tableTextAlign || 'center'}
-						options={[
-							{
-								label: __('Left', 'data-table-controller'),
-								value: 'left',
-							},
-							{
-								label: __('Center', 'data-table-controller'),
-								value: 'center',
-							},
-							{
-								label: __('Right', 'data-table-controller'),
-								value: 'right',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ tableTextAlign: value })
+					<BoldColumns
+						boldColumns={boldColumns}
+						columns={formatableColumns}
+						onBoldColumnsChange={(nextBoldColumns) =>
+							setAttributes({ boldColumns: nextBoldColumns })
 						}
-						help={__(
-							'Applies to all header and data cells except the first column.',
-							'data-table-controller'
-						)}
 					/>
 				</PanelBody>
 				<PanelBody
 					title={__('Mobile styling', 'data-table-controller')}
 					initialOpen={false}
 				>
-					<MobileColumnColors
-						colors={mobileColumnColors}
-						columns={formatableColumns}
-						onColorsChange={(nextColors) =>
-							setAttributes({ mobileColumnColors: nextColors })
-						}
-					/>
+					{contextMobileCellBackground ? (
+						<MobileColumnColorsLocked
+							background={contextMobileCellBackground}
+							worldBackground={contextMobileWorldCellBackground}
+						/>
+					) : (
+						<MobileColumnColors
+							colors={mobileColumnColors}
+							columns={formatableColumns}
+							onColorsChange={(nextColors) =>
+								setAttributes({
+									mobileColumnColors: nextColors,
+								})
+							}
+						/>
+					)}
 				</PanelBody>
 			</InspectorControls>
 			{(dataSource === 'csv' || dataSource === 'json' || contextLike) && (
@@ -2893,35 +1056,53 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 					)}
 				</p>
 			)}
-			{showColumnOrderUi && (
+			{desktopOrdering.showOrderUi && (
 				<ColumnOrderPreview
 					title={__('Desktop', 'data-table-controller')}
-					isAutoSort={isAutoSort}
-					effectiveOrder={effectiveOrder}
-					excludedBefore={excludedBefore}
-					excludedAfter={excludedAfter}
-					autoSortedOrder={autoSortedOrder}
-					sortReferenceRow={sortReferenceRow}
-					sensors={sensors}
-					onCustomDragEnd={handleColumnOrderDragEnd}
-					onAutoExcludedDragEnd={handleAutoExcludedDragEnd}
+					isAutoSort={desktopOrdering.isAutoSort}
+					effectiveOrder={desktopOrdering.effectiveOrder}
+					excludedBefore={desktopOrdering.excludedBefore}
+					excludedAfter={desktopOrdering.excludedAfter}
+					autoSortedOrder={desktopOrdering.autoSortedOrder}
+					sortReferenceRow={desktopOrdering.sortReferenceRow}
+					onCustomDragEnd={desktopOrdering.handleCustomDragEnd}
+					onAutoExcludedDragEnd={
+						desktopOrdering.handleAutoExcludedDragEnd
+					}
 				/>
 			)}
-			{showMobileColumnOrderUi && (
+			{mobileOrdering.showOrderUi && (
 				<ColumnOrderPreview
 					title={__('Mobile', 'data-table-controller')}
-					isAutoSort={isMobileAutoSort}
-					effectiveOrder={mobileEffectiveOrder}
-					excludedBefore={mobileExcludedBefore}
-					excludedAfter={mobileExcludedAfter}
-					autoSortedOrder={mobileAutoSortedOrder}
-					sortReferenceRow={mobileSortReferenceRow}
-					sensors={sensors}
-					onCustomDragEnd={handleMobileColumnOrderDragEnd}
-					onAutoExcludedDragEnd={handleMobileAutoExcludedDragEnd}
+					isAutoSort={mobileOrdering.isAutoSort}
+					effectiveOrder={mobileOrdering.effectiveOrder}
+					excludedBefore={mobileOrdering.excludedBefore}
+					excludedAfter={mobileOrdering.excludedAfter}
+					autoSortedOrder={mobileOrdering.autoSortedOrder}
+					sortReferenceRow={mobileOrdering.sortReferenceRow}
+					onCustomDragEnd={mobileOrdering.handleCustomDragEnd}
+					onAutoExcludedDragEnd={
+						mobileOrdering.handleAutoExcludedDragEnd
+					}
 				/>
 			)}
 			<div {...innerBlocksProps} />
+			{allowDataDownload && (
+				<>
+					<hr className="prc-data-table-controller__download-hr" />
+					<div className="prc-data-table-controller__download">
+						<span
+							className="has-sans-serif-font-family"
+							aria-hidden="true"
+						>
+							{__(
+								'Download data as .csv',
+								'data-table-controller'
+							)}
+						</span>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }

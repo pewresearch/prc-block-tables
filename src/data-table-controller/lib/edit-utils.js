@@ -1,6 +1,7 @@
 /**
  * Editor utilities for Data Table Controller.
  */
+/* eslint-disable max-lines */
 import { select } from '@wordpress/data';
 import { createBlock } from '@wordpress/blocks';
 import { __, sprintf } from '@wordpress/i18n';
@@ -716,6 +717,112 @@ export function getFormatableColumns({
 }
 
 /**
+ * Normalize rowDropdownColumnsBySheet attribute to a plain object.
+ *
+ * @param {unknown} bySheet Raw attribute value.
+ * @return {Record<string, string[]>} Normalized per-sheet column map.
+ */
+export function normalizeRowDropdownColumnsBySheet(bySheet) {
+	if (!bySheet || typeof bySheet !== 'object' || Array.isArray(bySheet)) {
+		return {};
+	}
+	return bySheet;
+}
+
+/**
+ * Resolve row dropdown columns for a sheet (override or global default).
+ *
+ * @param {string}   activeSheet               Active sheet key.
+ * @param {string[]} rowDropdownColumns        Global default column keys.
+ * @param {Object}   rowDropdownColumnsBySheet Per-sheet overrides.
+ * @return {string[]} Effective dropdown column keys.
+ */
+export function resolveRowDropdownColumns(
+	activeSheet,
+	rowDropdownColumns,
+	rowDropdownColumnsBySheet
+) {
+	const bySheet = normalizeRowDropdownColumnsBySheet(
+		rowDropdownColumnsBySheet
+	);
+	if (
+		activeSheet &&
+		Object.prototype.hasOwnProperty.call(bySheet, activeSheet) &&
+		Array.isArray(bySheet[activeSheet])
+	) {
+		return bySheet[activeSheet].map(String);
+	}
+	return Array.isArray(rowDropdownColumns)
+		? rowDropdownColumns.map(String)
+		: [];
+}
+
+/**
+ * Effective dropdown columns for the editor (global or one sheet override).
+ *
+ * @param {string}   sheetKey                  Empty string for global default.
+ * @param {string[]} rowDropdownColumns        Global default column keys.
+ * @param {Object}   rowDropdownColumnsBySheet Per-sheet overrides.
+ * @return {string[]} Column keys shown in the inspector.
+ */
+export function getEffectiveRowDropdownColumns(
+	sheetKey,
+	rowDropdownColumns,
+	rowDropdownColumnsBySheet
+) {
+	if (!sheetKey) {
+		return Array.isArray(rowDropdownColumns)
+			? rowDropdownColumns.map(String)
+			: [];
+	}
+	return resolveRowDropdownColumns(
+		sheetKey,
+		rowDropdownColumns,
+		rowDropdownColumnsBySheet
+	);
+}
+
+/**
+ * Prune stale sheet keys and column names from rowDropdownColumnsBySheet.
+ *
+ * @param {string[]} jsonColumns               Known column keys.
+ * @param {string[]} sheetNames                Known sheet keys.
+ * @param {Object}   rowDropdownColumnsBySheet Raw per-sheet overrides.
+ * @return {{ next: Record<string, string[]>, changed: boolean }} Pruned overrides and change flag.
+ */
+export function pruneRowDropdownColumnsBySheet(
+	jsonColumns,
+	sheetNames,
+	rowDropdownColumnsBySheet
+) {
+	const bySheet = normalizeRowDropdownColumnsBySheet(
+		rowDropdownColumnsBySheet
+	);
+	const cols = new Set(jsonColumns);
+	const names = new Set(sheetNames);
+	let changed = false;
+	const next = {};
+
+	Object.entries(bySheet).forEach(([sheet, columns]) => {
+		if (!names.has(sheet)) {
+			changed = true;
+			return;
+		}
+		const pruned = (Array.isArray(columns) ? columns : [])
+			.map(String)
+			.filter((col) => cols.has(col));
+		if (pruned.length !== (Array.isArray(columns) ? columns.length : 0)) {
+			changed = true;
+		}
+		if (Array.isArray(columns)) {
+			next[sheet] = pruned;
+		}
+	});
+
+	return { next, changed };
+}
+
+/**
  * Column keys eligible for value formatting controls (prefix/suffix exclude, format rules).
  * Includes visible main-table columns plus row-dropdown-only columns when dropdowns are enabled.
  *
@@ -723,6 +830,7 @@ export function getFormatableColumns({
  * @param {string[]} params.formatableColumns         Visible main-table column keys.
  * @param {boolean}  params.enableRowDropdowns        Whether row dropdowns are enabled.
  * @param {string[]} params.rowDropdownColumns        Configured dropdown column keys.
+ * @param {Object}   params.rowDropdownColumnsBySheet Per-sheet dropdown column overrides.
  * @param {string}   params.rowDropdownIdentityColumn Identity column key (excluded).
  * @return {string[]} De-duplicated column keys.
  */
@@ -730,6 +838,7 @@ export function getValueFormatColumns({
 	formatableColumns,
 	enableRowDropdowns,
 	rowDropdownColumns,
+	rowDropdownColumnsBySheet = {},
 	rowDropdownIdentityColumn,
 }) {
 	const base = Array.isArray(formatableColumns)
@@ -739,16 +848,25 @@ export function getValueFormatColumns({
 		return base;
 	}
 	const seen = new Set(base);
-	const dropdown = Array.isArray(rowDropdownColumns)
-		? rowDropdownColumns.map(String)
-		: [];
 	const identity =
 		typeof rowDropdownIdentityColumn === 'string'
 			? rowDropdownIdentityColumn
 			: '';
-	const extra = dropdown.filter(
-		(col) => col !== identity && !seen.has(col) && seen.add(col)
-	);
+	const dropdownLists = [
+		Array.isArray(rowDropdownColumns) ? rowDropdownColumns : [],
+		...Object.values(
+			normalizeRowDropdownColumnsBySheet(rowDropdownColumnsBySheet)
+		).filter(Array.isArray),
+	];
+	const extra = [];
+	dropdownLists.forEach((list) => {
+		list.map(String).forEach((col) => {
+			if (col !== identity && !seen.has(col)) {
+				seen.add(col);
+				extra.push(col);
+			}
+		});
+	});
 	return [...base, ...extra];
 }
 

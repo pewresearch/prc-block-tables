@@ -64,6 +64,7 @@ export default function ColumnSortingControls({
 	return (
 		<>
 			<SelectControl
+				__next40pxDefaultSize
 				label={__('Sort mode', 'data-table-controller')}
 				value={sortMode}
 				options={modeOptions}
@@ -86,6 +87,7 @@ export default function ColumnSortingControls({
 						)}
 					</p>
 					<SelectControl
+						__next40pxDefaultSize
 						label={__(
 							'Variable to target rows',
 							'data-table-controller'
@@ -107,6 +109,7 @@ export default function ColumnSortingControls({
 						onChange={onAutoSortVariableChange}
 					/>
 					<SelectControl
+						__next40pxDefaultSize
 						label={__('Select row', 'data-table-controller')}
 						value={
 							autoSortRowIndex >= 0

@@ -9,15 +9,6 @@ import {
 	TextControl,
 } from '@wordpress/components';
 
-const GROUP_KEYS = ['K', 'M', 'B', 'T'];
-
-const GROUP_LABELS = {
-	K: __('Thousands (k)', 'data-table-controller'),
-	M: __('Millions (M)', 'data-table-controller'),
-	B: __('Billions (B)', 'data-table-controller'),
-	T: __('Trillions (T)', 'data-table-controller'),
-};
-
 const OPERATORS = [
 	{ label: __('< (less than)', 'data-table-controller'), value: 'lt' },
 	{
@@ -32,38 +23,6 @@ const OPERATORS = [
 	{ label: __('= (equal)', 'data-table-controller'), value: 'eq' },
 	{ label: __('Between', 'data-table-controller'), value: 'between' },
 ];
-
-/**
- * Default per-magnitude formatting settings.
- *
- * @return {Object} Groups map.
- */
-export function createDefaultMobileGroups() {
-	return {
-		K: { decimals: 1, significantDigits: 2 },
-		M: { decimals: 1, significantDigits: 2 },
-		B: { decimals: 1, significantDigits: 2 },
-		T: { decimals: 1, significantDigits: 2 },
-	};
-}
-
-/**
- * Create a new mobile abbreviation rule.
- *
- * @return {Object} Rule object.
- */
-export function createMobileAbbrevRule() {
-	return {
-		id:
-			typeof crypto !== 'undefined' && crypto.randomUUID
-				? crypto.randomUUID()
-				: `mobile-rule-${Date.now()}`,
-		type: 'abbrev',
-		sheets: [],
-		columns: [],
-		groups: createDefaultMobileGroups(),
-	};
-}
 
 /**
  * Create a new mobile conditional replacement rule.
@@ -108,20 +67,6 @@ function toggleInList(list, item, add) {
 		return current.includes(item) ? current : [...current, item];
 	}
 	return current.filter((entry) => entry !== item);
-}
-
-/**
- * @param {unknown} value    Raw input.
- * @param {number}  fallback Fallback when invalid.
- * @param {number}  min      Minimum allowed value.
- * @return {number} Clamped integer.
- */
-function parseNonNegativeInt(value, fallback, min = 0) {
-	const parsed = Number.parseInt(String(value ?? ''), 10);
-	if (!Number.isFinite(parsed) || parsed < min) {
-		return fallback;
-	}
-	return parsed;
 }
 
 /**
@@ -219,42 +164,16 @@ function MobileValueFormatRuleCard({
 }) {
 	const selectedSheets = normalizeStringArray(rule.sheets);
 	const selectedColumns = normalizeStringArray(rule.columns);
-	const groups = rule.groups || createDefaultMobileGroups();
-	const isReplace = rule.type === 'replace';
 
 	const update = (patch) => onChange({ ...rule, ...patch });
-
-	const updateGroup = (key, field, value) => {
-		const current = groups[key] || createDefaultMobileGroups()[key];
-		const fallback =
-			field === 'significantDigits'
-				? createDefaultMobileGroups()[key].significantDigits
-				: createDefaultMobileGroups()[key].decimals;
-		const min = field === 'significantDigits' ? 1 : 0;
-		const parsed = parseNonNegativeInt(value, fallback, min);
-		update({
-			groups: {
-				...groups,
-				[key]: {
-					...current,
-					[field]: parsed,
-				},
-			},
-		});
-	};
 
 	return (
 		<div className="prc-data-table-controller-mobile-value-format-rule">
 			<p className="prc-data-table-controller-help">
-				{isReplace
-					? __(
-							'Conditional replacement (mobile only)',
-							'data-table-controller'
-						)
-					: __(
-							'Number abbreviation (mobile only)',
-							'data-table-controller'
-						)}
+				{__(
+					'Conditional replacement (mobile only)',
+					'data-table-controller'
+				)}
 			</p>
 			<MobileRuleScopeControls
 				rule={rule}
@@ -265,80 +184,41 @@ function MobileValueFormatRuleCard({
 				onSheetsChange={(sheets) => update({ sheets })}
 				onColumnsChange={(columns) => update({ columns })}
 			/>
-			{isReplace ? (
-				<>
-					<SelectControl
-						label={__('Operator', 'data-table-controller')}
-						value={rule.operator || 'lt'}
-						options={OPERATORS}
-						onChange={(value) => update({ operator: value })}
-					/>
-					<TextControl
-						label={__('Threshold', 'data-table-controller')}
-						type="number"
-						value={rule.threshold ?? ''}
-						onChange={(value) => update({ threshold: value })}
-					/>
-					{rule.operator === 'between' && (
-						<TextControl
-							label={__(
-								'Maximum threshold',
-								'data-table-controller'
-							)}
-							type="number"
-							value={rule.thresholdMax ?? ''}
-							onChange={(value) =>
-								update({ thresholdMax: value })
-							}
-						/>
-					)}
-					<TextControl
-						label={__(
-							'Replacement string',
-							'data-table-controller'
-						)}
-						value={rule.replacement ?? ''}
-						onChange={(value) => update({ replacement: value })}
-						help={__(
-							'Overrides Value formatting replacement rules on mobile. Shown exactly as typed (no prefix/suffix).',
-							'data-table-controller'
-						)}
-					/>
-				</>
-			) : (
-				GROUP_KEYS.map((key) => (
-					<div
-						key={`mobile-group-${rule.id}-${key}`}
-						className="prc-data-table-controller-mobile-value-format-rule__magnitude"
-					>
-						<p className="prc-data-table-controller-mobile-value-format-rule__magnitude-label">
-							{GROUP_LABELS[key]}
-						</p>
-						<TextControl
-							label={__(
-								'Significant digits',
-								'data-table-controller'
-							)}
-							type="number"
-							min={1}
-							value={String(groups[key]?.significantDigits ?? 2)}
-							onChange={(value) =>
-								updateGroup(key, 'significantDigits', value)
-							}
-						/>
-						<TextControl
-							label={__('Decimals', 'data-table-controller')}
-							type="number"
-							min={0}
-							value={String(groups[key]?.decimals ?? 1)}
-							onChange={(value) =>
-								updateGroup(key, 'decimals', value)
-							}
-						/>
-					</div>
-				))
+			<SelectControl
+				__next40pxDefaultSize
+				label={__('Operator', 'data-table-controller')}
+				value={rule.operator || 'lt'}
+				options={OPERATORS}
+				onChange={(value) => update({ operator: value })}
+			/>
+			<TextControl
+				__next40pxDefaultSize
+				label={__('Threshold', 'data-table-controller')}
+				type="number"
+				value={rule.threshold ?? ''}
+				onChange={(value) => update({ threshold: value })}
+			/>
+			{rule.operator === 'between' && (
+				<TextControl
+					__next40pxDefaultSize
+					label={__('Maximum threshold', 'data-table-controller')}
+					type="number"
+					value={rule.thresholdMax ?? ''}
+					onChange={(value) => update({ thresholdMax: value })}
+				/>
 			)}
+			<TextControl
+				__next40pxDefaultSize
+				label={__('Replacement string', 'data-table-controller')}
+				value={rule.replacement ?? ''}
+				onChange={(value) => update({ replacement: value })}
+				help={__(
+					'Overrides Value formatting replacement rules on mobile. Shown exactly as typed (no prefix/suffix).',
+					'data-table-controller'
+				)}
+			/>
 			<Button
+				__next40pxDefaultSize
 				variant="secondary"
 				isDestructive
 				onClick={onRemove}
@@ -365,7 +245,9 @@ export default function MobileValueFormatRules({
 	formatableColumns,
 	onChange,
 }) {
-	const ruleList = Array.isArray(rules) ? rules : [];
+	const ruleList = Array.isArray(rules)
+		? rules.filter((rule) => rule && rule.type === 'replace')
+		: [];
 
 	const updateRuleAt = (index, nextRule) => {
 		const next = [...ruleList];
@@ -391,20 +273,13 @@ export default function MobileValueFormatRules({
 			))}
 			<div className="prc-data-table-controller-mobile-value-format-rules__add">
 				<Button
+					__next40pxDefaultSize
 					variant="secondary"
 					onClick={() =>
 						onChange([...ruleList, createMobileReplaceRule()])
 					}
 				>
 					{__('Add replacement rule', 'data-table-controller')}
-				</Button>
-				<Button
-					variant="secondary"
-					onClick={() =>
-						onChange([...ruleList, createMobileAbbrevRule()])
-					}
-				>
-					{__('Add abbreviation rule', 'data-table-controller')}
 				</Button>
 			</div>
 		</div>

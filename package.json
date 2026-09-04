@@ -1,10 +1,11 @@
 {
 	"name": "@prc/block-tables",
-	"version": "1.1.1",
+	"version": "1.3.0",
 	"description": "Table blocks for PRC Platform (Power Table, and future Spreadsheet).",
 	"scripts": {
 		"build": "wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest && npm run build:ai",
-		"build:ai": "wp-scripts build --source-path=includes/ai-features/src/generate-tabular-data --output-path=includes/ai-features/build/generate-tabular-data"
+		"build:ai": "wp-scripts build --source-path=includes/ai-features/src/generate-tabular-data --output-path=includes/ai-features/build/generate-tabular-data",
+		"test": "wp-scripts test-unit-js --config jest.config.js"
 	},
 	"dependencies": {
 		"@dnd-kit/core": "^6.3.1",

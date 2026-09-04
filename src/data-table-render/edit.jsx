@@ -5,6 +5,11 @@ import { __ } from '@wordpress/i18n';
 import { useBlockProps } from '@wordpress/block-editor';
 import { useMemo } from '@wordpress/element';
 
+import {
+	getReligionIconFills,
+	resolveHeaderBorderColor,
+} from './religion-header-border-colors';
+
 const VALID_TEXT_ALIGNS = new Set(['left', 'center', 'right']);
 
 /**
@@ -19,10 +24,14 @@ export default function Edit({ context }) {
 	const hiddenColumnHeaders =
 		context['prc-block/dataTableHiddenColumnHeaders'];
 	const tableTextAlign = context['prc-block/dataTableTextAlign'];
+	const tableHeaderTextAlign = context['prc-block/dataTableHeaderTextAlign'];
+	const boldColumns = context['prc-block/dataTableBoldColumns'];
 	const enableHeaderSpecialBorders =
 		context['prc-block/dataTableEnableHeaderSpecialBorders'] ?? false;
 	const headerSpecialBorderColors =
 		context['prc-block/dataTableHeaderSpecialBorderColors'] ?? {};
+
+	const religionIconFills = useMemo(() => getReligionIconFills(), []);
 
 	const effectiveOrder = useMemo(() => {
 		const cols = Array.isArray(rawColumns) ? rawColumns : [];
@@ -42,45 +51,68 @@ export default function Edit({ context }) {
 		[hiddenColumnHeaders]
 	);
 
-	const resolvedTextAlign = VALID_TEXT_ALIGNS.has(tableTextAlign)
+	const boldColumnSet = useMemo(
+		() => new Set(Array.isArray(boldColumns) ? boldColumns : []),
+		[boldColumns]
+	);
+
+	const resolvedCellTextAlign = VALID_TEXT_ALIGNS.has(tableTextAlign)
 		? tableTextAlign
 		: 'center';
+	const resolvedHeaderTextAlign = VALID_TEXT_ALIGNS.has(tableHeaderTextAlign)
+		? tableHeaderTextAlign
+		: resolvedCellTextAlign;
 
 	const tableStyle = useMemo(
 		() => ({
-			'--prc-data-table-cell-text-align': resolvedTextAlign,
+			'--prc-data-table-header-text-align': resolvedHeaderTextAlign,
+			'--prc-data-table-cell-text-align': resolvedCellTextAlign,
 		}),
-		[resolvedTextAlign]
+		[resolvedHeaderTextAlign, resolvedCellTextAlign]
 	);
 
 	const showDynamicHeaders = effectiveOrder.length > 0;
+
+	const getHeaderBorderColor = (col) => {
+		if (!enableHeaderSpecialBorders || hiddenHeaderSet.has(col)) {
+			return null;
+		}
+
+		return resolveHeaderBorderColor(
+			col,
+			headerSpecialBorderColors,
+			religionIconFills
+		);
+	};
 
 	const getHeaderClassName = (col, index) => {
 		const classes = [];
 		if (index === 0) {
 			classes.push('prc-data-table__first-col');
 		}
-		if (enableHeaderSpecialBorders) {
-			const color = headerSpecialBorderColors?.[col];
-			if (color) {
-				classes.push('prc-data-table__header-special-border');
-			}
+		if (getHeaderBorderColor(col)) {
+			classes.push('prc-data-table__header-special-border');
 		}
 		return classes.length > 0 ? classes.join(' ') : undefined;
 	};
 
 	const getHeaderStyle = (col) => {
-		if (!enableHeaderSpecialBorders) {
-			return undefined;
-		}
-		const color = headerSpecialBorderColors?.[col];
+		const color = getHeaderBorderColor(col);
 		return color
 			? { '--prc-data-table-header-border-color': color }
 			: undefined;
 	};
 
-	const getCellClassName = (index) =>
-		index === 0 ? 'prc-data-table__first-col' : undefined;
+	const getCellClassName = (col, index) => {
+		const classes = [];
+		if (index === 0) {
+			classes.push('prc-data-table__first-col');
+		}
+		if (boldColumnSet.has(col)) {
+			classes.push('prc-data-table__bold-cell');
+		}
+		return classes.length > 0 ? classes.join(' ') : undefined;
+	};
 
 	const renderHeaderLabel = (col) => {
 		if (hiddenHeaderSet.has(col)) {
@@ -136,7 +168,7 @@ export default function Edit({ context }) {
 								effectiveOrder.map((col, index) => (
 									<td
 										key={col}
-										className={getCellClassName(index)}
+										className={getCellClassName(col, index)}
 									>
 										…
 									</td>

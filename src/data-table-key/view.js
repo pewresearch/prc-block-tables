@@ -23,6 +23,15 @@ const { state } = store('prc-block/data-table', {
 
 			return String(cf.value) === String(filterValue) && !cf.exclude;
 		},
+		get isKeyFilterResetActive() {
+			const { dataTableInstanceId, filterColumn } = getContext();
+			const table = state.tables[dataTableInstanceId];
+			if (!table) {
+				return true;
+			}
+
+			return !table.columnFilters?.[filterColumn];
+		},
 	},
 	actions: {
 		toggleKeyFilter() {
@@ -48,8 +57,19 @@ const { state } = store('prc-block/data-table', {
 
 			// Reassign the map so shallow watchers (void table.columnFilters) notify.
 			table.columnFilters = next;
-			table.sortColumn = null;
-			table.sortDirection = 'asc';
+		},
+		resetKeyFilter() {
+			const { dataTableInstanceId, filterColumn } = getContext();
+			const table = state.tables[dataTableInstanceId];
+			if (!table?.columnFilters?.[filterColumn]) {
+				return;
+			}
+
+			const next = { ...(table.columnFilters || {}) };
+			delete next[filterColumn];
+
+			// Reassign the map so shallow watchers (void table.columnFilters) notify.
+			table.columnFilters = next;
 		},
 	},
 });

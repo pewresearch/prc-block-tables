@@ -40,7 +40,9 @@
 	"supports": {
 		"anchor": true,
 		"html": false,
-		"interactivity": true,
+		"interactivity": {
+			"clientNavigation": true
+		},
 		"spacing": {
 			"margin": true,
 			"padding": true,

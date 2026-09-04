@@ -131,6 +131,58 @@ const COMPACT_MAGNITUDES = [
 const DEFAULT_COMPACT_GROUP = { decimals: 1, significantDigits: 2 };
 
 /**
+ * Resolve shared abbreviation rules from attributes, including legacy mobile abbrev rules.
+ *
+ * @param {Object} options Formatting options.
+ * @return {Array<Object>} Abbreviation rules.
+ */
+function resolveAbbreviationRules(options) {
+	const { valueAbbreviationRules = [], mobileValueFormatRules = [] } =
+		options;
+	if (
+		Array.isArray(valueAbbreviationRules) &&
+		valueAbbreviationRules.length > 0
+	) {
+		return valueAbbreviationRules;
+	}
+	return (
+		Array.isArray(mobileValueFormatRules) ? mobileValueFormatRules : []
+	).filter((rule) => rule && rule.type === 'abbrev');
+}
+
+/**
+ * First matching abbreviation rule display string, if any.
+ *
+ * @param {unknown} raw     Raw cell value.
+ * @param {string}  col     Column key.
+ * @param {Object}  options Formatting options.
+ * @return {string|null} Abbreviated display text or null.
+ */
+function getAbbreviationDisplay(raw, col, options) {
+	const { activeSheetName } = options;
+	const num = parseNumericValue(raw);
+	if (num === null || Math.abs(num) < 1000) {
+		return null;
+	}
+	const { prefix, suffix } = resolvePrefixSuffix(options);
+	const rules = resolveAbbreviationRules(options);
+	for (const rule of rules) {
+		if (
+			!rule ||
+			rule.type !== 'abbrev' ||
+			!ruleMatchesScope(activeSheetName, col, rule)
+		) {
+			continue;
+		}
+		const compact = formatCompactNumber(num, rule.groups);
+		if (compact !== null) {
+			return `${prefix}${compact}${suffix}`;
+		}
+	}
+	return null;
+}
+
+/**
  * First matching desktop replace rule display string, if any.
  *
  * @param {unknown}       raw         Raw cell value.
@@ -217,7 +269,12 @@ function formatCompactNumber(num, groups) {
 	}
 
 	const sign = num < 0 ? '-' : '';
-	return `${sign}${formattedCoeff}${magnitude.suffix}`;
+	const suffix =
+		groupSettings &&
+		Object.prototype.hasOwnProperty.call(groupSettings, 'abbreviation')
+			? String(groupSettings.abbreviation)
+			: magnitude.suffix;
+	return `${sign}${formattedCoeff}${suffix}`;
 }
 
 /**
@@ -330,17 +387,25 @@ function formatDisplayCell(raw, col, options) {
 	if (valueFormatExcluded.has(col)) {
 		return raw === null || raw === undefined ? '' : String(raw);
 	}
-	if (Array.isArray(valueFormatRules) && valueFormatRules.length > 0) {
-		return applyValueFormatRules(
-			raw,
-			col,
-			activeSheetName,
-			valueFormatRules,
-			prefix,
-			suffix
-		);
+
+	const replaceDisplay = getReplaceRuleDisplay(
+		raw,
+		col,
+		activeSheetName,
+		valueFormatRules
+	);
+	if (replaceDisplay !== null) {
+		return replaceDisplay;
 	}
-	return formatCellValue(raw, prefix, suffix);
+
+	if (options.enableDesktopAbbreviation) {
+		const abbrevDisplay = getAbbreviationDisplay(raw, col, options);
+		if (abbrevDisplay !== null) {
+			return abbrevDisplay;
+		}
+	}
+
+	return formatDisplayCellWithoutReplace(raw, col, options);
 }
 
 /**
@@ -387,7 +452,6 @@ function formatMobileDisplayCell(raw, col, options) {
 		mobileValueFormatRules = [],
 		activeSheetName,
 	} = options;
-	const { prefix, suffix } = resolvePrefixSuffix(options);
 
 	if (valueFormatExcluded.has(col)) {
 		return raw === null || raw === undefined ? '' : String(raw);
@@ -403,30 +467,9 @@ function formatMobileDisplayCell(raw, col, options) {
 		return mobileReplacement;
 	}
 
-	const num = parseNumericValue(raw);
-	if (num === null) {
-		return formatDisplayCellWithoutReplace(raw, col, options);
-	}
-
-	const mobileRules = Array.isArray(mobileValueFormatRules)
-		? mobileValueFormatRules
-		: [];
-	for (const rule of mobileRules) {
-		if (
-			!rule ||
-			rule.type !== 'abbrev' ||
-			!ruleMatchesScope(activeSheetName, col, rule)
-		) {
-			continue;
-		}
-		if (Math.abs(num) < 1000) {
-			return formatDisplayCellWithoutReplace(raw, col, options);
-		}
-		const compact = formatCompactNumber(num, rule.groups);
-		if (compact === null) {
-			return formatDisplayCellWithoutReplace(raw, col, options);
-		}
-		return `${prefix}${compact}${suffix}`;
+	const abbrevDisplay = getAbbreviationDisplay(raw, col, options);
+	if (abbrevDisplay !== null) {
+		return abbrevDisplay;
 	}
 
 	return formatDisplayCellWithoutReplace(raw, col, options);

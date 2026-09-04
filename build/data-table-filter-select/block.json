@@ -44,6 +44,10 @@
     "hasClearIcon": {
       "type": "boolean",
       "default": false
+    },
+    "enableSearch": {
+      "type": "boolean",
+      "default": false
     }
   },
   "supports": {

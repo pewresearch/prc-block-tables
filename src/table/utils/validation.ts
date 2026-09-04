@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /**
  * Validation engine for the Power Table block.
  *
@@ -1452,6 +1453,7 @@ const ISO3_NUMERIC_CODES = new Set([
 	'340',
 	'344',
 	'348',
+	'352',
 	'356',
 	'360',
 	'364',
@@ -1554,6 +1556,7 @@ const ISO3_NUMERIC_CODES = new Set([
 	'702',
 	'703',
 	'704',
+	'705',
 	'706',
 	'710',
 	'716',
@@ -1608,6 +1611,7 @@ const ISO3_NUMERIC_CODES = new Set([
 /**
  * Accepts 1–3 digit strings (leading zeros optional) and normalises to
  * 3-digit zero-padded before checking the set.
+ * @param raw
  */
 function isValidIso3Numeric(raw: string): boolean {
 	const trimmed = raw.trim();
@@ -1673,6 +1677,7 @@ const GEO_HEADER_HINT: Partial<Record<ColumnDataType, string>> = {
 /**
  * Map the trimmed, lower-cased text of every header cell in the table to the
  * virtual column index it occupies.
+ * @param attributes
  */
 function collectHeaderNames(attributes: BlockAttributes): Map<string, number> {
 	const names = new Map<string, number>();
@@ -1689,7 +1694,12 @@ function collectHeaderNames(attributes: BlockAttributes): Map<string, number> {
 	return names;
 }
 
-/** Validate every body/foot cell of one virtual column against `dataType`. */
+/**
+ * Validate every body/foot cell of one virtual column against `dataType`.
+ * @param attributes
+ * @param vColIndex
+ * @param dataType
+ */
 function validateColumnCells(
 	attributes: BlockAttributes,
 	vColIndex: number,
@@ -1730,6 +1740,8 @@ function validateColumnCells(
 /**
  * Validate a single cell's HTML content against a declared column data type.
  * Empty cells always pass; `'auto'` and `'text'` always pass.
+ * @param htmlContent
+ * @param dataType
  */
 export function validateCell(
 	htmlContent: string,
@@ -1786,6 +1798,7 @@ export function validateCell(
 /**
  * Validate all body and foot cells in the table against their declared
  * column types (resolved via `getEffectiveColumnMeta`).
+ * @param attributes
  */
 export function validateTable(
 	attributes: BlockAttributes
@@ -1828,6 +1841,8 @@ export function validateTable(
  * Validate a table against a named schema.
  * Runs `validateTable` first, then checks that all `requiredTypes` declared
  * by the schema are present in `columnMeta`.
+ * @param attributes
+ * @param schema
  */
 export function validateSchema(
 	attributes: BlockAttributes,
@@ -1898,6 +1913,7 @@ export function validateSchema(
 /**
  * Short summary for editor notices: prefer the first schema-level error,
  * otherwise the first error, otherwise empty when valid.
+ * @param result
  */
 export function getValidationSummaryMessage(
 	result: TableValidationResult

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Data Table Render — Interactivity mount for the client table.
+ *
+ * @package PRC\Platform\Blocks
+ */
+
 namespace PRC\Platform\Blocks;
 
 // $attributes, $content, $block provided by WordPress.
@@ -18,13 +24,14 @@ $wrapper_attrs_array = array(
 );
 
 if ( $instance_id ) {
-	$wrapper_attrs_array['data-wp-router-region']        = (string) $instance_id;
+	$wrapper_attrs_array['data-wp-router-region']          = (string) $instance_id;
 	$wrapper_attrs_array['data-wp-watch--sync-navigation'] = 'callbacks.syncOnNavigation';
+	$wrapper_attrs_array['data-wp-key']                    = (string) $instance_id;
 }
 
 $wrapper_attrs = get_block_wrapper_attributes( $wrapper_attrs_array );
 
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo $wrapper_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 	<div class="prc-data-table-mount"></div>
 </div>

@@ -179,6 +179,16 @@ return array(
 					
 				)
 			),
+			'enableDesktopAbbreviation' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'valueAbbreviationRules' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
 			'mobileValueFormatRules' => array(
 				'type' => 'array',
 				'default' => array(
@@ -195,6 +205,12 @@ return array(
 			),
 			'rowDropdownColumns' => array(
 				'type' => 'array',
+				'default' => array(
+					
+				)
+			),
+			'rowDropdownColumnsBySheet' => array(
+				'type' => 'object',
 				'default' => array(
 					
 				)
@@ -224,6 +240,16 @@ return array(
 			'tableTextAlign' => array(
 				'type' => 'string',
 				'default' => 'center'
+			),
+			'tableHeaderTextAlign' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'boldColumns' => array(
+				'type' => 'array',
+				'default' => array(
+					
+				)
 			),
 			'firebasePath' => array(
 				'type' => 'string',
@@ -258,6 +284,10 @@ return array(
 				'default' => array(
 					
 				)
+			),
+			'allowDataDownload' => array(
+				'type' => 'boolean',
+				'default' => true
 			)
 		),
 		'supports' => array(
@@ -296,7 +326,9 @@ return array(
 			'prc-block/dataTableEnableHeaderSpecialBorders' => 'enableHeaderSpecialBorders',
 			'prc-block/dataTableHeaderSpecialBorderColors' => 'headerSpecialBorderColors',
 			'prc-block/dataTableEnableColumnSorting' => 'enableColumnSorting',
-			'prc-block/dataTableTextAlign' => 'tableTextAlign'
+			'prc-block/dataTableTextAlign' => 'tableTextAlign',
+			'prc-block/dataTableHeaderTextAlign' => 'tableHeaderTextAlign',
+			'prc-block/dataTableBoldColumns' => 'boldColumns'
 		),
 		'usesContext' => array(
 			'prc-block/dataTableData',
@@ -305,7 +337,8 @@ return array(
 		'textdomain' => 'data-table-controller',
 		'editorScript' => 'file:./index.js',
 		'editorStyle' => 'file:./index.css',
-		'style' => 'file:./style-index.css'
+		'style' => 'file:./style-index.css',
+		'viewScriptModule' => 'file:./view.js'
 	),
 	'data-table-filter' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
@@ -351,7 +384,9 @@ return array(
 		'supports' => array(
 			'anchor' => true,
 			'html' => false,
-			'interactivity' => true,
+			'interactivity' => array(
+				'clientNavigation' => true
+			),
 			'spacing' => array(
 				'margin' => true,
 				'padding' => true,
@@ -447,6 +482,10 @@ return array(
 			'hasClearIcon' => array(
 				'type' => 'boolean',
 				'default' => false
+			),
+			'enableSearch' => array(
+				'type' => 'boolean',
+				'default' => false
 			)
 		),
 		'supports' => array(
@@ -506,6 +545,14 @@ return array(
 			'enableFilter' => array(
 				'type' => 'boolean',
 				'default' => false
+			),
+			'includeResetOption' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'resetLabel' => array(
+				'type' => 'string',
+				'default' => 'All'
 			),
 			'keyOrder' => array(
 				'type' => 'array',
@@ -597,7 +644,9 @@ return array(
 			'prc-block/dataTableEnableHeaderSpecialBorders',
 			'prc-block/dataTableHeaderSpecialBorderColors',
 			'prc-block/dataTableEnableColumnSorting',
-			'prc-block/dataTableTextAlign'
+			'prc-block/dataTableTextAlign',
+			'prc-block/dataTableHeaderTextAlign',
+			'prc-block/dataTableBoldColumns'
 		),
 		'textdomain' => 'data-table-render',
 		'editorScript' => 'file:./index.js',

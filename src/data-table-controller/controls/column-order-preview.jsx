@@ -1,17 +1,29 @@
 /**
- * WordPress dependencies
+ * External dependencies
  */
-import { __ } from '@wordpress/i18n';
-import { DndContext, closestCenter } from '@dnd-kit/core';
+import {
+	DndContext,
+	KeyboardSensor,
+	PointerSensor,
+	closestCenter,
+	useSensor,
+	useSensors,
+} from '@dnd-kit/core';
 import {
 	SortableContext,
 	horizontalListSortingStrategy,
+	sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
+
+/**
+ * WordPress dependencies
+ */
+import { __ } from '@wordpress/i18n';
 
 /**
  * Internal dependencies
  */
-import { SortableColumnChip } from './edit-utils';
+import { SortableColumnChip } from '../lib/edit-utils';
 
 /**
  * Canvas drag UI for column order (custom or auto-excluded + locked auto columns).
@@ -24,7 +36,6 @@ import { SortableColumnChip } from './edit-utils';
  * @param {string[]}    props.excludedAfter         Auto mode excluded columns after auto sort.
  * @param {string[]}    props.autoSortedOrder       Auto mode locked columns.
  * @param {Object|null} props.sortReferenceRow      Row used for auto sort value suffixes.
- * @param {Object}      props.sensors               dnd-kit sensors.
  * @param {Function}    props.onCustomDragEnd       Custom mode drag end handler.
  * @param {Function}    props.onAutoExcludedDragEnd Auto excluded drag end handler.
  */
@@ -36,10 +47,15 @@ export default function ColumnOrderPreview({
 	excludedAfter,
 	autoSortedOrder,
 	sortReferenceRow,
-	sensors,
 	onCustomDragEnd,
 	onAutoExcludedDragEnd,
 }) {
+	const sensors = useSensors(
+		useSensor(PointerSensor),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates,
+		})
+	);
 	const autoPreviewItems = [
 		...excludedBefore,
 		...autoSortedOrder,

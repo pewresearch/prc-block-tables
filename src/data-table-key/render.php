@@ -10,6 +10,11 @@ namespace PRC\Platform\Blocks;
 $instance_id   = $block->context['prc-block/dataTableInstanceId'] ?? '';
 $key_column    = isset( $attributes['keyColumn'] ) ? (string) $attributes['keyColumn'] : '';
 $enable_filter = ! empty( $attributes['enableFilter'] );
+$include_reset   = ! empty( $attributes['includeResetOption'] );
+$reset_label     = isset( $attributes['resetLabel'] ) ? wp_strip_all_tags( (string) $attributes['resetLabel'] ) : 'All';
+if ( '' === $reset_label ) {
+	$reset_label = 'All';
+}
 $raw_map       = isset( $attributes['colorMap'] ) && is_array( $attributes['colorMap'] ) ? $attributes['colorMap'] : array();
 $raw_order     = isset( $attributes['keyOrder'] ) && is_array( $attributes['keyOrder'] ) ? $attributes['keyOrder'] : array();
 $raw_excluded  = isset( $attributes['excludedKeys'] ) && is_array( $attributes['excludedKeys'] ) ? $attributes['excludedKeys'] : array();
@@ -78,6 +83,31 @@ $wrapper_attrs = get_block_wrapper_attributes( $wrapper_extra );
 				aria-label="<?php esc_attr_e( 'Legend filters', 'data-table-key' ); ?>"
 			<?php endif; ?>
 		>
+			<?php if ( $enable_filter && $include_reset && '' !== $instance_id ) : ?>
+				<?php
+				$reset_context = wp_json_encode(
+					array(
+						'dataTableInstanceId' => $instance_id,
+						'filterColumn'        => $key_column,
+					)
+				);
+				?>
+				<button
+					type="button"
+					class="prc-data-table-key__item prc-data-table-key__item--button prc-data-table-key__item--reset"
+					data-wp-context="<?php echo esc_attr( $reset_context ); ?>"
+					data-wp-on--click="actions.resetKeyFilter"
+					data-wp-class--is-active="state.isKeyFilterResetActive"
+					data-wp-bind--aria-pressed="state.isKeyFilterResetActive"
+				>
+					<span
+						class="prc-data-table-key__swatch"
+						style="<?php echo esc_attr( 'background-color: rgb(215, 215, 215)' ); ?>"
+						aria-hidden="true"
+					></span>
+					<span class="prc-data-table-key__label"><?php echo esc_html( $reset_label ); ?></span>
+				</button>
+			<?php endif; ?>
 			<?php foreach ( $ordered_labels as $label ) : ?>
 				<?php
 				if ( in_array( $label, $excluded_labels, true ) ) {

@@ -144,6 +144,14 @@
 			"type": "array",
 			"default": []
 		},
+		"enableDesktopAbbreviation": {
+			"type": "boolean",
+			"default": false
+		},
+		"valueAbbreviationRules": {
+			"type": "array",
+			"default": []
+		},
 		"mobileValueFormatRules": {
 			"type": "array",
 			"default": []
@@ -159,6 +167,10 @@
 		"rowDropdownColumns": {
 			"type": "array",
 			"default": []
+		},
+		"rowDropdownColumnsBySheet": {
+			"type": "object",
+			"default": {}
 		},
 		"enableHeaderSpecialBorders": {
 			"type": "boolean",
@@ -179,6 +191,14 @@
 		"tableTextAlign": {
 			"type": "string",
 			"default": "center"
+		},
+		"tableHeaderTextAlign": {
+			"type": "string",
+			"default": ""
+		},
+		"boldColumns": {
+			"type": "array",
+			"default": []
 		},
 		"firebasePath": {
 			"type": "string",
@@ -207,6 +227,10 @@
 		"pivotExtraColumns": {
 			"type": "array",
 			"default": []
+		},
+		"allowDataDownload": {
+			"type": "boolean",
+			"default": true
 		}
 	},
 	"supports": {
@@ -242,11 +266,14 @@
 		"prc-block/dataTableEnableHeaderSpecialBorders": "enableHeaderSpecialBorders",
 		"prc-block/dataTableHeaderSpecialBorderColors": "headerSpecialBorderColors",
 		"prc-block/dataTableEnableColumnSorting": "enableColumnSorting",
-		"prc-block/dataTableTextAlign": "tableTextAlign"
+		"prc-block/dataTableTextAlign": "tableTextAlign",
+		"prc-block/dataTableHeaderTextAlign": "tableHeaderTextAlign",
+		"prc-block/dataTableBoldColumns": "boldColumns"
 	},
 	"usesContext": ["prc-block/dataTableData", "remote-data-blocks/remoteData"],
 	"textdomain": "data-table-controller",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
-	"style": "file:./style-index.css"
+	"style": "file:./style-index.css",
+	"viewScriptModule": "file:./view.js"
 }

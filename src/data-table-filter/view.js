@@ -11,6 +11,7 @@
  *   state.tables[id].columnFilters = { region: { value: 'All', exclude: true, match: 'beginsWith' } }
  */
 import { store, getContext } from '@wordpress/interactivity';
+import { syncSortColumnToActiveSheet } from '../data-table-controller/lib/sync-sort-to-sheet';
 
 function isColumnFilterActiveForContext(table, context) {
 	const { filterValue, filterColumn, filterType } = context;
@@ -69,8 +70,6 @@ function applyColumnFilter(table, context) {
 
 	// Reassign the map so shallow watchers (void table.columnFilters) notify.
 	table.columnFilters = next;
-	table.sortColumn = null;
-	table.sortDirection = 'asc';
 }
 
 const { state } = store('prc-block/data-table', {
@@ -101,8 +100,7 @@ const { state } = store('prc-block/data-table', {
 			const table = state.tables[dataTableInstanceId];
 			if (table) {
 				table.activeSheet = filterValue;
-				table.sortColumn = null;
-				table.sortDirection = 'asc';
+				syncSortColumnToActiveSheet(table);
 			}
 		},
 		setColumnFilter() {
@@ -127,8 +125,6 @@ const { state } = store('prc-block/data-table', {
 				const next = { ...(table.columnFilters || {}) };
 				delete next[context.filterColumn];
 				table.columnFilters = next;
-				table.sortColumn = null;
-				table.sortDirection = 'asc';
 			} else {
 				applyColumnFilter(table, context);
 			}

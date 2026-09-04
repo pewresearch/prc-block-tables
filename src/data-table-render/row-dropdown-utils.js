@@ -1,7 +1,10 @@
 /**
  * Row dropdown table helpers for data-table-render.
  */
-/* global CSS */
+import { applyCellBackground } from './contrasting-ink';
+
+/** @type {WeakMap<HTMLElement, Object>} Lazy dropdown build specs keyed by toggle. */
+const dropdownToggleSpecs = new WeakMap();
 
 /**
  * @param {*}      parent      d3 selection for container.
@@ -20,10 +23,27 @@ function appendResponsiveValueSpans(parent, desktopText, mobileText) {
 }
 
 /**
+ * @param {HTMLElement} parent      DOM container.
+ * @param {string}      desktopText Desktop display text.
+ * @param {string}      mobileText  Mobile display text.
+ */
+function appendResponsiveValueSpansDom(parent, desktopText, mobileText) {
+	const desktop = parent.ownerDocument.createElement('span');
+	desktop.className = 'prc-data-table__value prc-data-table__value--desktop';
+	desktop.textContent = desktopText;
+	parent.appendChild(desktop);
+
+	const mobile = parent.ownerDocument.createElement('span');
+	mobile.className = 'prc-data-table__value prc-data-table__value--mobile';
+	mobile.textContent = mobileText;
+	parent.appendChild(mobile);
+}
+
+/**
  * Column used as the mobile card title. Falls back to the first display column.
  *
- * @param {string[]} cols                Visible display column keys.
- * @param {string}   mobileHeaderColumn  Configured mobile header column key.
+ * @param {string[]} cols               Visible display column keys.
+ * @param {string}   mobileHeaderColumn Configured mobile header column key.
  * @return {string} Column key for the mobile card title.
  */
 export function resolveMobileHeaderColumn(cols, mobileHeaderColumn) {
@@ -34,11 +54,65 @@ export function resolveMobileHeaderColumn(cols, mobileHeaderColumn) {
 }
 
 /**
+ * Compose a mobile card title from configured name/year columns.
+ *
+ * @param {Record<string, unknown>} row                Row data.
+ * @param {Object}                  mobileHeaderFormat Context-provided format.
+ * @return {string} Card title such as "Singapore (2010)".
+ */
+export function formatMobileCardHeader(row, mobileHeaderFormat) {
+	if (
+		!mobileHeaderFormat ||
+		typeof mobileHeaderFormat !== 'object' ||
+		typeof mobileHeaderFormat.nameColumn !== 'string' ||
+		typeof mobileHeaderFormat.yearColumn !== 'string' ||
+		!mobileHeaderFormat.nameColumn ||
+		!mobileHeaderFormat.yearColumn
+	) {
+		return '';
+	}
+
+	const name = row[mobileHeaderFormat.nameColumn];
+	const year = row[mobileHeaderFormat.yearColumn];
+	const nameText =
+		name === null || name === undefined ? '' : String(name).trim();
+	const yearText =
+		year === null || year === undefined ? '' : String(year).trim();
+
+	if (nameText && yearText) {
+		return `${nameText} (${yearText})`;
+	}
+
+	return nameText || yearText;
+}
+
+/**
+ * Column keys consumed by the composed mobile card title.
+ *
+ * @param {Object} mobileHeaderFormat Context-provided format.
+ * @return {string[]} Column keys to hide from the mobile card body.
+ */
+export function getMobileHeaderFormatExcludedColumns(mobileHeaderFormat) {
+	if (
+		!mobileHeaderFormat ||
+		typeof mobileHeaderFormat !== 'object' ||
+		typeof mobileHeaderFormat.nameColumn !== 'string' ||
+		typeof mobileHeaderFormat.yearColumn !== 'string' ||
+		!mobileHeaderFormat.nameColumn ||
+		!mobileHeaderFormat.yearColumn
+	) {
+		return [];
+	}
+
+	return [mobileHeaderFormat.nameColumn, mobileHeaderFormat.yearColumn];
+}
+
+/**
  * Resolve the mobile cell label shown above each value on small screens.
  *
- * @param {string}   col                 Column key.
- * @param {Object}   mobileColumnHeaders Optional column-to-label map.
- * @param {Set}      hiddenHeaderSet     Columns with hidden header labels.
+ * @param {string} col                 Column key.
+ * @param {Object} mobileColumnHeaders Optional column-to-label map.
+ * @param {Set}    hiddenHeaderSet     Columns with hidden header labels.
  * @return {string} Label for data-label attribute.
  */
 export function resolveMobileColumnHeader(
@@ -61,9 +135,29 @@ export function resolveMobileColumnHeader(
  * @return {{ filterCols: string[], dropdownCols: string[] }} Filter and dropdown column keys.
  */
 export function getDropdownColumnConfig(tableState, identityColumn) {
-	const configured = Array.isArray(tableState.rowDropdown?.columns)
+	const activeSheet =
+		typeof tableState.activeSheet === 'string'
+			? tableState.activeSheet
+			: '';
+	const columnsBySheet =
+		tableState.rowDropdown?.columnsBySheet &&
+		typeof tableState.rowDropdown.columnsBySheet === 'object' &&
+		!Array.isArray(tableState.rowDropdown.columnsBySheet)
+			? tableState.rowDropdown.columnsBySheet
+			: {};
+	const globalColumns = Array.isArray(tableState.rowDropdown?.columns)
 		? tableState.rowDropdown.columns.map(String)
 		: [];
+
+	let configured = globalColumns;
+	if (
+		activeSheet &&
+		Object.prototype.hasOwnProperty.call(columnsBySheet, activeSheet) &&
+		Array.isArray(columnsBySheet[activeSheet])
+	) {
+		configured = columnsBySheet[activeSheet].map(String);
+	}
+
 	const dropdownCols = configured.filter((col) => col !== identityColumn);
 	const activeFilters = new Set(Object.keys(tableState.columnFilters || {}));
 	const filterCols = dropdownCols.filter((col) => activeFilters.has(col));
@@ -71,6 +165,42 @@ export function getDropdownColumnConfig(tableState, identityColumn) {
 		filterCols,
 		dropdownCols,
 	};
+}
+
+/**
+ * Group sheet rows by identity value, optionally sorting each group.
+ *
+ * @param {Record<string, unknown>[]} rows           Full sheet rows.
+ * @param {string}                    identityColumn Identity column key.
+ * @param {string[]}                  filterCols     Sortable filter columns.
+ * @param {Function}                  compareForSort Sort comparator.
+ * @return {Map<string, Record<string, unknown>[]>} Identity value to sibling rows.
+ */
+export function buildIdentitySiblingsIndex(
+	rows,
+	identityColumn,
+	filterCols,
+	compareForSort
+) {
+	const index = new Map();
+	for (const sheetRow of rows) {
+		const identityVal = String(sheetRow[identityColumn] ?? '');
+		if (!index.has(identityVal)) {
+			index.set(identityVal, []);
+		}
+		index.get(identityVal).push(sheetRow);
+	}
+
+	if (filterCols.length > 0) {
+		const sortCol = filterCols[0];
+		for (const siblings of index.values()) {
+			siblings.sort((a, b) =>
+				compareForSort(a[sortCol], b[sortCol], 'asc')
+			);
+		}
+	}
+
+	return index;
 }
 
 /**
@@ -88,17 +218,100 @@ export function getIdentitySiblings(
 	filterCols,
 	compareForSort
 ) {
-	const identityVal = String(row[identityColumn] ?? '');
-	let siblings = rows.filter(
-		(r) => String(r[identityColumn] ?? '') === identityVal
+	const index = buildIdentitySiblingsIndex(
+		rows,
+		identityColumn,
+		filterCols,
+		compareForSort
 	);
-	if (filterCols.length > 0) {
-		const sortCol = filterCols[0];
-		siblings = siblings
-			.slice()
-			.sort((a, b) => compareForSort(a[sortCol], b[sortCol], 'asc'));
+	const identityVal = String(row[identityColumn] ?? '');
+	return index.get(identityVal) ?? [];
+}
+
+/**
+ * Whether a dropdown sibling row matches the active parent-table filter row.
+ *
+ * @param {Record<string, unknown>} sibRow     Sibling row from the dropdown.
+ * @param {Record<string, unknown>} displayRow Filtered parent table row.
+ * @param {string[]}                filterCols Dropdown columns with active filters.
+ * @return {boolean} True when all filter columns match the parent row.
+ */
+export function isActiveFilterDropdownRow(sibRow, displayRow, filterCols) {
+	if (!Array.isArray(filterCols) || filterCols.length === 0) {
+		return false;
 	}
-	return siblings;
+	return filterCols.every(
+		(col) => String(sibRow[col] ?? '') === String(displayRow[col] ?? '')
+	);
+}
+
+/**
+ * Append nested dropdown rows into a parent body row.
+ *
+ * @param {HTMLElement} parentTr                   Parent body row element.
+ * @param {Object}      spec                       Lazy dropdown build spec.
+ * @param {string}      spec.dropdownId            Nested table element id.
+ * @param {Object}      spec.parentRow             Parent display row.
+ * @param {Array}       spec.siblings              Identity sibling rows.
+ * @param {string[]}    spec.dropdownCols          Dropdown column keys.
+ * @param {string[]}    spec.filterCols            Active filter column keys.
+ * @param {Object}      spec.formatOptions         Cell format options.
+ * @param {Set}         spec.boldColumnSet         Bold body column keys.
+ * @param {Function}    spec.formatDisplayCellPair Formatter.
+ */
+function appendNestedDropdownTable(parentTr, spec) {
+	const {
+		dropdownId,
+		parentRow,
+		siblings,
+		dropdownCols,
+		filterCols,
+		formatOptions,
+		boldColumnSet,
+		formatDisplayCellPair,
+	} = spec;
+
+	const nestedTable = parentTr.ownerDocument.createElement('table');
+	nestedTable.className = 'dropdown-table dropdown-table-visible';
+	nestedTable.id = dropdownId;
+	nestedTable.setAttribute('role', 'region');
+	nestedTable.setAttribute('aria-label', 'Additional data rows');
+
+	siblings.forEach((sibRow) => {
+		const isActiveFilter = isActiveFilterDropdownRow(
+			sibRow,
+			parentRow,
+			filterCols
+		);
+		const sibTr = parentTr.ownerDocument.createElement('tr');
+		sibTr.className = isActiveFilter
+			? 'dropdown-table__row dropdown-table__row--active-filter'
+			: 'dropdown-table__row';
+		if (isActiveFilter) {
+			sibTr.setAttribute('aria-current', 'true');
+		}
+		dropdownCols.forEach((col) => {
+			const display = formatDisplayCellPair(
+				sibRow[col],
+				col,
+				formatOptions
+			);
+			const cellTd = parentTr.ownerDocument.createElement('td');
+			cellTd.className = 'dropdown-table__row__cell';
+			if (boldColumnSet.has(col)) {
+				cellTd.classList.add('prc-data-table__bold-cell');
+			}
+			appendResponsiveValueSpansDom(
+				cellTd,
+				display.desktop,
+				display.mobile
+			);
+			sibTr.appendChild(cellTd);
+		});
+		nestedTable.appendChild(sibTr);
+	});
+
+	parentTr.appendChild(nestedTable);
 }
 
 /**
@@ -114,7 +327,7 @@ export function closeAllRowDropdowns(mount) {
 			btn.classList.remove('prc-data-table__dropdown-toggle--expanded');
 		});
 	mount.querySelectorAll('.dropdown-table').forEach((tbl) => {
-		tbl.classList.remove('dropdown-table-visible');
+		tbl.remove();
 	});
 }
 
@@ -130,46 +343,53 @@ export function handleRowDropdownToggle(mount, button) {
 	if (isExpanded) {
 		return;
 	}
-	const controlsId = button.getAttribute('aria-controls');
-	if (!controlsId) {
+
+	const spec = dropdownToggleSpecs.get(button);
+	if (!spec) {
 		return;
 	}
-	const nested = mount.querySelector(`#${CSS.escape(controlsId)}`);
-	if (!nested) {
+
+	const parentTr = button.closest('tr');
+	if (!parentTr) {
 		return;
 	}
+
+	appendNestedDropdownTable(parentTr, spec);
 	button.setAttribute('aria-expanded', 'true');
 	button.classList.add('prc-data-table__dropdown-toggle--expanded');
-	nested.classList.add('dropdown-table-visible');
 }
 
 /**
  * Append tbody rows, optionally with expandable nested dropdown tables.
  *
  * Nested dropdown markup mirrors the GRF table: a `.dropdown-table` is a direct
- * child of the body `<tr>`, not a sibling row.
+ * child of the body `<tr>`, not a sibling row. Dropdown bodies are lazy-rendered
+ * on first toggle to avoid building thousands of hidden nested rows on draw.
  *
- * @param {Object}      params                       Render parameters.
- * @param {*}           params.tbody                 d3 tbody selection.
- * @param {Array}       params.displayRows           Rows to render.
- * @param {string[]}    params.cols                  Main table columns.
- * @param {string[]}    params.dropdownCols          Dropdown-only columns.
- * @param {string[]}    params.filterCols            Active filter columns.
- * @param {boolean}     params.dropdownEnabled       Whether dropdowns are on.
- * @param {string}      params.identityColumn        Identity column key.
- * @param {Array}       params.activeSheetRows       Unfiltered sheet rows.
- * @param {boolean}     params.showRowKey            Whether key swatch column shows.
- * @param {Object}      params.keyMap                Key map config.
- * @param {Object}      params.formatOptions         Cell format options.
- * @param {Function}    params.formatDisplayCellPair Desktop/mobile formatters.
- * @param {Function}    params.compareForSort        Sort comparator.
- * @param {HTMLElement} params.mount                 Table mount node.
- * @param {string}      params.tableId               Table instance id.
- * @param {Object}      params.mobileColumnColors    Column-to-mobile-background map.
- * @param {Object}      [params.mobileColumnHeaders] Column-to-mobile-header map.
- * @param {string}      [params.mobileHeaderColumn]        Configured mobile header column key.
+ * @param {Object}      params                             Render parameters.
+ * @param {*}           params.tbody                       d3 tbody selection.
+ * @param {Array}       params.displayRows                 Rows to render.
+ * @param {string[]}    params.cols                        Main table columns.
+ * @param {string[]}    params.dropdownCols                Dropdown-only columns.
+ * @param {string[]}    params.filterCols                  Active filter columns.
+ * @param {boolean}     params.dropdownEnabled             Whether dropdowns are on.
+ * @param {string}      params.identityColumn              Identity column key.
+ * @param {Array}       params.activeSheetRows             Unfiltered sheet rows.
+ * @param {boolean}     params.showRowKey                  Whether key swatch column shows.
+ * @param {Object}      params.keyMap                      Key map config.
+ * @param {Object}      params.formatOptions               Cell format options.
+ * @param {Function}    params.formatDisplayCellPair       Desktop/mobile formatters.
+ * @param {Function}    params.compareForSort              Sort comparator.
+ * @param {HTMLElement} params.mount                       Table mount node.
+ * @param {string}      params.tableId                     Table instance id.
+ * @param {Object}      params.mobileColumnColors          Column-to-mobile-background map.
+ * @param {string}      [params.mobileWorldCellBackground] Context World-column mobile background.
+ * @param {Object}      [params.mobileColumnHeaders]       Column-to-mobile-header map.
+ * @param {Object}      [params.mobileHeaderColumn]        Configured mobile header column key.
+ * @param {Object}      [params.mobileHeaderFormat]        Context-provided composed card title format.
  * @param {string}      [params.resolvedMobileHeaderCol]   Pre-resolved card title column key.
- * @param {string[]}    [params.hiddenColumnHeaders] Column keys with hidden header labels.
+ * @param {string[]}    [params.hiddenColumnHeaders]       Column keys with hidden header labels.
+ * @param {string[]}    [params.boldColumns]               Column keys with bold body cells.
  */
 export function appendDisplayRows({
 	tbody,
@@ -188,38 +408,52 @@ export function appendDisplayRows({
 	mount,
 	tableId,
 	mobileColumnColors = {},
+	mobileWorldCellBackground = '',
 	mobileColumnHeaders = {},
 	mobileHeaderColumn = '',
+	mobileHeaderFormat = null,
 	resolvedMobileHeaderCol = '',
 	hiddenColumnHeaders = [],
+	boldColumns = [],
 }) {
 	const hiddenHeaderSet = new Set(
 		Array.isArray(hiddenColumnHeaders) ? hiddenColumnHeaders : []
+	);
+	const boldColumnSet = new Set(
+		Array.isArray(boldColumns) ? boldColumns : []
 	);
 	const mobileHeaderCol =
 		resolvedMobileHeaderCol ||
 		resolveMobileHeaderColumn(cols, mobileHeaderColumn);
 
+	const identityIndex = dropdownEnabled
+		? buildIdentitySiblingsIndex(
+				activeSheetRows,
+				identityColumn,
+				filterCols,
+				compareForSort
+			)
+		: null;
+
 	displayRows.forEach((row, rowIndex) => {
 		const tr = tbody.append('tr');
 
-		const siblings = dropdownEnabled
-			? getIdentitySiblings(
-					activeSheetRows,
-					row,
-					identityColumn,
-					filterCols,
-					compareForSort
-				)
-			: [];
+		const identityVal = String(row[identityColumn] ?? '');
+		const siblings = identityIndex?.get(identityVal) ?? [];
 		const hasDropdown =
 			dropdownEnabled && siblings.length > 1 && dropdownCols.length > 0;
 		const dropdownId = `prc-dropdown-${tableId}-${rowIndex}`;
-		const mobileHeaderDisplay = formatDisplayCellPair(
-			row[mobileHeaderCol],
-			mobileHeaderCol,
-			formatOptions
+		const composedMobileHeader = formatMobileCardHeader(
+			row,
+			mobileHeaderFormat
 		);
+		const mobileHeaderDisplay = composedMobileHeader
+			? { desktop: composedMobileHeader, mobile: composedMobileHeader }
+			: formatDisplayCellPair(
+					row[mobileHeaderCol],
+					mobileHeaderCol,
+					formatOptions
+				);
 		let cellKey = '';
 		let fill = 'transparent';
 
@@ -287,11 +521,14 @@ export function appendDisplayRows({
 						hiddenHeaderSet
 					)
 				)
-				.classed('prc-data-table__first-col', col === cols[0]);
+				.classed('prc-data-table__first-col', col === cols[0])
+				.classed('prc-data-table__bold-cell', boldColumnSet.has(col));
 
 			const cellColor = mobileColumnColors?.[col];
 			if (cellColor) {
-				td.style('--prc-data-table-cell-bg', cellColor);
+				applyCellBackground(td, cellColor);
+			} else if (col === 'World') {
+				applyCellBackground(td, mobileWorldCellBackground);
 			}
 
 			if (hasDropdown && col === cols[0]) {
@@ -309,41 +546,23 @@ export function appendDisplayRows({
 					display.desktop,
 					display.mobile
 				);
+
+				const toggleNode = toggle.node();
+				if (toggleNode) {
+					dropdownToggleSpecs.set(toggleNode, {
+						dropdownId,
+						parentRow: row,
+						siblings,
+						dropdownCols,
+						filterCols,
+						formatOptions,
+						boldColumnSet,
+						formatDisplayCellPair,
+					});
+				}
 			} else {
 				appendResponsiveValueSpans(td, display.desktop, display.mobile);
 			}
-		});
-
-		if (!hasDropdown) {
-			return;
-		}
-
-		const nestedTable = tr
-			.append('table')
-			.attr('class', 'dropdown-table')
-			.attr('id', dropdownId)
-			.attr('role', 'region')
-			.attr('aria-label', 'Additional data rows');
-
-		siblings.forEach((sibRow) => {
-			const sibTr = nestedTable
-				.append('tr')
-				.attr('class', 'dropdown-table__row');
-			dropdownCols.forEach((col) => {
-				const display = formatDisplayCellPair(
-					sibRow[col],
-					col,
-					formatOptions
-				);
-				const cellTd = sibTr
-					.append('td')
-					.attr('class', 'dropdown-table__row__cell');
-				appendResponsiveValueSpans(
-					cellTd,
-					display.desktop,
-					display.mobile
-				);
-			});
 		});
 	});
 }

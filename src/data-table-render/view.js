@@ -13,9 +13,11 @@ import { select } from '@prc/d3';
 import {
 	appendDisplayRows,
 	getDropdownColumnConfig,
+	getMobileHeaderFormatExcludedColumns,
 	resolveMobileHeaderColumn,
 } from './row-dropdown-utils';
 import { formatDisplayCellPair } from './cell-display-format';
+import { applyCellBackground } from './contrasting-ink';
 import {
 	MOBILE_BREAKPOINT,
 	isMobileViewport,
@@ -153,6 +155,38 @@ function getSortedRows(tableState) {
 }
 
 /**
+ * @param {HTMLElement} mount Mount node.
+ */
+function renderEmptyTableMessage(mount) {
+	const rootEmpty = select(mount);
+	rootEmpty.selectAll('*').remove();
+	rootEmpty
+		.append('p')
+		.attr('class', 'prc-data-table-empty')
+		.text('No table data.');
+}
+
+/**
+ * @param {string} tableTextAlign       Data cell alignment attribute.
+ * @param {string} tableHeaderTextAlign Header alignment attribute.
+ * @return {{ resolvedCellTextAlign: string, resolvedHeaderTextAlign: string }} Resolved alignment values for CSS variables.
+ */
+function resolveTableTextAlignStyles(tableTextAlign, tableHeaderTextAlign) {
+	const resolvedCellTextAlign = ['left', 'center', 'right'].includes(
+		tableTextAlign
+	)
+		? tableTextAlign
+		: 'center';
+	const resolvedHeaderTextAlign = ['left', 'center', 'right'].includes(
+		tableHeaderTextAlign
+	)
+		? tableHeaderTextAlign
+		: resolvedCellTextAlign;
+
+	return { resolvedCellTextAlign, resolvedHeaderTextAlign };
+}
+
+/**
  * @param {HTMLElement}       mount       Mount node.
  * @param {string}            tableId     Instance id.
  * @param {Object<string, *>} tablesState Shared tables state object.
@@ -160,23 +194,13 @@ function getSortedRows(tableState) {
 function drawTable(mount, tableId, tablesState) {
 	const tableState = tablesState[tableId];
 	if (!tableState?.sheets) {
-		const rootEmpty = select(mount);
-		rootEmpty.selectAll('*').remove();
-		rootEmpty
-			.append('p')
-			.attr('class', 'prc-data-table-empty')
-			.text('No table data.');
+		renderEmptyTableMessage(mount);
 		return;
 	}
 	const activeSheetName = tableState.activeSheet;
 	const activeSheetData = tableState.sheets[activeSheetName];
 	if (!activeSheetData) {
-		const rootEmpty = select(mount);
-		rootEmpty.selectAll('*').remove();
-		rootEmpty
-			.append('p')
-			.attr('class', 'prc-data-table-empty')
-			.text('No table data.');
+		renderEmptyTableMessage(mount);
 		return;
 	}
 
@@ -186,16 +210,23 @@ function drawTable(mount, tableId, tablesState) {
 		valueFormatSheets = [],
 		valueFormatExcludedColumns = [],
 		valueFormatRules = [],
+		enableDesktopAbbreviation = false,
+		valueAbbreviationRules = [],
 		mobileValueFormatRules = [],
 		enableHeaderSpecialBorders = false,
 		headerSpecialBorderColors = {},
 		mobileColumnColors = {},
+		mobileCellBackground = '',
+		mobileWorldCellBackground = '',
 		mobileColumnHeaders = {},
 		mobileHeaderColumn = '',
+		mobileHeaderFormat = null,
 		mobileHiddenColumns = [],
 		enableColumnSorting = true,
 		hiddenColumnHeaders = [],
 		tableTextAlign = 'center',
+		tableHeaderTextAlign = '',
+		boldColumns = [],
 	} = tableState;
 	const valueFormatExcluded = new Set(valueFormatExcludedColumns);
 	const hiddenHeaderSet = new Set(
@@ -211,12 +242,7 @@ function drawTable(mount, tableId, tablesState) {
 
 	const orderedCols = resolveDisplayColumns(tableState, activeSheetData);
 	if (!orderedCols.length) {
-		const rootEmpty = select(mount);
-		rootEmpty.selectAll('*').remove();
-		rootEmpty
-			.append('p')
-			.attr('class', 'prc-data-table-empty')
-			.text('No table data.');
+		renderEmptyTableMessage(mount);
 		return;
 	}
 
@@ -227,8 +253,17 @@ function drawTable(mount, tableId, tablesState) {
 	const mobileHiddenSet = new Set(
 		Array.isArray(mobileHiddenColumns) ? mobileHiddenColumns : []
 	);
+	const mobileHeaderFormatExcluded = new Set(
+		isMobileViewport()
+			? getMobileHeaderFormatExcludedColumns(mobileHeaderFormat)
+			: []
+	);
 	const cols = isMobileViewport()
-		? orderedCols.filter((col) => !mobileHiddenSet.has(col))
+		? orderedCols.filter(
+				(col) =>
+					!mobileHiddenSet.has(col) &&
+					!mobileHeaderFormatExcluded.has(col)
+			)
 		: orderedCols;
 
 	const displayRows = getSortedRows(tableState);
@@ -243,6 +278,8 @@ function drawTable(mount, tableId, tablesState) {
 	const formatOptions = {
 		valueFormatExcluded,
 		valueFormatRules,
+		enableDesktopAbbreviation,
+		valueAbbreviationRules,
 		mobileValueFormatRules,
 		activeSheetName,
 		valuePrefix,
@@ -264,20 +301,21 @@ function drawTable(mount, tableId, tablesState) {
 	// Native <table> semantics are exactly right for a static data table, so
 	// no ARIA grid/row/cell roles are applied — they would override the
 	// table semantics without delivering the grid keyboard model.
+	const { resolvedCellTextAlign, resolvedHeaderTextAlign } =
+		resolveTableTextAlignStyles(tableTextAlign, tableHeaderTextAlign);
+
 	const table = root
 		.append('table')
 		.attr('class', 'prc-data-table')
 		.classed('prc-data-table--row-dropdowns', dropdownEnabled)
-		.style(
-			'--prc-data-table-cell-text-align',
-			['left', 'center', 'right'].includes(tableTextAlign)
-				? tableTextAlign
-				: 'center'
-		)
+		.style('--prc-data-table-header-text-align', resolvedHeaderTextAlign)
+		.style('--prc-data-table-cell-text-align', resolvedCellTextAlign)
 		.style(
 			'--prc-data-table-mobile-track-count',
 			String(resolveMobileCellTrackCount(tableState))
 		);
+
+	applyCellBackground(table, mobileCellBackground);
 
 	const captionText =
 		activeSheetName && activeSheetName !== 'default'
@@ -310,7 +348,7 @@ function drawTable(mount, tableId, tablesState) {
 			.attr('scope', 'col')
 			.classed('prc-data-table__first-col', col === cols[0]);
 
-		if (enableHeaderSpecialBorders) {
+		if (enableHeaderSpecialBorders && !hiddenHeaderSet.has(col)) {
 			const borderColor = headerSpecialBorderColors?.[col];
 			if (borderColor) {
 				th.classed('prc-data-table__header-special-border', true).style(
@@ -363,7 +401,7 @@ function drawTable(mount, tableId, tablesState) {
 					tableState.sortDirection === 'asc' ? 'desc' : 'asc';
 			} else {
 				tableState.sortColumn = col;
-				tableState.sortDirection = 'asc';
+				tableState.sortDirection = 'desc';
 			}
 			announce(
 				mount,
@@ -395,10 +433,13 @@ function drawTable(mount, tableId, tablesState) {
 		mount,
 		tableId,
 		mobileColumnColors,
+		mobileWorldCellBackground,
 		mobileColumnHeaders,
 		mobileHeaderColumn,
+		mobileHeaderFormat,
 		resolvedMobileHeaderCol: mobileHeaderCol,
 		hiddenColumnHeaders,
+		boldColumns,
 	});
 
 	if (focusedCol) {
@@ -612,6 +653,9 @@ const { state } = store(DATA_TABLE_STORE, {
 			void table.sheets;
 			void table.activeSheet;
 			void table.keyMap;
+			void table.mobileCellBackground;
+			void table.mobileWorldCellBackground;
+			void table.mobileHeaderFormat;
 			// Shallow `void table.columnFilters` only tracks map reassignment.
 			// Filter actions often mutate nested entries in place; subscribe to
 			// keys + entry fields so those clicks still redraw the table.

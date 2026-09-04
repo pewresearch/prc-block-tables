@@ -118,6 +118,7 @@ function ValueFormatRuleCard({
 	return (
 		<div className="prc-data-table-controller-value-format-rule">
 			<SelectControl
+				__next40pxDefaultSize
 				label={__('Rule type', 'data-table-controller')}
 				value={rule.type || 'replace'}
 				options={RULE_TYPES}
@@ -180,12 +181,14 @@ function ValueFormatRuleCard({
 			{rule.type === 'replace' && (
 				<>
 					<SelectControl
+						__next40pxDefaultSize
 						label={__('Operator', 'data-table-controller')}
 						value={rule.operator || 'lt'}
 						options={OPERATORS}
 						onChange={(value) => update({ operator: value })}
 					/>
 					<TextControl
+						__next40pxDefaultSize
 						label={__('Threshold', 'data-table-controller')}
 						type="number"
 						value={rule.threshold ?? ''}
@@ -193,6 +196,7 @@ function ValueFormatRuleCard({
 					/>
 					{rule.operator === 'between' && (
 						<TextControl
+							__next40pxDefaultSize
 							label={__(
 								'Maximum threshold',
 								'data-table-controller'
@@ -205,6 +209,7 @@ function ValueFormatRuleCard({
 						/>
 					)}
 					<TextControl
+						__next40pxDefaultSize
 						label={__(
 							'Replacement string',
 							'data-table-controller'
@@ -220,6 +225,7 @@ function ValueFormatRuleCard({
 			)}
 			{rule.type === 'round' && (
 				<TextControl
+					__next40pxDefaultSize
 					label={__('Round to nearest', 'data-table-controller')}
 					type="number"
 					value={rule.nearest ?? ''}
@@ -232,6 +238,7 @@ function ValueFormatRuleCard({
 			)}
 			{rule.type === 'precision' && (
 				<TextControl
+					__next40pxDefaultSize
 					label={__('Decimal places', 'data-table-controller')}
 					type="number"
 					min={0}
@@ -252,6 +259,7 @@ function ValueFormatRuleCard({
 				</p>
 			)}
 			<Button
+				__next40pxDefaultSize
 				variant="secondary"
 				isDestructive
 				onClick={onRemove}
@@ -313,19 +321,32 @@ export default function ValueFormatRules({
 				/>
 			))}
 			<div className="prc-data-table-controller-value-format-rules__add">
-				<Button variant="secondary" onClick={() => addRule('replace')}>
+				<Button
+					__next40pxDefaultSize
+					variant="secondary"
+					onClick={() => addRule('replace')}
+				>
 					{__('Add replacement rule', 'data-table-controller')}
 				</Button>
-				<Button variant="secondary" onClick={() => addRule('round')}>
+				<Button
+					__next40pxDefaultSize
+					variant="secondary"
+					onClick={() => addRule('round')}
+				>
 					{__('Add rounding rule', 'data-table-controller')}
 				</Button>
 				<Button
+					__next40pxDefaultSize
 					variant="secondary"
 					onClick={() => addRule('precision')}
 				>
 					{__('Add precision rule', 'data-table-controller')}
 				</Button>
-				<Button variant="secondary" onClick={() => addRule('commas')}>
+				<Button
+					__next40pxDefaultSize
+					variant="secondary"
+					onClick={() => addRule('commas')}
+				>
 					{__(
 						'Add thousands separators rule',
 						'data-table-controller'

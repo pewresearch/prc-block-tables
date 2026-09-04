@@ -92,6 +92,7 @@ function DropdownSettingsPanel({
 	defaultValue,
 	isFullWidth,
 	hasClearIcon,
+	enableSearch,
 	instanceId,
 	defaultValueOptions,
 	setAttributes,
@@ -102,6 +103,7 @@ function DropdownSettingsPanel({
 			initialOpen
 		>
 			<TextControl
+				__next40pxDefaultSize
 				label={__('Placeholder', 'data-table-filter-select')}
 				help={__(
 					'Text shown inside the dropdown when no filter is selected.',
@@ -137,14 +139,25 @@ function DropdownSettingsPanel({
 				checked={hasClearIcon}
 				onChange={(v) => setAttributes({ hasClearIcon: v })}
 			/>
+			<ToggleControl
+				label={__('Enable search', 'data-table-filter-select')}
+				help={__(
+					'Let readers type in the dropdown to filter the list of options.',
+					'data-table-filter-select'
+				)}
+				checked={enableSearch}
+				onChange={(v) => setAttributes({ enableSearch: v })}
+			/>
 			{includeResetOption && (
 				<TextControl
+					__next40pxDefaultSize
 					label={__('Reset option label', 'data-table-filter-select')}
 					value={resetLabel}
 					onChange={(v) => setAttributes({ resetLabel: v })}
 				/>
 			)}
 			<SelectControl
+				__next40pxDefaultSize
 				label={__('Default selection', 'data-table-filter-select')}
 				help={__(
 					'Which option is active when the table first loads. Child filters marked “Active by default” are used when this is unset.',
@@ -207,6 +220,7 @@ function ImportColumnControls({
 				</p>
 			)}
 			<SelectControl
+				__next40pxDefaultSize
 				label={__('Column', 'data-table-filter-select')}
 				help={
 					isFirebaseSource
@@ -224,6 +238,7 @@ function ImportColumnControls({
 				onChange={setImportColumn}
 			/>
 			<Button
+				__next40pxDefaultSize
 				variant="primary"
 				onClick={onImport}
 				disabled={!importColumn || isImporting}
@@ -283,7 +298,12 @@ function ImportOptionsPanel({
 							filterColumn
 						)}
 					</p>
-					<Button variant="secondary" isDestructive onClick={onClear}>
+					<Button
+						__next40pxDefaultSize
+						variant="secondary"
+						isDestructive
+						onClick={onClear}
+					>
 						{__(
 							'Clear imported options',
 							'data-table-filter-select'
@@ -305,6 +325,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 		importedOptions,
 		isFullWidth,
 		hasClearIcon,
+		enableSearch,
 	} = attributes;
 	const instanceId = context['prc-block/dataTableInstanceId'] || '';
 	const dataSource = context['prc-block/dataTableDataSource'] || 'csv';
@@ -489,6 +510,7 @@ export default function Edit({ clientId, attributes, setAttributes, context }) {
 					defaultValue={defaultValue}
 					isFullWidth={isFullWidth}
 					hasClearIcon={hasClearIcon}
+					enableSearch={enableSearch}
 					instanceId={instanceId}
 					defaultValueOptions={defaultValueOptions}
 					setAttributes={setAttributes}

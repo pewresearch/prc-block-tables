@@ -10,6 +10,17 @@ import {
 	getElement,
 	getServerState,
 } from '@wordpress/interactivity';
+import { syncSortColumnToActiveSheet } from '../data-table-controller/lib/sync-sort-to-sheet';
+import {
+	getDropdownRoot,
+	getVisibleDropdownItems,
+	highlightedValueMatchesSearch,
+	resolveMenuHighlightValue,
+} from './lib/dropdown-navigation';
+import {
+	hasMatchingSearchOptions,
+	optionMatchesSearch,
+} from './lib/search-options';
 
 const DATA_TABLE_STORE = 'prc-block/data-table';
 
@@ -70,6 +81,7 @@ function applyOptionToTable(table, option) {
 
 	if (filterType === 'sheet') {
 		table.activeSheet = value;
+		syncSortColumnToActiveSheet(table);
 	} else {
 		const next = { ...(table.columnFilters || {}) };
 		if (filterType === 'column-include') {
@@ -89,9 +101,6 @@ function applyOptionToTable(table, option) {
 		// Reassign the map so shallow watchers (void table.columnFilters) notify.
 		table.columnFilters = next;
 	}
-
-	table.sortColumn = null;
-	table.sortDirection = 'asc';
 }
 
 /**
@@ -211,11 +220,10 @@ function applySelection(selected, blockContext, table) {
 			);
 			if (resetSheet !== null && resetSheet !== undefined) {
 				table.activeSheet = resetSheet;
+				syncSortColumnToActiveSheet(table);
 			}
 		}
 
-		table.sortColumn = null;
-		table.sortDirection = 'asc';
 		return;
 	}
 
@@ -228,15 +236,34 @@ function applySelection(selected, blockContext, table) {
 }
 
 /**
+ * Clear the active search query on the block context.
+ *
+ * @param {Object} context Block interactive context.
+ */
+function resetSearchQuery(context) {
+	context.searchQuery = '';
+}
+
+/**
+ * Close the dropdown and clear any active search query.
+ *
+ * @param {Object} context Block interactive context.
+ */
+function closeFilterDropdown(context) {
+	context.isOpen = false;
+	context.highlightedValue = null;
+	resetSearchQuery(context);
+}
+
+/**
  * Move keyboard focus among dropdown menu items.
  *
- * @param {HTMLElement} dropdown  Dropdown root element.
- * @param {number}      direction -1 for up, 1 for down.
+ * @param {HTMLElement} element          Dropdown root or a descendant.
+ * @param {number}      direction        -1 for up, 1 for down.
+ * @param {boolean}     keepFocusOnInput When true, highlight only.
  */
-function focusDropdownItem(dropdown, direction) {
-	const items = Array.from(
-		dropdown.querySelectorAll('.menu .item[role="option"]')
-	);
+function focusDropdownItem(element, direction, keepFocusOnInput = false) {
+	const items = getVisibleDropdownItems(element);
 	if (!items.length) {
 		return;
 	}
@@ -260,7 +287,40 @@ function focusDropdownItem(dropdown, direction) {
 	const nextItem = items[nextIndex];
 	nextItem.classList.add('active', 'selected');
 	nextItem.setAttribute('aria-selected', 'true');
-	nextItem.focus();
+
+	const context = getContext();
+	const nextValue = nextItem.getAttribute('data-value');
+	if (context && nextValue !== null) {
+		context.highlightedValue = nextValue;
+	}
+
+	if (!keepFocusOnInput) {
+		nextItem.focus();
+	}
+}
+
+/**
+ * Focus the search input inside a searchable dropdown.
+ *
+ * @param {HTMLElement} dropdown Dropdown root element.
+ */
+function focusSearchInput(dropdown) {
+	window.requestAnimationFrame(() => {
+		dropdown?.querySelector('input.search')?.focus();
+	});
+}
+
+/**
+ * Select the active or first visible dropdown item.
+ *
+ * @param {HTMLElement} element Dropdown root or a descendant.
+ */
+function selectHighlightedDropdownItem(element) {
+	const items = getVisibleDropdownItems(element);
+	const activeItem =
+		items.find((item) => item.classList.contains('active')) || items[0];
+
+	activeItem?.click();
 }
 
 const { state } = store('prc-block/data-table', {
@@ -309,7 +369,8 @@ const { state } = store('prc-block/data-table', {
 		get isItemActive() {
 			const context = getContext();
 			const selected = resolveDropdownValue(context, state.tables);
-			return String(context.optionValue) === String(selected);
+			const highlight = resolveMenuHighlightValue(context, selected);
+			return String(context.optionValue) === String(highlight);
 		},
 		get hasClearIcon() {
 			const blockContext = getContext();
@@ -331,18 +392,128 @@ const { state } = store('prc-block/data-table', {
 				!!blockContext.options[index]
 			);
 		},
+		get isSearchActive() {
+			const blockContext = getContext();
+
+			if (!blockContext.enableSearch) {
+				return false;
+			}
+
+			return String(blockContext.searchQuery ?? '').trim().length > 0;
+		},
+		get isItemFiltered() {
+			const context = getContext();
+
+			if (!context.enableSearch) {
+				return false;
+			}
+
+			const query = String(context.searchQuery ?? '').trim();
+
+			if (!query) {
+				return false;
+			}
+
+			return !optionMatchesSearch(context.optionLabel || '', query);
+		},
+		get hasNoSearchResults() {
+			const blockContext = getContext();
+
+			if (!blockContext.enableSearch || !blockContext.isOpen) {
+				return false;
+			}
+
+			const query = String(blockContext.searchQuery ?? '').trim();
+
+			if (!query) {
+				return false;
+			}
+
+			return !hasMatchingSearchOptions(
+				blockContext,
+				blockContext.options
+			);
+		},
 	},
 	actions: {
 		toggleDropdown() {
 			const context = getContext();
-			context.isOpen = !context.isOpen;
+
+			if (context.enableSearch) {
+				if (!context.isOpen) {
+					context.isOpen = true;
+					const { ref } = getElement();
+					if (ref) {
+						focusSearchInput(ref);
+					}
+				}
+				return;
+			}
+
+			if (context.isOpen) {
+				closeFilterDropdown(context);
+				return;
+			}
+
+			context.isOpen = true;
 		},
 		closeDropdown() {
-			const context = getContext();
-			context.isOpen = false;
+			closeFilterDropdown(getContext());
 		},
 		stopPropagation(event) {
 			event.stopPropagation();
+		},
+		onSearchInput(event) {
+			const context = getContext();
+			context.searchQuery =
+				event?.target?.value ?? event?.currentTarget?.value ?? '';
+			context.isOpen = true;
+			if (!highlightedValueMatchesSearch(context)) {
+				context.highlightedValue = null;
+			}
+		},
+		onSearchFocus() {
+			const context = getContext();
+			context.isOpen = true;
+		},
+		onSearchKeydown(event) {
+			const { ref } = getElement();
+			const dropdown = getDropdownRoot(ref);
+
+			if (!dropdown) {
+				return;
+			}
+
+			const context = getContext();
+
+			if (event.key === 'Escape') {
+				closeFilterDropdown(context);
+				event.preventDefault();
+				return;
+			}
+
+			switch (event.key) {
+				case 'Enter':
+					event.preventDefault();
+					selectHighlightedDropdownItem(dropdown);
+					break;
+				case 'ArrowDown':
+					event.preventDefault();
+					if (!context.isOpen) {
+						context.isOpen = true;
+					}
+					focusDropdownItem(dropdown, 1, true);
+					break;
+				case 'ArrowUp':
+					event.preventDefault();
+					if (!context.isOpen) {
+						context.isOpen = true;
+					}
+					focusDropdownItem(dropdown, -1, true);
+					break;
+				default:
+					break;
+			}
 		},
 		clearSelection(event) {
 			event.stopPropagation();
@@ -355,7 +526,7 @@ const { state } = store('prc-block/data-table', {
 			}
 
 			applySelection('__reset__', blockContext, table);
-			blockContext.isOpen = false;
+			closeFilterDropdown(blockContext);
 		},
 		selectItem(event) {
 			event.stopPropagation();
@@ -369,7 +540,7 @@ const { state } = store('prc-block/data-table', {
 			}
 
 			applySelection(String(optionValue), context, table);
-			context.isOpen = false;
+			closeFilterDropdown(context);
 		},
 		selectColumnFilter(event) {
 			const blockContext = getContext();
@@ -386,8 +557,12 @@ const { state } = store('prc-block/data-table', {
 		onDropdownKeydown(event) {
 			const context = getContext();
 
+			if (context.enableSearch) {
+				return;
+			}
+
 			if (event.key === 'Escape') {
-				context.isOpen = false;
+				closeFilterDropdown(context);
 				event.preventDefault();
 				return;
 			}
@@ -404,10 +579,7 @@ const { state } = store('prc-block/data-table', {
 					if (!context.isOpen) {
 						context.isOpen = true;
 					} else {
-						const activeItem =
-							ref.querySelector('.menu .item.active') ||
-							ref.querySelector('.menu .item[role="option"]');
-						activeItem?.click();
+						selectHighlightedDropdownItem(ref);
 					}
 					break;
 				case 'ArrowDown':
@@ -440,7 +612,7 @@ const { state } = store('prc-block/data-table', {
 
 			const { ref } = getElement();
 			if (ref && !ref.contains(event.target)) {
-				context.isOpen = false;
+				closeFilterDropdown(context);
 			}
 		},
 	},

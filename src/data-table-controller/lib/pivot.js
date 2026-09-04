@@ -115,9 +115,9 @@ export function normalizePivotValueFields(valueFields) {
 /**
  * Build a composite row key from the identity value and group-by extras.
  *
- * @param {string}               indexValue Identity column value.
- * @param {Record<string, unknown>} source  Source row.
- * @param {string[]}             extras    Group-by field names.
+ * @param {string}                  indexValue Identity column value.
+ * @param {Record<string, unknown>} source     Source row.
+ * @param {string[]}                extras     Group-by field names.
  * @return {string} Composite key.
  */
 function buildPivotRowKey(indexValue, source, extras) {

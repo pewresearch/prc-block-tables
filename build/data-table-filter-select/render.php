@@ -1,4 +1,10 @@
 <?php
+/**
+ * Data Table Filter Select — grouped dropdown filter control.
+ *
+ * @package PRC\Platform\Blocks
+ */
+
 namespace PRC\Platform\Blocks;
 
 $instance_id        = $block->context['prc-block/dataTableInstanceId'] ?? '';
@@ -12,6 +18,7 @@ $imported_options   = isset( $attributes['importedOptions'] ) && is_array( $attr
 	: array();
 $is_full_width      = ! empty( $attributes['isFullWidth'] );
 $has_clear_icon     = ! empty( $attributes['hasClearIcon'] );
+$enable_search      = ! empty( $attributes['enableSearch'] );
 
 $options = array();
 
@@ -133,6 +140,9 @@ $interactive_context = array(
 	'resetLabel'          => $reset_label,
 	'placeholder'         => $placeholder,
 	'hasClearIcon'        => $has_clear_icon,
+	'enableSearch'        => $enable_search,
+	'searchQuery'         => '',
+	'highlightedValue'    => null,
 	'isOpen'              => false,
 );
 
@@ -172,20 +182,32 @@ $aria_label = '' !== $placeholder
 	? $placeholder
 	: __( 'Filter table', 'data-table-filter-select' );
 
+$dropdown_classes = array( 'ui', 'selection', 'dropdown' );
+if ( $has_clear_icon ) {
+	$dropdown_classes[] = 'has-clear-icon';
+}
+if ( $enable_search ) {
+	$dropdown_classes[] = 'search';
+}
+
 ob_start();
 ?>
 <div <?php echo $wrapper_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 	<div
-		class="ui selection dropdown<?php echo $has_clear_icon ? ' has-clear-icon' : ''; ?>"
-		role="listbox"
-		tabindex="0"
+		class="<?php echo esc_attr( implode( ' ', $dropdown_classes ) ); ?>"
+		<?php if ( ! $enable_search ) : ?>
+			role="listbox"
+			tabindex="0"
+		<?php endif; ?>
 		data-wp-on--click="actions.toggleDropdown"
 		data-wp-on--keydown="actions.onDropdownKeydown"
 		data-wp-on-document--click="callbacks.onDocumentClick"
 		data-wp-class--active="context.isOpen"
 		data-wp-class--visible="context.isOpen"
-		data-wp-bind--aria-expanded="context.isOpen"
-		aria-label="<?php echo esc_attr( $aria_label ); ?>"
+		<?php if ( ! $enable_search ) : ?>
+			data-wp-bind--aria-expanded="context.isOpen"
+			aria-label="<?php echo esc_attr( $aria_label ); ?>"
+		<?php endif; ?>
 	>
 		<?php if ( $has_clear_icon ) : ?>
 			<button
@@ -200,24 +222,55 @@ ob_start();
 			</button>
 		<?php endif; ?>
 		<i class="dropdown icon" aria-hidden="true"></i>
+		<?php if ( $enable_search ) : ?>
+			<input
+				class="search"
+				type="search"
+				autocomplete="off"
+				spellcheck="false"
+				tabindex="0"
+				role="combobox"
+				aria-autocomplete="list"
+				aria-label="<?php echo esc_attr__( 'Search options', 'data-table-filter-select' ); ?>"
+				data-wp-on--input="actions.onSearchInput"
+				data-wp-on--keydown="actions.onSearchKeydown"
+				data-wp-on--focus="actions.onSearchFocus"
+				data-wp-on--click="actions.stopPropagation"
+				data-wp-bind--value="context.searchQuery"
+				data-wp-bind--aria-expanded="context.isOpen"
+			/>
+		<?php endif; ?>
 		<div
 			class="text<?php echo $initial_is_placeholder ? ' default' : ''; ?>"
 			data-wp-text="state.selectedLabel"
 			data-wp-class--default="state.isPlaceholder"
+			<?php if ( $enable_search ) : ?>
+				data-wp-class--filtered="state.isSearchActive"
+			<?php endif; ?>
 		>
 			<?php echo $initial_is_placeholder ? esc_html( $initial_selected_label ) : wp_kses_post( $initial_selected_label ); ?>
 		</div>
 		<div
 			class="menu"
-			role="presentation"
+			role="<?php echo $enable_search ? 'listbox' : 'presentation'; ?>"
 			data-wp-on--click="actions.stopPropagation"
 		>
+			<?php if ( $enable_search ) : ?>
+				<div
+					class="message"
+					hidden
+					data-wp-bind--hidden="!state.hasNoSearchResults"
+				>
+					<?php echo esc_html__( 'No results found', 'data-table-filter-select' ); ?>
+				</div>
+			<?php endif; ?>
 			<?php if ( $include_reset ) : ?>
 				<?php
 				$reset_is_active = '__reset__' === $initial_selected_value;
 				$reset_item_ctx  = wp_json_encode(
 					array(
 						'optionValue' => '__reset__',
+						'optionLabel' => $reset_label,
 					)
 				);
 				?>
@@ -231,6 +284,9 @@ ob_start();
 					data-wp-class--active="state.isItemActive"
 					data-wp-class--selected="state.isItemActive"
 					data-wp-bind--aria-selected="state.isItemActive"
+					<?php if ( $enable_search ) : ?>
+						data-wp-bind--hidden="state.isItemFiltered"
+					<?php endif; ?>
 					<?php echo $reset_is_active ? ' aria-selected="true"' : ' aria-selected="false"'; ?>
 				>
 					<?php echo esc_html( $reset_label ); ?>
@@ -243,6 +299,7 @@ ob_start();
 				$option_item_ctx  = wp_json_encode(
 					array(
 						'optionValue' => $option_value,
+						'optionLabel' => wp_strip_all_tags( $option['label'] ),
 					)
 				);
 				?>
@@ -256,6 +313,9 @@ ob_start();
 					data-wp-class--active="state.isItemActive"
 					data-wp-class--selected="state.isItemActive"
 					data-wp-bind--aria-selected="state.isItemActive"
+					<?php if ( $enable_search ) : ?>
+						data-wp-bind--hidden="state.isItemFiltered"
+					<?php endif; ?>
 					<?php echo $option_is_active ? ' aria-selected="true"' : ' aria-selected="false"'; ?>
 				>
 					<?php echo wp_kses_post( $option['label'] ); ?>

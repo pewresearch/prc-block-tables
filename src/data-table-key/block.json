@@ -20,6 +20,14 @@
 			"type": "boolean",
 			"default": false
 		},
+		"includeResetOption": {
+			"type": "boolean",
+			"default": false
+		},
+		"resetLabel": {
+			"type": "string",
+			"default": "All"
+		},
 		"keyOrder": {
 			"type": "array",
 			"default": []

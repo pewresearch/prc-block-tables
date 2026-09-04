@@ -8,6 +8,7 @@ import {
 	SelectControl,
 	ColorPicker,
 	ToggleControl,
+	TextControl,
 	Button,
 } from '@wordpress/components';
 import { useEffect, useMemo } from '@wordpress/element';
@@ -149,13 +150,38 @@ function KeyColorRow({
 	);
 }
 
-function LegendPreview({ orderedLabels, colorMap, enableFilter, excludedSet }) {
+function LegendPreview({
+	orderedLabels,
+	colorMap,
+	enableFilter,
+	includeResetOption,
+	resetLabel,
+	excludedSet,
+}) {
+	const showReset = enableFilter && includeResetOption;
+	const resetText = resetLabel || __('All', 'data-table-key');
+
 	return (
 		<div
 			className="prc-data-table-key__legend"
 			role={enableFilter ? 'group' : 'list'}
 			aria-label={__('Legend', 'data-table-key')}
 		>
+			{showReset ? (
+				<button
+					type="button"
+					className="prc-data-table-key__item prc-data-table-key__item--button prc-data-table-key__item--reset"
+				>
+					<span
+						className="prc-data-table-key__swatch"
+						style={{ backgroundColor: 'rgb(215, 215, 215)' }}
+						aria-hidden="true"
+					/>
+					<span className="prc-data-table-key__label">
+						{resetText}
+					</span>
+				</button>
+			) : null}
 			{orderedLabels.map((label) => {
 				const isExcluded = excludedSet.has(label);
 				const baseClass = enableFilter
@@ -202,8 +228,15 @@ function LegendPreview({ orderedLabels, colorMap, enableFilter, excludedSet }) {
 }
 
 export default function Edit({ attributes, setAttributes, context, clientId }) {
-	const { keyColumn, colorMap, enableFilter, keyOrder, excludedKeys } =
-		attributes;
+	const {
+		keyColumn,
+		colorMap,
+		enableFilter,
+		includeResetOption,
+		resetLabel,
+		keyOrder,
+		excludedKeys,
+	} = attributes;
 	const instanceId = context['prc-block/dataTableInstanceId'] || '';
 	const dataSource = context['prc-block/dataTableDataSource'] || 'csv';
 	const providerContext = context['prc-block/dataTableData'];
@@ -335,6 +368,7 @@ export default function Edit({ attributes, setAttributes, context, clientId }) {
 					initialOpen
 				>
 					<SelectControl
+						__next40pxDefaultSize
 						label={__('Key column', 'data-table-key')}
 						help={__(
 							'Only columns with 20 or fewer unique values are listed.',
@@ -358,6 +392,37 @@ export default function Edit({ attributes, setAttributes, context, clientId }) {
 							setAttributes({ enableFilter: value })
 						}
 					/>
+					{enableFilter ? (
+						<>
+							<ToggleControl
+								label={__(
+									'Show a reset item',
+									'data-table-key'
+								)}
+								help={__(
+									'Add an item that clears the key-column filter and shows all rows.',
+									'data-table-key'
+								)}
+								checked={includeResetOption}
+								onChange={(value) =>
+									setAttributes({ includeResetOption: value })
+								}
+							/>
+							{includeResetOption ? (
+								<TextControl
+									__next40pxDefaultSize
+									label={__(
+										'Reset item label',
+										'data-table-key'
+									)}
+									value={resetLabel}
+									onChange={(value) =>
+										setAttributes({ resetLabel: value })
+									}
+								/>
+							) : null}
+						</>
+					) : null}
 					{keyColumn
 						? orderedLabels.map((label, index) => (
 								<KeyColorRow
@@ -398,6 +463,8 @@ export default function Edit({ attributes, setAttributes, context, clientId }) {
 						orderedLabels={orderedLabels}
 						colorMap={colorMap}
 						enableFilter={enableFilter}
+						includeResetOption={includeResetOption}
+						resetLabel={resetLabel}
 						excludedSet={excludedSet}
 					/>
 				)}

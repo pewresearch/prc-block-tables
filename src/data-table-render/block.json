@@ -39,7 +39,9 @@
 		"prc-block/dataTableEnableHeaderSpecialBorders",
 		"prc-block/dataTableHeaderSpecialBorderColors",
 		"prc-block/dataTableEnableColumnSorting",
-		"prc-block/dataTableTextAlign"
+		"prc-block/dataTableTextAlign",
+		"prc-block/dataTableHeaderTextAlign",
+		"prc-block/dataTableBoldColumns"
 	],
 	"textdomain": "data-table-render",
 	"editorScript": "file:./index.js",

@@ -73,37 +73,37 @@ class Data_Table_Controller {
 					return current_user_can( 'edit_posts' );
 				},
 				'args'                => array(
-					'path' => array(
+					'path'              => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => array( $this, 'sanitize_firebase_path' ),
 					),
-					'column' => array(
+					'column'            => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'defaultJsonSheet' => array(
+					'defaultJsonSheet'  => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'pivotEnabled' => array(
+					'pivotEnabled'      => array(
 						'type'    => 'boolean',
 						'default' => false,
 					),
-					'pivotIndexColumn' => array(
+					'pivotIndexColumn'  => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'pivotColumnField' => array(
+					'pivotColumnField'  => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'pivotColumns' => array(
+					'pivotColumns'      => array(
 						'type'    => 'array',
 						'default' => array(),
 					),
-					'pivotValueFields' => array(
+					'pivotValueFields'  => array(
 						'type'    => 'array',
 						'default' => array(),
 					),
@@ -354,7 +354,7 @@ class Data_Table_Controller {
 	 * @return string|\WP_Error Database URL or error.
 	 */
 	private function resolve_data_table_builder_database_uri() {
-		$environment = \wp_get_environment_type();
+		$environment   = \wp_get_environment_type();
 		$is_production = 'production' === $environment;
 
 		if ( $is_production ) {
@@ -473,8 +473,6 @@ class Data_Table_Controller {
 		}
 		$key = 'remote-data-blocks/remoteData';
 		if ( ! empty( $context[ $key ] ) && is_array( $context[ $key ] ) ) {
-			// do_action('qm/debug', 'context[remote-data-blocks/remoteData] is not empty');
-			// do_action('qm/debug', $context[ $key ]);
 			return $context;
 		}
 		$remote = $this->get_remote_data_from_parent_block( $parent_block );
@@ -565,8 +563,8 @@ class Data_Table_Controller {
 				}
 			}
 
-			$columns     = array_keys( $non_empty_keys );
-			$clean_rows  = array();
+			$columns    = array_keys( $non_empty_keys );
+			$clean_rows = array();
 			foreach ( $rows as $row ) {
 				$clean_rows[] = array_intersect_key( $row, $non_empty_keys );
 			}
@@ -658,11 +656,16 @@ class Data_Table_Controller {
 			return $sheet;
 		}
 		$flip    = array_flip( $hidden );
-		$columns = array_values( array_filter(
-			$sheet['columns'],
-			fn( $col ) => ! isset( $flip[ $col ] )
-		) );
-		return array( 'columns' => $columns, 'rows' => $sheet['rows'] );
+		$columns = array_values(
+			array_filter(
+				$sheet['columns'],
+				fn( $col ) => ! isset( $flip[ $col ] )
+			) 
+		);
+		return array(
+			'columns' => $columns,
+			'rows'    => $sheet['rows'],
+		);
 	}
 
 	/**
@@ -906,7 +909,7 @@ class Data_Table_Controller {
 		string $row_index_key,
 		string $excluded_key
 	): array {
-		$variable = isset( $attributes[ $variable_key ] )
+		$variable  = isset( $attributes[ $variable_key ] )
 			? sanitize_text_field( (string) $attributes[ $variable_key ] )
 			: '';
 		$row_value = isset( $attributes[ $row_value_key ] )
@@ -1032,10 +1035,10 @@ class Data_Table_Controller {
 			);
 		}
 
-		$first       = reset( $entries );
-		$prefix      = $first['prefix'];
-		$suffix      = $first['suffix'];
-		$excluded    = array();
+		$first    = reset( $entries );
+		$prefix   = $first['prefix'];
+		$suffix   = $first['suffix'];
+		$excluded = array();
 		foreach ( $entries as $column => $format ) {
 			if ( $format['prefix'] !== $prefix || $format['suffix'] !== $suffix ) {
 				$excluded[] = $column;
@@ -1171,6 +1174,7 @@ class Data_Table_Controller {
 
 		$column_filter = array(
 			'value'   => $filter_value,
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- column filter flag, not get_posts().
 			'exclude' => in_array( $filter_type, array( 'column-exclude', 'column-exclude-begins-with' ), true ),
 		);
 		if ( 'column-exclude-begins-with' === $filter_type ) {
@@ -1243,7 +1247,7 @@ class Data_Table_Controller {
 	/**
 	 * Sanitize a display-only replacement string while preserving literal "<".
 	 *
-	 * sanitize_text_field() entity-encodes lone less-than signs (e.g. "<1" becomes
+	 * The sanitize_text_field() function entity-encodes lone less-than signs (e.g. "<1" becomes
 	 * "&lt;1"), which breaks common statistical notation. Output is rendered via
 	 * textContent on the client, so HTML tags are not interpreted.
 	 *
@@ -1302,10 +1306,10 @@ class Data_Table_Controller {
 				if ( ! in_array( $operator, $allowed_operators, true ) ) {
 					$operator = 'lt';
 				}
-				$entry['operator']    = $operator;
-				$entry['threshold']   = isset( $rule['threshold'] ) ? (float) $rule['threshold'] : 0.0;
+				$entry['operator']     = $operator;
+				$entry['threshold']    = isset( $rule['threshold'] ) ? (float) $rule['threshold'] : 0.0;
 				$entry['thresholdMax'] = isset( $rule['thresholdMax'] ) ? (float) $rule['thresholdMax'] : 0.0;
-				$entry['replacement'] = isset( $rule['replacement'] )
+				$entry['replacement']  = isset( $rule['replacement'] )
 					? $this->sanitize_display_replacement_string( (string) $rule['replacement'] )
 					: '';
 			} elseif ( 'round' === $type ) {
@@ -1330,6 +1334,123 @@ class Data_Table_Controller {
 	}
 
 	/**
+	 * Sanitize per-magnitude abbreviation group settings.
+	 *
+	 * @param array<string, mixed> $groups_raw Raw groups map.
+	 * @return array<string, array<string, int|string>>
+	 */
+	private function sanitize_abbreviation_groups( array $groups_raw ): array {
+		$allowed_groups = array( 'K', 'M', 'B', 'T' );
+		$default_suffix = array(
+			'K' => 'k',
+			'M' => 'M',
+			'B' => 'B',
+			'T' => 'T',
+		);
+		$groups         = array();
+
+		foreach ( $allowed_groups as $group_key ) {
+			$group_entry = isset( $groups_raw[ $group_key ] ) && is_array( $groups_raw[ $group_key ] )
+				? $groups_raw[ $group_key ]
+				: array();
+			$decimals    = isset( $group_entry['decimals'] ) ? (int) $group_entry['decimals'] : 1;
+			if ( $decimals < 0 ) {
+				$decimals = 0;
+			}
+			$significant = isset( $group_entry['significantDigits'] ) ? (int) $group_entry['significantDigits'] : 2;
+			if ( $significant < 1 ) {
+				$significant = 1;
+			}
+			$abbreviation         = isset( $group_entry['abbreviation'] )
+				? $this->sanitize_display_replacement_string( (string) $group_entry['abbreviation'] )
+				: $default_suffix[ $group_key ];
+			$groups[ $group_key ] = array(
+				'abbreviation'      => $abbreviation,
+				'decimals'          => $decimals,
+				'significantDigits' => $significant,
+			);
+		}
+
+		return $groups;
+	}
+
+	/**
+	 * Sanitize valueAbbreviationRules block attribute for interactivity state.
+	 *
+	 * @param mixed $rules Raw attribute value.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function sanitize_value_abbreviation_rules( $rules ): array {
+		if ( ! is_array( $rules ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+
+		foreach ( $rules as $rule ) {
+			if ( ! is_array( $rule ) ) {
+				continue;
+			}
+
+			$type = isset( $rule['type'] ) ? (string) $rule['type'] : '';
+			if ( 'abbrev' !== $type ) {
+				continue;
+			}
+
+			$sheets     = isset( $rule['sheets'] ) && is_array( $rule['sheets'] )
+				? array_values( array_map( 'strval', $rule['sheets'] ) )
+				: array();
+			$columns    = isset( $rule['columns'] ) && is_array( $rule['columns'] )
+				? array_values( array_map( 'strval', $rule['columns'] ) )
+				: array();
+			$groups_raw = isset( $rule['groups'] ) && is_array( $rule['groups'] )
+				? $rule['groups']
+				: array();
+
+			$sanitized[] = array(
+				'id'      => isset( $rule['id'] ) ? sanitize_text_field( (string) $rule['id'] ) : '',
+				'type'    => 'abbrev',
+				'sheets'  => $sheets,
+				'columns' => $columns,
+				'groups'  => $this->sanitize_abbreviation_groups( $groups_raw ),
+			);
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Resolve shared abbreviation rules from attributes, including legacy mobile abbrev rules.
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function resolve_value_abbreviation_rules( array $attributes ): array {
+		$value_rules = $this->sanitize_value_abbreviation_rules( $attributes['valueAbbreviationRules'] ?? array() );
+		if ( ! empty( $value_rules ) ) {
+			return $value_rules;
+		}
+
+		$mobile_rules = isset( $attributes['mobileValueFormatRules'] ) && is_array( $attributes['mobileValueFormatRules'] )
+			? $attributes['mobileValueFormatRules']
+			: array();
+		$legacy       = array();
+
+		foreach ( $mobile_rules as $rule ) {
+			if ( ! is_array( $rule ) ) {
+				continue;
+			}
+			$type = isset( $rule['type'] ) ? (string) $rule['type'] : '';
+			if ( 'abbrev' !== $type ) {
+				continue;
+			}
+			$legacy[] = $rule;
+		}
+
+		return $this->sanitize_value_abbreviation_rules( $legacy );
+	}
+
+	/**
 	 * Sanitize mobileValueFormatRules block attribute for interactivity state.
 	 *
 	 * @param mixed $rules Raw attribute value.
@@ -1340,7 +1461,6 @@ class Data_Table_Controller {
 			return array();
 		}
 
-		$allowed_groups    = array( 'K', 'M', 'B', 'T' );
 		$allowed_operators = array( 'lt', 'lte', 'gt', 'gte', 'eq', 'between' );
 		$sanitized         = array();
 
@@ -1350,7 +1470,7 @@ class Data_Table_Controller {
 			}
 
 			$type = isset( $rule['type'] ) ? (string) $rule['type'] : '';
-			if ( ! in_array( $type, array( 'abbrev', 'replace' ), true ) ) {
+			if ( 'replace' !== $type ) {
 				continue;
 			}
 
@@ -1361,52 +1481,23 @@ class Data_Table_Controller {
 				? array_values( array_map( 'strval', $rule['columns'] ) )
 				: array();
 
-			$entry = array(
-				'id'      => isset( $rule['id'] ) ? sanitize_text_field( (string) $rule['id'] ) : '',
-				'type'    => $type,
-				'sheets'  => $sheets,
-				'columns' => $columns,
-			);
+			$operator = isset( $rule['operator'] ) ? (string) $rule['operator'] : 'lt';
+			if ( ! in_array( $operator, $allowed_operators, true ) ) {
+				$operator = 'lt';
+			}
 
-			if ( 'replace' === $type ) {
-				$operator = isset( $rule['operator'] ) ? (string) $rule['operator'] : 'lt';
-				if ( ! in_array( $operator, $allowed_operators, true ) ) {
-					$operator = 'lt';
-				}
-				$entry['operator']     = $operator;
-				$entry['threshold']    = isset( $rule['threshold'] ) ? (float) $rule['threshold'] : 0.0;
-				$entry['thresholdMax'] = isset( $rule['thresholdMax'] ) ? (float) $rule['thresholdMax'] : 0.0;
-				$entry['replacement']  = isset( $rule['replacement'] )
+			$sanitized[] = array(
+				'id'           => isset( $rule['id'] ) ? sanitize_text_field( (string) $rule['id'] ) : '',
+				'type'         => 'replace',
+				'sheets'       => $sheets,
+				'columns'      => $columns,
+				'operator'     => $operator,
+				'threshold'    => isset( $rule['threshold'] ) ? (float) $rule['threshold'] : 0.0,
+				'thresholdMax' => isset( $rule['thresholdMax'] ) ? (float) $rule['thresholdMax'] : 0.0,
+				'replacement'  => isset( $rule['replacement'] )
 					? $this->sanitize_display_replacement_string( (string) $rule['replacement'] )
-					: '';
-				$sanitized[]           = $entry;
-				continue;
-			}
-
-			$groups_raw = isset( $rule['groups'] ) && is_array( $rule['groups'] )
-				? $rule['groups']
-				: array();
-			$groups     = array();
-			foreach ( $allowed_groups as $group_key ) {
-				$group_entry = isset( $groups_raw[ $group_key ] ) && is_array( $groups_raw[ $group_key ] )
-					? $groups_raw[ $group_key ]
-					: array();
-				$decimals    = isset( $group_entry['decimals'] ) ? (int) $group_entry['decimals'] : 1;
-				if ( $decimals < 0 ) {
-					$decimals = 0;
-				}
-				$significant = isset( $group_entry['significantDigits'] ) ? (int) $group_entry['significantDigits'] : 2;
-				if ( $significant < 1 ) {
-					$significant = 1;
-				}
-				$groups[ $group_key ] = array(
-					'decimals'          => $decimals,
-					'significantDigits' => $significant,
-				);
-			}
-
-			$entry['groups'] = $groups;
-			$sanitized[]     = $entry;
+					: '',
+			);
 		}
 
 		return $sanitized;
@@ -1475,6 +1566,73 @@ class Data_Table_Controller {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Resolve optional context-provided uniform mobile cell background.
+	 *
+	 * @param mixed $raw Raw prc-block/dataTableData context value.
+	 * @return string Sanitized hex color or empty string.
+	 */
+	private function resolve_context_mobile_cell_background( $raw ): string {
+		if ( ! is_array( $raw ) ) {
+			return '';
+		}
+
+		$color = $raw['mobileCellBackground'] ?? '';
+		if ( ! is_string( $color ) ) {
+			return '';
+		}
+
+		return $this->sanitize_hex_color_with_alpha( $color );
+	}
+
+	/**
+	 * Resolve optional context-provided World-column mobile cell background.
+	 *
+	 * @param mixed $raw Raw prc-block/dataTableData context value.
+	 * @return string Sanitized hex color or empty string.
+	 */
+	private function resolve_context_mobile_world_cell_background( $raw ): string {
+		if ( ! is_array( $raw ) ) {
+			return '';
+		}
+
+		$color = $raw['mobileWorldCellBackground'] ?? '';
+		if ( ! is_string( $color ) ) {
+			return '';
+		}
+
+		return $this->sanitize_hex_color_with_alpha( $color );
+	}
+
+	/**
+	 * Resolve optional context-provided mobile card header format.
+	 *
+	 * @param mixed $raw Raw prc-block/dataTableData context value.
+	 * @return array{ nameColumn: string, yearColumn: string } Sanitized format or empty array.
+	 */
+	private function resolve_context_mobile_header_format( $raw ): array {
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		$format = $raw['mobileHeaderFormat'] ?? null;
+		if ( ! is_array( $format ) ) {
+			return array();
+		}
+
+		$name_column = isset( $format['nameColumn'] ) ? sanitize_text_field( (string) $format['nameColumn'] ) : '';
+		$year_column = isset( $format['yearColumn'] ) ? sanitize_text_field( (string) $format['yearColumn'] ) : '';
+
+		if ( '' === $name_column || '' === $year_column ) {
+			return array();
+		}
+
+		return array(
+			'nameColumn' => $name_column,
+			'yearColumn' => $year_column,
+		);
 	}
 
 	/**
@@ -1674,7 +1832,7 @@ class Data_Table_Controller {
 			if ( '' === $value ) {
 				continue;
 			}
-			$label = isset( $entry['label'] ) ? (string) $entry['label'] : $value;
+			$label        = isset( $entry['label'] ) ? (string) $entry['label'] : $value;
 			$normalized[] = array(
 				'value' => $value,
 				'label' => '' !== $label ? $label : $value,
@@ -1709,7 +1867,7 @@ class Data_Table_Controller {
 			if ( '' === $field ) {
 				continue;
 			}
-			$label = isset( $entry['label'] ) ? (string) $entry['label'] : $field;
+			$label        = isset( $entry['label'] ) ? (string) $entry['label'] : $field;
 			$normalized[] = array(
 				'field' => $field,
 				'label' => '' !== $label ? $label : $field,
@@ -1780,7 +1938,7 @@ class Data_Table_Controller {
 			if ( isset( $value_field_names[ $col ] ) ) {
 				continue;
 			}
-			$seen[ $col ]       = true;
+			$seen[ $col ] = true;
 			$normalized[] = $col;
 		}
 
@@ -1819,10 +1977,10 @@ class Data_Table_Controller {
 			return $sheets;
 		}
 
-		$index_column = isset( $attributes['pivotIndexColumn'] )
+		$index_column  = isset( $attributes['pivotIndexColumn'] )
 			? (string) $attributes['pivotIndexColumn']
 			: '';
-		$column_field = isset( $attributes['pivotColumnField'] )
+		$column_field  = isset( $attributes['pivotColumnField'] )
 			? (string) $attributes['pivotColumnField']
 			: '';
 		$pivot_columns = $this->normalize_pivot_columns( $attributes['pivotColumns'] ?? array() );
@@ -1852,12 +2010,12 @@ class Data_Table_Controller {
 			$wide_columns[] = $col['label'];
 		}
 
-		$result         = array();
+		$result          = array();
 		$used_sheet_keys = array();
 
 		foreach ( $value_fields as $value_entry ) {
 			$field     = $value_entry['field'];
-			$sheet_key = $value_entry['label'] !== '' ? $value_entry['label'] : $field;
+			$sheet_key = '' !== $value_entry['label'] ? $value_entry['label'] : $field;
 			if ( isset( $used_sheet_keys[ $sheet_key ] ) ) {
 				$suffix = 2;
 				while ( isset( $used_sheet_keys[ $sheet_key . ' (' . $suffix . ')' ] ) ) {
@@ -2038,9 +2196,9 @@ class Data_Table_Controller {
 	/**
 	 * Apply hidden-column filtering and column order to every sheet.
 	 *
-	 * @param array               $normalized       Normalized sheets.
-	 * @param string[]            $hidden           Global hidden column keys.
-	 * @param string[]            $col_order        Preferred column order.
+	 * @param array                   $normalized       Normalized sheets.
+	 * @param string[]                $hidden           Global hidden column keys.
+	 * @param string[]                $col_order        Preferred column order.
 	 * @param array<string, string[]> $hidden_by_sheet Per-sheet hidden column keys.
 	 * @return array<string, array{ columns: string[], rows: array }>
 	 */
@@ -2049,8 +2207,8 @@ class Data_Table_Controller {
 		foreach ( $normalized as $sheet_name => $sheet ) {
 			// Match sanitizer keying: cast + sanitize so numeric year keys and
 			// labels that change under sanitize_text_field still resolve.
-			$sheet_key    = sanitize_text_field( (string) $sheet_name );
-			$sheet_hidden = array_values(
+			$sheet_key             = sanitize_text_field( (string) $sheet_name );
+			$sheet_hidden          = array_values(
 				array_unique(
 					array_merge(
 						$hidden,
@@ -2077,8 +2235,8 @@ class Data_Table_Controller {
 	 */
 	private function build_sheets_from_raw_context( $raw, array $attributes, ?WP_Block $block, array $col_order ): array {
 		list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
-		$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
-		$normalized    = $this->normalize_context_data( $raw, $attributes, $block );
+		$default_sheet                    = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
+		$normalized                       = $this->normalize_context_data( $raw, $attributes, $block );
 
 		if ( empty( $normalized ) ) {
 			return array(
@@ -2103,34 +2261,40 @@ class Data_Table_Controller {
 	/**
 	 * Render callback
 	 *
-	 * @param array    $attributes Block attributes.
-	 * @param string   $content    Inner blocks HTML.
+	 * @param array     $attributes Block attributes.
+	 * @param string    $content    Inner blocks HTML.
 	 * @param \WP_Block $block      Block instance.
 	 * @return string
 	 */
 	public function render_block_callback( $attributes, $content, $block ) {
-		$data_source = isset( $attributes['dataSource'] ) ? (string) $attributes['dataSource'] : 'csv';
-		$instance_id = isset( $attributes['dataTableInstanceId'] ) ? (string) $attributes['dataTableInstanceId'] : '';
-		$sheets = array();
-		$activeSheet = 'default';
-		$col_order = isset( $attributes['columnOrder'] ) && is_array( $attributes['columnOrder'] )
+		$data_source                          = isset( $attributes['dataSource'] ) ? (string) $attributes['dataSource'] : 'csv';
+		$instance_id                          = isset( $attributes['dataTableInstanceId'] ) ? (string) $attributes['dataTableInstanceId'] : '';
+		$sheets                               = array();
+		$active_sheet                         = 'default';
+		$context_mobile_cell_background       = '';
+		$context_mobile_world_cell_background = '';
+		$context_mobile_header_format         = array();
+		$col_order                            = isset( $attributes['columnOrder'] ) && is_array( $attributes['columnOrder'] )
 			? array_map( 'strval', $attributes['columnOrder'] )
 			: array();
 
 		if ( 'remote' === $data_source ) {
 			$remote = $block->context['remote-data-blocks/remoteData'] ?? null;
 			if ( is_array( $remote ) ) {
-				$results = isset( $remote['results'] ) && is_array( $remote['results'] ) ? $remote['results'] : array();
-				$sheets  = $this->group_remote_results_by_sheet( $results );
-				$activeSheet = array_key_first( $sheets );
+				$results      = isset( $remote['results'] ) && is_array( $remote['results'] ) ? $remote['results'] : array();
+				$sheets       = $this->group_remote_results_by_sheet( $results );
+				$active_sheet = array_key_first( $sheets );
 			}
 		} elseif ( 'context' === $data_source ) {
 			$raw    = $block->context['prc-block/dataTableData'] ?? null;
 			$built  = $this->build_sheets_from_raw_context( $raw, $attributes, $block, $col_order );
 			$sheets = $built['sheets'];
 			if ( null !== $built['activeSheet'] ) {
-				$activeSheet = $built['activeSheet'];
+				$active_sheet = $built['activeSheet'];
 			}
+			$context_mobile_cell_background       = $this->resolve_context_mobile_cell_background( $raw );
+			$context_mobile_world_cell_background = $this->resolve_context_mobile_world_cell_background( $raw );
+			$context_mobile_header_format         = $this->resolve_context_mobile_header_format( $raw );
 		} elseif ( 'firebase' === $data_source ) {
 			$firebase_path = isset( $attributes['firebasePath'] ) ? (string) $attributes['firebasePath'] : '';
 			$firebase_path = is_string( $firebase_path ) ? ltrim( trim( $firebase_path ), '/' ) : '';
@@ -2138,17 +2302,17 @@ class Data_Table_Controller {
 			if ( '' === $firebase_path ) {
 				// Legacy posts that used dataSource=firebase without a path fall back to CSV.
 				list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
-				$normalized = array(
+				$normalized                       = array(
 					'default' => $this->normalize_csv_table( $attributes['csvTable'] ?? null ),
 				);
-				$normalized    = $this->apply_pivot( $normalized, $attributes );
-				$sheets        = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
-				$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
-				$activeSheet   = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
+				$normalized                       = $this->apply_pivot( $normalized, $attributes );
+				$sheets                           = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
+				$default_sheet                    = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
+				$active_sheet                     = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
 					? $default_sheet
 					: array_key_first( $sheets );
-				if ( null === $activeSheet ) {
-					$activeSheet = 'default';
+				if ( null === $active_sheet ) {
+					$active_sheet = 'default';
 				}
 			} else {
 				$raw = $this->fetch_firebase_path( $firebase_path );
@@ -2156,15 +2320,15 @@ class Data_Table_Controller {
 					$built  = $this->build_sheets_from_raw_context( $raw, $attributes, $block, $col_order );
 					$sheets = $built['sheets'];
 					if ( null !== $built['activeSheet'] ) {
-						$activeSheet = $built['activeSheet'];
+						$active_sheet = $built['activeSheet'];
 					}
 				}
 			}
 		} elseif ( 'json' === $data_source ) {
-			$json_table = $attributes['jsonTable'] ?? null;
+			$json_table                       = $attributes['jsonTable'] ?? null;
 			list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
-			$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
-			$multi_sheets  = $this->normalize_json_multi_sheet( $json_table );
+			$default_sheet                    = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
+			$multi_sheets                     = $this->normalize_json_multi_sheet( $json_table );
 
 			if ( null !== $multi_sheets ) {
 				$normalized = $multi_sheets;
@@ -2174,45 +2338,47 @@ class Data_Table_Controller {
 				);
 			}
 
-			$normalized = $this->apply_pivot( $normalized, $attributes );
-			$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
-			$activeSheet = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
+			$normalized   = $this->apply_pivot( $normalized, $attributes );
+			$sheets       = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
+			$active_sheet = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
 				? $default_sheet
 				: array_key_first( $sheets );
 		} else {
 			list( $hidden, $hidden_by_sheet ) = $this->get_hidden_column_config( $attributes );
-			$normalized = array(
+			$normalized                       = array(
 				'default' => $this->normalize_csv_table( $attributes['csvTable'] ?? null ),
 			);
-			$normalized = $this->apply_pivot( $normalized, $attributes );
-			$sheets     = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
-			$default_sheet = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
-			$activeSheet   = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
+			$normalized                       = $this->apply_pivot( $normalized, $attributes );
+			$sheets                           = $this->filter_and_order_sheets( $normalized, $hidden, $col_order, $hidden_by_sheet );
+			$default_sheet                    = isset( $attributes['defaultJsonSheet'] ) ? (string) $attributes['defaultJsonSheet'] : '';
+			$active_sheet                     = ( '' !== $default_sheet && isset( $sheets[ $default_sheet ] ) )
 				? $default_sheet
 				: array_key_first( $sheets );
-			if ( null === $activeSheet ) {
-				$activeSheet = 'default';
+			if ( null === $active_sheet ) {
+				$active_sheet = 'default';
 			}
 		}
 
 
-		$mobile_header_column = isset( $attributes['mobileHeaderColumn'] ) ? (string) $attributes['mobileHeaderColumn'] : '';
-		$mobile_hidden_columns  = isset( $attributes['mobileHiddenColumns'] ) && is_array( $attributes['mobileHiddenColumns'] )
+		$mobile_header_column        = isset( $attributes['mobileHeaderColumn'] ) ? (string) $attributes['mobileHeaderColumn'] : '';
+		$mobile_hidden_columns       = isset( $attributes['mobileHiddenColumns'] ) && is_array( $attributes['mobileHiddenColumns'] )
 			? array_values( array_map( 'strval', $attributes['mobileHiddenColumns'] ) )
 			: array();
-		$value_prefix          = isset( $attributes['valuePrefix'] ) ? (string) $attributes['valuePrefix'] : '';
-		$value_suffix          = isset( $attributes['valueSuffix'] ) ? (string) $attributes['valueSuffix'] : '';
-		$value_format_sheets   = isset( $attributes['valueFormatSheets'] ) && is_array( $attributes['valueFormatSheets'] )
+		$value_prefix                = isset( $attributes['valuePrefix'] ) ? (string) $attributes['valuePrefix'] : '';
+		$value_suffix                = isset( $attributes['valueSuffix'] ) ? (string) $attributes['valueSuffix'] : '';
+		$value_format_sheets         = isset( $attributes['valueFormatSheets'] ) && is_array( $attributes['valueFormatSheets'] )
 			? array_values( array_map( 'strval', $attributes['valueFormatSheets'] ) )
 			: array();
-		$value_format_excluded = isset( $attributes['valueFormatExcludedColumns'] ) && is_array( $attributes['valueFormatExcludedColumns'] )
+		$value_format_excluded       = isset( $attributes['valueFormatExcludedColumns'] ) && is_array( $attributes['valueFormatExcludedColumns'] )
 			? array_map( 'strval', $attributes['valueFormatExcludedColumns'] )
 			: array();
-		$value_format_rules         = $this->sanitize_value_format_rules( $attributes['valueFormatRules'] ?? array() );
-		$mobile_value_format_rules  = $this->sanitize_mobile_value_format_rules( $attributes['mobileValueFormatRules'] ?? array() );
+		$value_format_rules          = $this->sanitize_value_format_rules( $attributes['valueFormatRules'] ?? array() );
+		$value_abbreviation_rules    = $this->resolve_value_abbreviation_rules( $attributes );
+		$enable_desktop_abbreviation = ! empty( $attributes['enableDesktopAbbreviation'] );
+		$mobile_value_format_rules   = $this->sanitize_mobile_value_format_rules( $attributes['mobileValueFormatRules'] ?? array() );
 
 		if ( '' === $value_prefix && '' === $value_suffix && ! empty( $attributes['columnValueFormats'] ) && is_array( $attributes['columnValueFormats'] ) ) {
-			$legacy = $this->resolve_legacy_column_value_formats( $attributes['columnValueFormats'], $sheets, $activeSheet );
+			$legacy                = $this->resolve_legacy_column_value_formats( $attributes['columnValueFormats'], $sheets, $active_sheet );
 			$value_prefix          = $legacy['prefix'];
 			$value_suffix          = $legacy['suffix'];
 			$value_format_excluded = $legacy['excluded'];
@@ -2220,13 +2386,13 @@ class Data_Table_Controller {
 
 		$default_filters = $this->collect_default_table_filters( $block );
 		if ( null !== $default_filters['activeSheet'] && isset( $sheets[ $default_filters['activeSheet'] ] ) ) {
-			$activeSheet = $default_filters['activeSheet'];
+			$active_sheet = $default_filters['activeSheet'];
 		}
 
 		list( $sheets, $col_order ) = $this->apply_auto_column_order_to_sheets(
 			$sheets,
 			$attributes,
-			(string) $activeSheet,
+			(string) $active_sheet,
 			$col_order
 		);
 
@@ -2234,76 +2400,109 @@ class Data_Table_Controller {
 			? array_values( array_map( 'strval', $attributes['mobileColumnOrder'] ) )
 			: array();
 
-		if ( isset( $sheets[ $activeSheet ] ) ) {
+		if ( isset( $sheets[ $active_sheet ] ) ) {
 			$mobile_column_order = $this->resolve_mobile_auto_column_order(
 				$attributes,
-				$sheets[ $activeSheet ],
+				$sheets[ $active_sheet ],
 				$mobile_column_order
 			);
 		}
 
 		$enable_column_sorting = ! isset( $attributes['enableColumnSorting'] ) || ! empty( $attributes['enableColumnSorting'] );
-		$initial_sort          = $this->resolve_initial_sort_state( $attributes, $sheets, (string) $activeSheet, $enable_column_sorting );
+		$initial_sort          = $this->resolve_initial_sort_state( $attributes, $sheets, (string) $active_sheet, $enable_column_sorting );
 
-		$enable_row_dropdowns = ! empty( $attributes['enableRowDropdowns'] );
-		$dropdown_identity    = isset( $attributes['rowDropdownIdentityColumn'] )
+		$enable_row_dropdowns      = ! empty( $attributes['enableRowDropdowns'] );
+		$dropdown_identity         = isset( $attributes['rowDropdownIdentityColumn'] )
 			? sanitize_text_field( (string) $attributes['rowDropdownIdentityColumn'] )
 			: '';
-		$dropdown_columns     = isset( $attributes['rowDropdownColumns'] ) && is_array( $attributes['rowDropdownColumns'] )
+		$dropdown_columns          = isset( $attributes['rowDropdownColumns'] ) && is_array( $attributes['rowDropdownColumns'] )
 			? array_values( array_map( 'strval', $attributes['rowDropdownColumns'] ) )
 			: array();
+		$dropdown_columns_by_sheet = $this->sanitize_hidden_columns_by_sheet(
+			$attributes['rowDropdownColumnsBySheet'] ?? array()
+		);
 
 		$enable_header_special_borders = ! empty( $attributes['enableHeaderSpecialBorders'] );
-		$header_special_border_colors  = $this->sanitize_header_special_border_colors(
-			$attributes['headerSpecialBorderColors'] ?? array()
+		$header_special_border_colors  = apply_filters(
+			'prc_data_table_header_special_border_colors',
+			$this->sanitize_header_special_border_colors(
+				$attributes['headerSpecialBorderColors'] ?? array()
+			),
+			$attributes,
+			$sheets
 		);
-		$mobile_column_colors          = $this->sanitize_mobile_column_colors(
-			$attributes['mobileColumnColors'] ?? array()
-		);
+		$mobile_column_colors          = '' !== $context_mobile_cell_background
+			? array()
+			: $this->sanitize_mobile_column_colors(
+				$attributes['mobileColumnColors'] ?? array()
+			);
 		$mobile_column_headers         = $this->sanitize_mobile_column_headers(
 			$attributes['mobileColumnHeaders'] ?? array()
 		);
-		$mobile_column_sort_mode = isset( $attributes['mobileColumnSortMode'] )
+		$mobile_column_sort_mode       = isset( $attributes['mobileColumnSortMode'] )
 			? sanitize_text_field( (string) $attributes['mobileColumnSortMode'] )
 			: 'inherit';
-		$hidden_column_headers   = isset( $attributes['hiddenColumnHeaders'] ) && is_array( $attributes['hiddenColumnHeaders'] )
+		$hidden_column_headers         = isset( $attributes['hiddenColumnHeaders'] ) && is_array( $attributes['hiddenColumnHeaders'] )
 			? array_values( array_map( 'strval', $attributes['hiddenColumnHeaders'] ) )
 			: array();
-		$table_text_align        = $this->sanitize_table_text_align( $attributes['tableTextAlign'] ?? 'center' );
+		$bold_columns                  = isset( $attributes['boldColumns'] ) && is_array( $attributes['boldColumns'] )
+			? array_values( array_map( 'strval', $attributes['boldColumns'] ) )
+			: array();
+		$table_text_align              = $this->sanitize_table_text_align( $attributes['tableTextAlign'] ?? 'center' );
+		$table_header_text_align       = $this->sanitize_table_text_align(
+			'' !== ( $attributes['tableHeaderTextAlign'] ?? '' )
+				? $attributes['tableHeaderTextAlign']
+				: ( $attributes['tableTextAlign'] ?? 'center' )
+		);
+
+		$allow_data_download = ! isset( $attributes['allowDataDownload'] ) || ! empty( $attributes['allowDataDownload'] );
+		$csv_filename        = sanitize_title( get_the_title() );
+		if ( '' === $csv_filename ) {
+			$csv_filename = 'data-table';
+		}
 
 		wp_interactivity_state(
 			'prc-block/data-table',
 			array(
 				'tables' => array(
 					$instance_id => array(
-						'sheets'               => $sheets,
-						'activeSheet'          => $activeSheet,
-						'dataSource'           => $data_source,
-						'mobileHeaderColumn'   => $mobile_header_column,
-						'mobileHiddenColumns'  => $mobile_hidden_columns,
+						'sheets'                     => $sheets,
+						'activeSheet'                => $active_sheet,
+						'dataSource'                 => $data_source,
+						'mobileHeaderColumn'         => $mobile_header_column,
+						'mobileHiddenColumns'        => $mobile_hidden_columns,
 						'valuePrefix'                => $value_prefix,
 						'valueSuffix'                => $value_suffix,
 						'valueFormatSheets'          => $value_format_sheets,
 						'valueFormatExcludedColumns' => $value_format_excluded,
 						'valueFormatRules'           => $value_format_rules,
+						'enableDesktopAbbreviation'  => $enable_desktop_abbreviation,
+						'valueAbbreviationRules'     => $value_abbreviation_rules,
 						'mobileValueFormatRules'     => $mobile_value_format_rules,
-						'enableColumnSorting'  => $enable_column_sorting,
-						'sortColumn'           => $initial_sort['sortColumn'],
-						'sortDirection'        => $initial_sort['sortDirection'],
-						'columnFilters'        => $default_filters['columnFilters'],
-						'rowDropdown'          => array(
+						'enableColumnSorting'        => $enable_column_sorting,
+						'sortColumn'                 => $initial_sort['sortColumn'],
+						'sortDirection'              => $initial_sort['sortDirection'],
+						'columnFilters'              => $default_filters['columnFilters'],
+						'rowDropdown'                => array(
 							'enabled'        => $enable_row_dropdowns && '' !== $dropdown_identity,
 							'identityColumn' => $dropdown_identity,
 							'columns'        => $dropdown_columns,
+							'columnsBySheet' => $dropdown_columns_by_sheet,
 						),
 						'enableHeaderSpecialBorders' => $enable_header_special_borders,
 						'headerSpecialBorderColors'  => $header_special_border_colors,
 						'mobileColumnColors'         => $mobile_column_colors,
+						'mobileCellBackground'       => $context_mobile_cell_background,
+						'mobileWorldCellBackground'  => $context_mobile_world_cell_background,
+						'mobileHeaderFormat'         => $context_mobile_header_format,
 						'mobileColumnHeaders'        => $mobile_column_headers,
 						'mobileColumnSortMode'       => $mobile_column_sort_mode,
 						'mobileColumnOrder'          => $mobile_column_order,
 						'hiddenColumnHeaders'        => $hidden_column_headers,
 						'tableTextAlign'             => $table_text_align,
+						'tableHeaderTextAlign'       => $table_header_text_align,
+						'boldColumns'                => $bold_columns,
+						'csvFilename'                => $csv_filename,
 					),
 				),
 			)
@@ -2311,14 +2510,31 @@ class Data_Table_Controller {
 
 		$wrapper_attributes = get_block_wrapper_attributes(
 			array(
-				'class' => 'wp-block-prc-block-data-table-controller',
+				'class'               => 'wp-block-prc-block-data-table-controller',
+				'data-wp-interactive' => 'prc-block/data-table',
+				'data-wp-key'         => $instance_id,
+				'data-wp-context'     => wp_json_encode(
+					array(
+						'dataTableInstanceId' => $instance_id,
+					)
+				),
 			)
 		);
 
+		$download_markup = '';
+		if ( $allow_data_download ) {
+			$download_markup = 
+				'<div class="prc-data-table-controller__download">'
+				. '<a data-wp-on--click="actions.downloadCsv" data-wp-on--keydown="actions.downloadCsv" tabindex="0" role="button" class="has-sans-serif-font-family">'
+				. esc_html__( 'Download data', 'data-table-controller' )
+				. '</a></div>';
+		}
+
 		return wp_sprintf(
-			'<div %1$s>%2$s</div>',
+			'<div %1$s>%2$s%3$s</div>',
 			$wrapper_attributes,
-			$content
+			$content,
+			$download_markup
 		);
 	}
 
