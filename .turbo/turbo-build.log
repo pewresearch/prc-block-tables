@@ -26,7 +26,7 @@ built modules 57.8 KiB (css/mini-extract) 906 KiB (javascript) [1m[33m[built]
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js[39m[22m 196 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated)[39m[22m 2.49 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   + 8 modules
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 5516 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 24557 ms
 
 assets by path [1m[32mdata-table-render/[39m[22m 24.6 KiB 2 assets
 assets by path [1m[32mdata-table-filter-select/[39m[22m 6.4 KiB 2 assets
@@ -49,7 +49,7 @@ built modules 121 KiB [1m[33m[built][39m[22m
     + 6 modules
   [1mexternal "@wordpress/interactivity"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   [1mexternal "@prc/d3"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 3007 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 16832 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
 > @prc/block-tables@1.2.0 build:ai
@@ -60,4 +60,4 @@ asset [1m[32mindex.asset.php[39m[22m 189 bytes [1m[32m[emitted][39m[22m 
 Entrypoint [1mindex[39m[22m 3.48 KiB = [1m[32mindex.js[39m[22m 3.29 KiB [1m[32mindex.asset.php[39m[22m 189 bytes
 orphan modules 6.29 KiB [1m[33m[orphan][39m[22m 8 modules
 [1m./includes/ai-features/src/generate-tabular-data/index.tsx + 8 modules[39m[22m 8.21 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 360 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 1024 ms
