@@ -1,5 +1,8 @@
-import { Icon } from '@prc/icons';
+/**
+ * WordPress Dependencies
+ */
+import { Icon, filter } from '@wordpress/icons';
 
 export default function icon() {
-	return <Icon icon="filter" />;
+	return <Icon icon={filter} />;
 }

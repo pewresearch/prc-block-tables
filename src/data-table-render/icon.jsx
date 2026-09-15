@@ -1,5 +1,5 @@
-import { Icon } from '@prc/icons';
+import { Icon, table } from '@wordpress/icons';
 
 export default function icon() {
-	return <Icon icon="editor-table" />;
+	return <Icon icon={table} />;
 }

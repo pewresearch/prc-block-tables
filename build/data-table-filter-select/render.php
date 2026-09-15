@@ -218,7 +218,7 @@ ob_start();
 				aria-label="<?php echo esc_attr__( 'Clear filter', 'data-table-filter-select' ); ?>"
 				<?php echo $initial_has_clear ? '' : ' hidden'; ?>
 			>
-				<?php echo \PRC\Platform\Icons\render( 'solid', 'circle-xmark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo \PRC\Platform\Icons\render( 'prc', 'circle-xmark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</button>
 		<?php endif; ?>
 		<i class="dropdown icon" aria-hidden="true"></i>
