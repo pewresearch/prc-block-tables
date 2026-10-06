@@ -68,6 +68,10 @@ class Plugin {
 		require_once plugin_dir_path( __DIR__ ) . '/build/data-table-key/class-data-table-key.php';
 		require_once plugin_dir_path( __DIR__ ) . '/build/remote-pivot-table/class-remote-pivot-table.php';
 
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+			require_once plugin_dir_path( __DIR__ ) . '/includes/cli/class-standard-table-migrate-cli.php';
+		}
+
 		$this->loader = new Loader();
 	}
 
