@@ -25,7 +25,7 @@ $wrapper_attrs_array = array(
 
 if ( $instance_id ) {
 	$wrapper_attrs_array['data-wp-router-region']          = (string) $instance_id;
-	$wrapper_attrs_array['data-wp-watch--sync-navigation'] = 'callbacks.syncOnNavigation';
+	$wrapper_attrs_array['data-wp-watch---sync-navigation'] = 'callbacks.syncOnNavigation';
 	$wrapper_attrs_array['data-wp-key']                    = (string) $instance_id;
 }
 

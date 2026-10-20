@@ -1607,6 +1607,20 @@ class Data_Table_Controller {
 	}
 
 	/**
+	 * Resolve optional context-provided CSV download filename stem.
+	 *
+	 * @param mixed $raw Raw prc-block/dataTableData context value.
+	 * @return string Sanitized slug or empty string.
+	 */
+	private function resolve_context_csv_filename( $raw ): string {
+		if ( ! is_array( $raw ) || ! isset( $raw['csvFilename'] ) || ! is_string( $raw['csvFilename'] ) ) {
+			return '';
+		}
+
+		return sanitize_title( $raw['csvFilename'] );
+	}
+
+	/**
 	 * Resolve optional context-provided mobile card header format.
 	 *
 	 * @param mixed $raw Raw prc-block/dataTableData context value.
@@ -2274,6 +2288,7 @@ class Data_Table_Controller {
 		$context_mobile_cell_background       = '';
 		$context_mobile_world_cell_background = '';
 		$context_mobile_header_format         = array();
+		$context_csv_filename                 = '';
 		$col_order                            = isset( $attributes['columnOrder'] ) && is_array( $attributes['columnOrder'] )
 			? array_map( 'strval', $attributes['columnOrder'] )
 			: array();
@@ -2295,6 +2310,7 @@ class Data_Table_Controller {
 			$context_mobile_cell_background       = $this->resolve_context_mobile_cell_background( $raw );
 			$context_mobile_world_cell_background = $this->resolve_context_mobile_world_cell_background( $raw );
 			$context_mobile_header_format         = $this->resolve_context_mobile_header_format( $raw );
+			$context_csv_filename                 = $this->resolve_context_csv_filename( $raw );
 		} elseif ( 'firebase' === $data_source ) {
 			$firebase_path = isset( $attributes['firebasePath'] ) ? (string) $attributes['firebasePath'] : '';
 			$firebase_path = is_string( $firebase_path ) ? ltrim( trim( $firebase_path ), '/' ) : '';
@@ -2456,7 +2472,7 @@ class Data_Table_Controller {
 		);
 
 		$allow_data_download = ! isset( $attributes['allowDataDownload'] ) || ! empty( $attributes['allowDataDownload'] );
-		$csv_filename        = sanitize_title( get_the_title() );
+		$csv_filename        = '' !== $context_csv_filename ? $context_csv_filename : sanitize_title( get_the_title() );
 		if ( '' === $csv_filename ) {
 			$csv_filename = 'data-table';
 		}
