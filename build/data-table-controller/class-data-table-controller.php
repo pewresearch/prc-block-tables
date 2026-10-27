@@ -1334,13 +1334,38 @@ class Data_Table_Controller {
 	}
 
 	/**
+	 * Sanitize one coefficient band (ones / tens / hundreds).
+	 *
+	 * @param mixed $band_raw       Raw band entry.
+	 * @param int   $default_sig    Default significant digits.
+	 * @param int   $default_dec    Default decimal places.
+	 * @return array{significantDigits: int, decimals: int}
+	 */
+	private function sanitize_abbreviation_band( $band_raw, int $default_sig, int $default_dec ): array {
+		$band_entry = is_array( $band_raw ) ? $band_raw : array();
+		$decimals   = isset( $band_entry['decimals'] ) ? (int) $band_entry['decimals'] : $default_dec;
+		if ( $decimals < 0 ) {
+			$decimals = 0;
+		}
+		$significant = isset( $band_entry['significantDigits'] ) ? (int) $band_entry['significantDigits'] : $default_sig;
+		if ( $significant < 1 ) {
+			$significant = 1;
+		}
+		return array(
+			'significantDigits' => $significant,
+			'decimals'          => $decimals,
+		);
+	}
+
+	/**
 	 * Sanitize per-magnitude abbreviation group settings.
 	 *
 	 * @param array<string, mixed> $groups_raw Raw groups map.
-	 * @return array<string, array<string, int|string>>
+	 * @return array<string, array<string, mixed>>
 	 */
 	private function sanitize_abbreviation_groups( array $groups_raw ): array {
 		$allowed_groups = array( 'K', 'M', 'B', 'T' );
+		$band_keys      = array( 'ones', 'tens', 'hundreds' );
 		$default_suffix = array(
 			'K' => 'k',
 			'M' => 'M',
@@ -1361,13 +1386,32 @@ class Data_Table_Controller {
 			if ( $significant < 1 ) {
 				$significant = 1;
 			}
-			$abbreviation         = isset( $group_entry['abbreviation'] )
+			$abbreviation = isset( $group_entry['abbreviation'] )
 				? $this->sanitize_display_replacement_string( (string) $group_entry['abbreviation'] )
 				: $default_suffix[ $group_key ];
+
+			$bands_raw = isset( $group_entry['bands'] ) && is_array( $group_entry['bands'] )
+				? $group_entry['bands']
+				: null;
+			$bands     = array();
+			foreach ( $band_keys as $band_key ) {
+				if ( null !== $bands_raw ) {
+					$bands[ $band_key ] = $this->sanitize_abbreviation_band(
+						$bands_raw[ $band_key ] ?? null,
+						$significant,
+						$decimals
+					);
+				} else {
+					$bands[ $band_key ] = array(
+						'significantDigits' => $significant,
+						'decimals'          => $decimals,
+					);
+				}
+			}
+
 			$groups[ $group_key ] = array(
-				'abbreviation'      => $abbreviation,
-				'decimals'          => $decimals,
-				'significantDigits' => $significant,
+				'abbreviation' => $abbreviation,
+				'bands'        => $bands,
 			);
 		}
 

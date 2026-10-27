@@ -5,6 +5,7 @@ import { __ } from '@wordpress/i18n';
 import { Button, CheckboxControl, TextControl } from '@wordpress/components';
 
 const GROUP_KEYS = ['K', 'M', 'B', 'T'];
+const BAND_KEYS = ['ones', 'tens', 'hundreds'];
 
 const GROUP_LABELS = {
 	K: __('Thousands', 'data-table-controller'),
@@ -13,12 +14,59 @@ const GROUP_LABELS = {
 	T: __('Trillions', 'data-table-controller'),
 };
 
+const BAND_LABELS = {
+	K: {
+		ones: __('1–9 thousand', 'data-table-controller'),
+		tens: __('10–99 thousand', 'data-table-controller'),
+		hundreds: __('100–999 thousand', 'data-table-controller'),
+	},
+	M: {
+		ones: __('1–9 million', 'data-table-controller'),
+		tens: __('10–99 million', 'data-table-controller'),
+		hundreds: __('100–999 million', 'data-table-controller'),
+	},
+	B: {
+		ones: __('1–9 billion', 'data-table-controller'),
+		tens: __('10–99 billion', 'data-table-controller'),
+		hundreds: __('100–999 billion', 'data-table-controller'),
+	},
+	T: {
+		ones: __('1–9 trillion', 'data-table-controller'),
+		tens: __('10–99 trillion', 'data-table-controller'),
+		hundreds: __('100–999 trillion', 'data-table-controller'),
+	},
+};
+
 const DEFAULT_ABBREVIATIONS = {
 	K: 'k',
 	M: 'M',
 	B: 'B',
 	T: 'T',
 };
+
+const DEFAULT_BAND_FORMAT = { significantDigits: 2, decimals: 1 };
+
+/**
+ * Default sig digits and decimals for a coefficient band.
+ *
+ * @return {{ significantDigits: number, decimals: number }} Default band format.
+ */
+export function createDefaultBandFormat() {
+	return { ...DEFAULT_BAND_FORMAT };
+}
+
+/**
+ * Default bands map (ones / tens / hundreds).
+ *
+ * @return {Object} Band key to format settings map.
+ */
+export function createDefaultAbbreviationBands() {
+	return {
+		ones: createDefaultBandFormat(),
+		tens: createDefaultBandFormat(),
+		hundreds: createDefaultBandFormat(),
+	};
+}
 
 /**
  * Default per-magnitude formatting settings.
@@ -29,24 +77,68 @@ export function createDefaultAbbreviationGroups() {
 	return {
 		K: {
 			abbreviation: DEFAULT_ABBREVIATIONS.K,
-			decimals: 1,
-			significantDigits: 2,
+			bands: createDefaultAbbreviationBands(),
 		},
 		M: {
 			abbreviation: DEFAULT_ABBREVIATIONS.M,
-			decimals: 1,
-			significantDigits: 2,
+			bands: createDefaultAbbreviationBands(),
 		},
 		B: {
 			abbreviation: DEFAULT_ABBREVIATIONS.B,
-			decimals: 1,
-			significantDigits: 2,
+			bands: createDefaultAbbreviationBands(),
 		},
 		T: {
 			abbreviation: DEFAULT_ABBREVIATIONS.T,
-			decimals: 1,
-			significantDigits: 2,
+			bands: createDefaultAbbreviationBands(),
 		},
+	};
+}
+
+/**
+ * Resolve bands for editor display (legacy flat groups → three identical bands).
+ *
+ * @param {Object|undefined} group Group entry from a rule.
+ * @param {string}           key   Magnitude key (K, M, B, T).
+ * @return {Object} Bands map.
+ */
+function resolveGroupBandsForEditor(group, key) {
+	const defaults = createDefaultAbbreviationGroups()[key];
+	const defaultBands = defaults.bands;
+
+	if (group?.bands && typeof group.bands === 'object') {
+		const resolved = {};
+		for (const bandKey of BAND_KEYS) {
+			const band = group.bands[bandKey];
+			resolved[bandKey] = {
+				significantDigits:
+					Number.isFinite(Number(band?.significantDigits)) &&
+					Number(band.significantDigits) >= 1
+						? Number(band.significantDigits)
+						: defaultBands[bandKey].significantDigits,
+				decimals:
+					Number.isFinite(Number(band?.decimals)) &&
+					Number(band.decimals) >= 0
+						? Number(band.decimals)
+						: defaultBands[bandKey].decimals,
+			};
+		}
+		return resolved;
+	}
+
+	const legacySig = Number.isFinite(Number(group?.significantDigits))
+		? Math.max(1, Number(group.significantDigits))
+		: defaultBands.ones.significantDigits;
+	const legacyDec = Number.isFinite(Number(group?.decimals))
+		? Math.max(0, Number(group.decimals))
+		: defaultBands.ones.decimals;
+	const legacyBand = {
+		significantDigits: legacySig,
+		decimals: legacyDec,
+	};
+	return {
+		ones: { ...legacyBand },
+		tens: { ...legacyBand },
+		hundreds: { ...legacyBand },
 	};
 }
 
@@ -205,32 +297,43 @@ function AbbreviationFormatRuleCard({
 
 	const update = (patch) => onChange({ ...rule, ...patch });
 
-	const updateGroup = (key, field, value) => {
+	const updateGroupAbbreviation = (key, value) => {
 		const current = groups[key] || createDefaultAbbreviationGroups()[key];
-		if (field === 'abbreviation') {
-			update({
-				groups: {
-					...groups,
-					[key]: {
-						...current,
-						abbreviation: value ?? '',
-					},
+		const bands = resolveGroupBandsForEditor(current, key);
+		update({
+			groups: {
+				...groups,
+				[key]: {
+					abbreviation: value ?? '',
+					bands,
 				},
-			});
-			return;
-		}
+			},
+		});
+	};
+
+	const updateGroupBand = (key, bandKey, field, value) => {
+		const current = groups[key] || createDefaultAbbreviationGroups()[key];
+		const bands = resolveGroupBandsForEditor(current, key);
+		const band = bands[bandKey] || createDefaultBandFormat();
 		const fallback =
 			field === 'significantDigits'
-				? createDefaultAbbreviationGroups()[key].significantDigits
-				: createDefaultAbbreviationGroups()[key].decimals;
+				? band.significantDigits
+				: band.decimals;
 		const min = field === 'significantDigits' ? 1 : 0;
 		const parsed = parseNonNegativeInt(value, fallback, min);
 		update({
 			groups: {
 				...groups,
 				[key]: {
-					...current,
-					[field]: parsed,
+					abbreviation:
+						current.abbreviation ?? DEFAULT_ABBREVIATIONS[key],
+					bands: {
+						...bands,
+						[bandKey]: {
+							...band,
+							[field]: parsed,
+						},
+					},
 				},
 			},
 		});
@@ -253,54 +356,86 @@ function AbbreviationFormatRuleCard({
 				onSheetsChange={(sheets) => update({ sheets })}
 				onColumnsChange={(columns) => update({ columns })}
 			/>
-			{GROUP_KEYS.map((key) => (
-				<div
-					key={`abbrev-group-${rule.id}-${key}`}
-					className="prc-data-table-controller-abbreviation-format-rule__magnitude"
-				>
-					<p className="prc-data-table-controller-abbreviation-format-rule__magnitude-label">
-						{GROUP_LABELS[key]}
-					</p>
-					<TextControl
-						__next40pxDefaultSize
-						label={__('Abbreviation', 'data-table-controller')}
-						value={
-							groups[key]?.abbreviation ??
-							DEFAULT_ABBREVIATIONS[key]
-						}
-						onChange={(value) =>
-							updateGroup(key, 'abbreviation', value)
-						}
-						help={__(
-							'Suffix appended to the compact number (e.g. K for 407K).',
-							'data-table-controller'
-						)}
-					/>
-					<TextControl
-						__next40pxDefaultSize
-						label={__(
-							'Significant digits',
-							'data-table-controller'
-						)}
-						type="number"
-						min={1}
-						value={String(groups[key]?.significantDigits ?? 2)}
-						onChange={(value) =>
-							updateGroup(key, 'significantDigits', value)
-						}
-					/>
-					<TextControl
-						__next40pxDefaultSize
-						label={__('Decimals', 'data-table-controller')}
-						type="number"
-						min={0}
-						value={String(groups[key]?.decimals ?? 1)}
-						onChange={(value) =>
-							updateGroup(key, 'decimals', value)
-						}
-					/>
-				</div>
-			))}
+			{GROUP_KEYS.map((key) => {
+				const groupEntry =
+					groups[key] || createDefaultAbbreviationGroups()[key];
+				const bands = resolveGroupBandsForEditor(groupEntry, key);
+				return (
+					<div
+						key={`abbrev-group-${rule.id}-${key}`}
+						className="prc-data-table-controller-abbreviation-format-rule__magnitude"
+					>
+						<p className="prc-data-table-controller-abbreviation-format-rule__magnitude-label">
+							{GROUP_LABELS[key]}
+						</p>
+						<TextControl
+							__next40pxDefaultSize
+							label={__('Abbreviation', 'data-table-controller')}
+							value={
+								groupEntry?.abbreviation ??
+								DEFAULT_ABBREVIATIONS[key]
+							}
+							onChange={(value) =>
+								updateGroupAbbreviation(key, value)
+							}
+							help={__(
+								'Suffix appended to the compact number (e.g. K for 407K).',
+								'data-table-controller'
+							)}
+						/>
+						{BAND_KEYS.map((bandKey) => (
+							<div
+								key={`abbrev-band-${rule.id}-${key}-${bandKey}`}
+								className="prc-data-table-controller-abbreviation-format-rule__band"
+							>
+								<p className="prc-data-table-controller-abbreviation-format-rule__band-label">
+									{BAND_LABELS[key][bandKey]}
+								</p>
+								<TextControl
+									__next40pxDefaultSize
+									label={__(
+										'Significant digits',
+										'data-table-controller'
+									)}
+									type="number"
+									min={1}
+									value={String(
+										bands[bandKey]?.significantDigits ?? 2
+									)}
+									onChange={(value) =>
+										updateGroupBand(
+											key,
+											bandKey,
+											'significantDigits',
+											value
+										)
+									}
+								/>
+								<TextControl
+									__next40pxDefaultSize
+									label={__(
+										'Decimals',
+										'data-table-controller'
+									)}
+									type="number"
+									min={0}
+									value={String(
+										bands[bandKey]?.decimals ?? 1
+									)}
+									onChange={(value) =>
+										updateGroupBand(
+											key,
+											bandKey,
+											'decimals',
+											value
+										)
+									}
+								/>
+							</div>
+						))}
+					</div>
+				);
+			})}
 			<Button
 				__next40pxDefaultSize
 				variant="secondary"

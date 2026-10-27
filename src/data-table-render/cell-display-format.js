@@ -131,6 +131,61 @@ const COMPACT_MAGNITUDES = [
 const DEFAULT_COMPACT_GROUP = { decimals: 1, significantDigits: 2 };
 
 /**
+ * Coefficient band after dividing by K/M/B/T divisor.
+ *
+ * @param {number} coefficient Absolute scaled value (e.g. 62.448575 for millions).
+ * @return {'ones'|'tens'|'hundreds'} Band key.
+ */
+function compactCoefficientBandKey(coefficient) {
+	const absCoeff = Math.abs(coefficient);
+	if (absCoeff < 10) {
+		return 'ones';
+	}
+	if (absCoeff < 100) {
+		return 'tens';
+	}
+	return 'hundreds';
+}
+
+/**
+ * Sig digits and decimals for one magnitude, including legacy flat groups.
+ *
+ * @param {Object|undefined} groupSettings Per-magnitude group from a rule.
+ * @param {number}           coefficient   Scaled absolute value.
+ * @return {{ decimals: number, significantDigits: number }} Band-specific format settings.
+ */
+function resolveCompactBandFormat(groupSettings, coefficient) {
+	const bandKey = compactCoefficientBandKey(coefficient);
+	if (
+		groupSettings &&
+		typeof groupSettings === 'object' &&
+		groupSettings.bands &&
+		typeof groupSettings.bands === 'object' &&
+		groupSettings.bands[bandKey]
+	) {
+		const band = groupSettings.bands[bandKey];
+		return {
+			decimals: Number.isFinite(Number(band.decimals))
+				? Math.max(0, Number(band.decimals))
+				: DEFAULT_COMPACT_GROUP.decimals,
+			significantDigits: Number.isFinite(Number(band.significantDigits))
+				? Math.max(1, Number(band.significantDigits))
+				: DEFAULT_COMPACT_GROUP.significantDigits,
+		};
+	}
+	return {
+		decimals: Number.isFinite(Number(groupSettings?.decimals))
+			? Math.max(0, Number(groupSettings.decimals))
+			: DEFAULT_COMPACT_GROUP.decimals,
+		significantDigits: Number.isFinite(
+			Number(groupSettings?.significantDigits)
+		)
+			? Math.max(1, Number(groupSettings.significantDigits))
+			: DEFAULT_COMPACT_GROUP.significantDigits,
+	};
+}
+
+/**
  * Resolve shared abbreviation rules from attributes, including legacy mobile abbrev rules.
  *
  * @param {Object} options Formatting options.
@@ -248,17 +303,13 @@ function formatCompactNumber(num, groups) {
 	const groupSettings =
 		groups && typeof groups === 'object' && groups[magnitude.key]
 			? groups[magnitude.key]
-			: DEFAULT_COMPACT_GROUP;
-	const decimals = Number.isFinite(Number(groupSettings.decimals))
-		? Math.max(0, Number(groupSettings.decimals))
-		: DEFAULT_COMPACT_GROUP.decimals;
-	const significantDigits = Number.isFinite(
-		Number(groupSettings.significantDigits)
-	)
-		? Math.max(1, Number(groupSettings.significantDigits))
-		: DEFAULT_COMPACT_GROUP.significantDigits;
+			: null;
 
 	let coefficient = abs / magnitude.divisor;
+	const { decimals, significantDigits } = resolveCompactBandFormat(
+		groupSettings,
+		coefficient
+	);
 	coefficient = Number(coefficient.toPrecision(significantDigits));
 
 	let formattedCoeff;
@@ -383,7 +434,6 @@ function applyValueFormatRules(raw, col, activeSheet, rules, prefix, suffix) {
  */
 function formatDisplayCell(raw, col, options) {
 	const { valueFormatExcluded, valueFormatRules, activeSheetName } = options;
-	const { prefix, suffix } = resolvePrefixSuffix(options);
 	if (valueFormatExcluded.has(col)) {
 		return raw === null || raw === undefined ? '' : String(raw);
 	}
