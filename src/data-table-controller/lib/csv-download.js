@@ -414,6 +414,49 @@ export function tableToCsv(columns, rows) {
 }
 
 /**
+ * The file "Download data" saves for one table slice.
+ *
+ * A context-provided `csvDownload` is saved verbatim. Otherwise the sheets
+ * are merged and named `${csvFilename}_data_table.csv`.
+ *
+ * @param {Object|undefined} table Table slice from `state.tables[id]`.
+ * @return {{ filename: string, csv: string }|null} File to save, or null when there is nothing to export.
+ */
+export function resolveCsvDownload(table) {
+	const prebuilt = table?.csvDownload;
+	if (
+		prebuilt &&
+		typeof prebuilt.filename === 'string' &&
+		prebuilt.filename !== '' &&
+		typeof prebuilt.content === 'string' &&
+		prebuilt.content !== ''
+	) {
+		return { filename: prebuilt.filename, csv: prebuilt.content };
+	}
+
+	if (!table?.sheets) {
+		return null;
+	}
+
+	const { columns, rows } = mergeSheetsForCsv(table.sheets, {
+		columnFilters: table.columnFilters,
+	});
+	if (!columns.length) {
+		return null;
+	}
+
+	const filenameStem =
+		typeof table.csvFilename === 'string' && table.csvFilename
+			? table.csvFilename
+			: sanitizeCsvFilename('');
+
+	return {
+		filename: `${filenameStem}_data_table.csv`,
+		csv: tableToCsv(columns, rows),
+	};
+}
+
+/**
  * Trigger a browser download for CSV text.
  *
  * @param {string} filename Download filename.

@@ -1651,17 +1651,38 @@ class Data_Table_Controller {
 	}
 
 	/**
-	 * Resolve optional context-provided CSV download filename stem.
+	 * Prebuilt CSV from a context provider.
+	 *
+	 * The filename must already equal `sanitize_file_name()` and end in `.csv`.
+	 * Content is copied unchanged so a provider can include commas and quotes.
 	 *
 	 * @param mixed $raw Raw prc-block/dataTableData context value.
-	 * @return string Sanitized slug or empty string.
+	 * @return array{filename: string, content: string}|null
 	 */
-	private function resolve_context_csv_filename( $raw ): string {
-		if ( ! is_array( $raw ) || ! isset( $raw['csvFilename'] ) || ! is_string( $raw['csvFilename'] ) ) {
-			return '';
+	private function resolve_context_csv_download( $raw ): ?array {
+		if ( ! is_array( $raw ) ) {
+			return null;
 		}
 
-		return sanitize_title( $raw['csvFilename'] );
+		$csv = $raw['csvDownload'] ?? null;
+		if ( ! is_array( $csv ) ) {
+			return null;
+		}
+
+		$filename = $csv['filename'] ?? null;
+		$content  = $csv['content'] ?? null;
+		if ( ! is_string( $filename ) || '' === $filename || ! is_string( $content ) || '' === $content ) {
+			return null;
+		}
+
+		if ( ! str_ends_with( $filename, '.csv' ) || sanitize_file_name( $filename ) !== $filename ) {
+			return null;
+		}
+
+		return array(
+			'filename' => $filename,
+			'content'  => $content,
+		);
 	}
 
 	/**
@@ -2332,7 +2353,7 @@ class Data_Table_Controller {
 		$context_mobile_cell_background       = '';
 		$context_mobile_world_cell_background = '';
 		$context_mobile_header_format         = array();
-		$context_csv_filename                 = '';
+		$csv_download                         = null;
 		$col_order                            = isset( $attributes['columnOrder'] ) && is_array( $attributes['columnOrder'] )
 			? array_map( 'strval', $attributes['columnOrder'] )
 			: array();
@@ -2354,7 +2375,7 @@ class Data_Table_Controller {
 			$context_mobile_cell_background       = $this->resolve_context_mobile_cell_background( $raw );
 			$context_mobile_world_cell_background = $this->resolve_context_mobile_world_cell_background( $raw );
 			$context_mobile_header_format         = $this->resolve_context_mobile_header_format( $raw );
-			$context_csv_filename                 = $this->resolve_context_csv_filename( $raw );
+			$csv_download                         = $this->resolve_context_csv_download( $raw );
 		} elseif ( 'firebase' === $data_source ) {
 			$firebase_path = isset( $attributes['firebasePath'] ) ? (string) $attributes['firebasePath'] : '';
 			$firebase_path = is_string( $firebase_path ) ? ltrim( trim( $firebase_path ), '/' ) : '';
@@ -2516,7 +2537,7 @@ class Data_Table_Controller {
 		);
 
 		$allow_data_download = ! isset( $attributes['allowDataDownload'] ) || ! empty( $attributes['allowDataDownload'] );
-		$csv_filename        = '' !== $context_csv_filename ? $context_csv_filename : sanitize_title( get_the_title() );
+		$csv_filename        = sanitize_title( get_the_title() );
 		if ( '' === $csv_filename ) {
 			$csv_filename = 'data-table';
 		}
@@ -2563,6 +2584,7 @@ class Data_Table_Controller {
 						'tableHeaderTextAlign'       => $table_header_text_align,
 						'boldColumns'                => $bold_columns,
 						'csvFilename'                => $csv_filename,
+						'csvDownload'                => $csv_download,
 					),
 				),
 			)

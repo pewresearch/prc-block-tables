@@ -5,17 +5,12 @@
  */
 import { store, getContext } from '@wordpress/interactivity';
 
-import {
-	downloadCsv,
-	mergeSheetsForCsv,
-	sanitizeCsvFilename,
-	tableToCsv,
-} from './lib/csv-download';
+import { downloadCsv, resolveCsvDownload } from './lib/csv-download';
 
 const { state } = store('prc-block/data-table', {
 	actions: {
 		/**
-		 * Download the current table as a merged CSV file.
+		 * Download the table CSV.
 		 *
 		 * @param {Event} event Click or keydown event.
 		 */
@@ -29,24 +24,12 @@ const { state } = store('prc-block/data-table', {
 			}
 
 			const { dataTableInstanceId } = getContext();
-			const table = state.tables[dataTableInstanceId];
-			if (!table?.sheets) {
+			const file = resolveCsvDownload(state.tables[dataTableInstanceId]);
+			if (!file) {
 				return;
 			}
 
-			const { columns, rows } = mergeSheetsForCsv(table.sheets, {
-				columnFilters: table.columnFilters,
-			});
-			if (!columns.length) {
-				return;
-			}
-
-			const csv = tableToCsv(columns, rows);
-			const filenameStem =
-				typeof table.csvFilename === 'string' && table.csvFilename
-					? table.csvFilename
-					: sanitizeCsvFilename('');
-			downloadCsv(`${filenameStem}_data_table.csv`, csv);
+			downloadCsv(file.filename, file.csv);
 		},
 	},
 });
