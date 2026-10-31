@@ -72,7 +72,7 @@ Each sheet returns `{ id, name, head, body, foot, columnMeta }`. Use `getSpreads
 
 - WordPress 6.8+
 - PHP 8.2+
-- [`prc-scripts`](https://github.com/pewresearch/prc-scripts) (must be active)
+- [`prc-shared`](https://github.com/pewresearch/prc-shared) (must be active)
 
 ## Development
 
