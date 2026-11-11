@@ -80,16 +80,19 @@ type TableDataSettingsProps = {
 	setAttributes: (attrs: Partial<BlockAttributes>) => void;
 	vTable: VTable;
 	selectedCells: VSelectedCells;
+	clientId?: string;
 };
 
 type DropzoneProps = {
 	attributes: BlockAttributes;
 	setAttributes: (attrs: Partial<BlockAttributes>) => void;
+	clientId?: string;
 };
 
 export function TableDataDropzone({
 	attributes,
 	setAttributes,
+	clientId,
 }: DropzoneProps) {
 	const { createErrorNotice } = useDispatch(noticesStore);
 
@@ -104,7 +107,8 @@ export function TableDataDropzone({
 					(message: string) => {
 						// @ts-ignore
 						createErrorNotice(message, { type: 'snackbar' });
-					}
+					},
+					clientId
 				)
 			}
 		/>
@@ -116,6 +120,7 @@ export default function TableDataSettings({
 	attributes,
 	setAttributes,
 	vTable,
+	clientId,
 }: TableDataSettingsProps) {
 	// Create a hidden file input element.
 	const hiddenFileInput = useRef<HTMLInputElement>(null);
@@ -262,7 +267,8 @@ export default function TableDataSettings({
 								createErrorNotice(message, {
 									type: 'snackbar',
 								});
-							}
+							},
+							clientId
 						)
 					}
 					style={{ display: 'none' }}
@@ -270,6 +276,7 @@ export default function TableDataSettings({
 				<TableDataDropzone
 					attributes={attributes}
 					setAttributes={setAttributes}
+					clientId={clientId}
 				/>
 			</PanelRow>
 			<PanelRow>

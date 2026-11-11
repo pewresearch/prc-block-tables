@@ -50,10 +50,11 @@ import type { BlockAttributes } from '../block-attributes';
 
 type Props = {
 	setAttributes: (attrs: Partial<BlockAttributes>) => void;
+	clientId?: string;
 };
 
 /* eslint-disable max-lines-per-function */
-export default function TablePlaceholder({ setAttributes }: Props) {
+export default function TablePlaceholder({ setAttributes, clientId }: Props) {
 	const [rowCount, setRowCount] = useState<number | undefined>(
 		DEFAULT_PREVIEW_ROWS
 	);
@@ -181,7 +182,8 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 							createErrorNotice(message, {
 								type: 'snackbar',
 							});
-						}
+						},
+						clientId
 					)
 				}
 			/>
@@ -300,6 +302,7 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 						value={colCount || ''}
 						onChange={onChangeColumnCount}
 						__nextHasNoMarginBottom
+						__next40pxDefaultSize
 					/>
 					<TextControl
 						label={__('Row count', 'prc-block')}
@@ -310,11 +313,13 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 						value={rowCount || ''}
 						onChange={onChangeRowCount}
 						__nextHasNoMarginBottom
+						__next40pxDefaultSize
 					/>
 					<Button
 						variant="primary"
 						type="submit"
 						disabled={!rowCount || !colCount}
+						__next40pxDefaultSize
 					>
 						{__('Create Table', 'prc-block')}
 					</Button>
@@ -322,6 +327,7 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 						variant="secondary"
 						type="button"
 						onClick={() => csvFileInputRef.current?.click()}
+						__next40pxDefaultSize
 					>
 						{__('Import CSV', 'prc-block')}
 					</Button>
@@ -340,7 +346,8 @@ export default function TablePlaceholder({ setAttributes }: Props) {
 										createErrorNotice(message, {
 											type: 'snackbar',
 										});
-									}
+									},
+									clientId
 								);
 							}
 						}}

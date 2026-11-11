@@ -21,7 +21,7 @@ assets by chunk 8.83 KiB (name: data-table-render/index)
 + 20 assets
 orphan modules 1.11 MiB (javascript) 12.9 KiB (runtime) [1m[33m[orphan][39m[22m 565 modules
 runtime modules 19.8 KiB 29 modules
-built modules 58.2 KiB (css/mini-extract) 912 KiB (javascript) [1m[33m[built][39m[22m
+built modules 58.2 KiB (css/mini-extract) 913 KiB (javascript) [1m[33m[built][39m[22m
   cacheable modules 58.2 KiB (css/mini-extract) 5.36 KiB (javascript)
     modules by path [1m./src/[39m[22m 58.2 KiB 14 modules
     javascript modules 5.36 KiB
@@ -29,7 +29,7 @@ built modules 58.2 KiB (css/mini-extract) 912 KiB (javascript) [1m[33m[built]
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/index.js[39m[22m 196 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
       [1m../../node_modules/hoist-non-react-statics/node_modules/react-is/cjs/react-is.pr...(truncated)[39m[22m 2.49 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   + 8 modules
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 34316 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 14904 ms
 
 assets by path [1m[32mdata-table-render/[39m[22m 25 KiB 2 assets
 assets by path [1m[32mdata-table-filter-select/[39m[22m 6.4 KiB 2 assets
@@ -52,7 +52,7 @@ built modules 123 KiB [1m[33m[built][39m[22m
     + 6 modules
   [1mexternal "@wordpress/interactivity"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   [1mexternal "@prc/d3"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 19126 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 7202 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
 > @prc/block-tables@1.5.1 build:ai
@@ -66,4 +66,4 @@ asset [1m[32mindex.asset.php[39m[22m 189 bytes [1m[32m[emitted][39m[22m 
 Entrypoint [1mindex[39m[22m 3.48 KiB = [1m[32mindex.js[39m[22m 3.29 KiB [1m[32mindex.asset.php[39m[22m 189 bytes
 orphan modules 6.29 KiB [1m[33m[orphan][39m[22m 8 modules
 [1m./includes/ai-features/src/generate-tabular-data/index.tsx + 8 modules[39m[22m 8.21 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 997 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 1122 ms

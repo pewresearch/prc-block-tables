@@ -264,6 +264,7 @@ function TableEdit(props: BlockEditProps<BlockAttributes>) {
 		setAttributes,
 		vTable,
 		selectedCells,
+		clientId,
 	};
 
 	return (
@@ -349,6 +350,7 @@ function TableEdit(props: BlockEditProps<BlockAttributes>) {
 					<TableDataDropzone
 						attributes={attributes}
 						setAttributes={setAttributes}
+						clientId={clientId}
 					/>
 				</figure>
 			)}

@@ -6,6 +6,7 @@ import CSV from 'comma-separated-values';
 /**
  * WordPress Dependencies
  */
+import { doAction } from '@wordpress/hooks';
 import { __, sprintf } from '@wordpress/i18n';
 
 /**
@@ -17,6 +18,9 @@ import { isTableWithinLimits } from './utils/table-limits';
 /**
  * Utilities for managing core/table data
  */
+
+/** Fired after a CSV replaces this table. Chart builder sizes bar height from it. */
+export const TABLE_CSV_IMPORT_ACTION = 'prc-block.table.import-csv';
 
 function convertToRow(d, tag = 'td') {
 	return d.map((content) => ({
@@ -33,7 +37,7 @@ function convertJSONToAttributes(d, tag = 'td') {
 	return d.map((row) => ({ cells: convertToRow(row, tag) }));
 }
 
-export function parseCSV(csvInput, attributes, setAttributes) {
+export function parseCSV(csvInput, attributes, setAttributes, clientId) {
 	const opts = {
 		header: false,
 	};
@@ -78,8 +82,14 @@ export function parseCSV(csvInput, attributes, setAttributes) {
 
 	const headerData = convertJSONToAttributes(parsed.shift(), 'th');
 	const bodyData = convertJSONToAttributes(parsed);
+	const head = [{ cells: headerData }];
 	setAttributes({ body: bodyData });
-	setAttributes({ head: [{ cells: headerData }] });
+	setAttributes({ head });
+	doAction(TABLE_CSV_IMPORT_ACTION, {
+		clientId,
+		head,
+		body: bodyData,
+	});
 
 	return parsed;
 }
@@ -103,13 +113,14 @@ export function handleCSV(
 	files,
 	attributes,
 	setAttributes,
-	onError = () => {}
+	onError = () => {},
+	clientId
 ) {
 	// eslint-disable-next-line no-undef
 	const reader = new FileReader();
 	reader.onload = () => {
 		try {
-			parseCSV(reader.result, attributes, setAttributes);
+			parseCSV(reader.result, attributes, setAttributes, clientId);
 		} catch (error) {
 			onError(
 				error instanceof Error
